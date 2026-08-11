@@ -208,7 +208,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="font-body">
+    <main className="overflow-x-hidden font-body">
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(4px); }
@@ -410,11 +410,11 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[300px] py-6">
+          <div className="relative mx-auto w-full max-w-[220px] overflow-hidden py-6 sm:max-w-[300px] sm:overflow-visible">
             {/* Floating shadow beneath the phone */}
             <div className="absolute inset-x-6 bottom-2 h-8 rounded-full bg-black/30 blur-2xl" />
 
-            <div className="relative -rotate-6 transition-transform duration-500 hover:rotate-0">
+            <div className="relative sm:-rotate-6 transition-transform duration-500 sm:hover:rotate-0">
               <div className="relative aspect-[9/19.5] rounded-[3rem] border-[8px] border-navy bg-navy shadow-2xl drop-shadow-2xl">
                 {/* Dynamic Island */}
                 <div className="absolute left-1/2 top-3 z-10 h-6 w-24 -translate-x-1/2 rounded-full bg-navy" />
