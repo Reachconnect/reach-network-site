@@ -195,10 +195,48 @@ function StarRow({ count = 5, color = "text-emerald-500" }: { count?: number; co
   );
 }
 
+const NAV_SECTIONS = [
+  {
+    label: "For Employers",
+    links: [
+      { label: "I need staff", href: "/i-need-staff" },
+      { label: "Book a call", href: "/book-a-call" },
+      { label: "Our services", href: "/our-services" },
+      { label: "How it works", href: "/how-it-works" },
+      { label: "Reach Connect sign in", href: "#" },
+    ],
+  },
+  {
+    label: "For Candidates",
+    links: [
+      { label: "Find a job", href: "/looking-for-work" },
+      { label: "Register for work", href: "/looking-for-work" },
+      { label: "Register CV", href: "/looking-for-work" },
+      { label: "Career advice", href: "/looking-for-work" },
+    ],
+  },
+  {
+    label: "Reach Connect",
+    links: [
+      { label: "Book a demo", href: "/book-a-demo" },
+      { label: "Features", href: "/book-a-demo#features" },
+    ],
+  },
+  {
+    label: "Reach Network Recruitment",
+    links: [
+      { label: "About us", href: "/about-us" },
+      { label: "Why choose us", href: "/about-us" },
+      { label: "FAQ", href: "/book-a-call#faq" },
+    ],
+  },
+];
+
 export default function Home() {
   const [screenIndex, setScreenIndex] = useState(0);
   const activeScreen = APP_SCREENS[screenIndex];
   const [menuOpen, setMenuOpen] = useState(false);
+  const [openSection, setOpenSection] = useState<string | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -239,9 +277,12 @@ export default function Home() {
               </svg>
               0121 630 1643
             </a>
-            <button className="hidden rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:block">
+            <Link
+              href="/book-a-call"
+              className="hidden rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:block"
+            >
               Let&rsquo;s Talk
-            </button>
+            </Link>
 
             <button
               type="button"
@@ -270,16 +311,17 @@ export default function Home() {
           }`}
         >
           <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-4 lg:px-8">
-            {["For Employers", "For Candidates", "Industries", "About Us"].map(
-              (item) => (
+            {NAV_SECTIONS.map((section) => (
+              <div key={section.label}>
                 <button
-                  key={item}
-                  className="flex items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
+                  type="button"
+                  onClick={() => setOpenSection(openSection === section.label ? null : section.label)}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
                 >
-                  {item}
+                  {section.label}
                   <svg
                     viewBox="0 0 12 12"
-                    className="h-3 w-3 opacity-60"
+                    className={`h-3 w-3 opacity-60 transition-transform ${openSection === section.label ? "rotate-180" : ""}`}
                     fill="none"
                   >
                     <path
@@ -291,19 +333,26 @@ export default function Home() {
                     />
                   </svg>
                 </button>
-              )
-            )}
+                {openSection === section.label && (
+                  <div className="ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+                    {section.links.map((link) => (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        className="rounded-lg px-3 py-2 text-left text-xs font-semibold text-white/70 transition hover:bg-white/5 hover:text-white"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
             <Link
-              href="#insights"
+              href="/contact-us"
               className="rounded-lg px-3 py-3 text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
             >
-              Insights
-            </Link>
-            <Link
-              href="#contact"
-              className="rounded-lg px-3 py-3 text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
-            >
-              Contact
+              Contact us
             </Link>
 
             <div className="mt-2 flex flex-col gap-3 border-t border-white/10 pt-4 sm:hidden">
@@ -313,9 +362,12 @@ export default function Home() {
                 </svg>
                 0121 630 1643
               </a>
-              <button className="mx-3 rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark">
+              <Link
+                href="/book-a-call"
+                className="mx-3 rounded-full bg-orange px-5 py-2.5 text-center text-sm font-bold text-white transition hover:bg-orange-dark"
+              >
                 Let&rsquo;s Talk
-              </button>
+              </Link>
             </div>
           </nav>
         </div>
@@ -359,14 +411,20 @@ export default function Home() {
           </p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <button className="flex items-center gap-1.5 rounded-full bg-orange px-7 py-3.5 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+            <Link
+              href="/i-need-staff"
+              className="flex items-center gap-1.5 rounded-full bg-orange px-7 py-3.5 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
               I need staff
               <span aria-hidden="true">&rarr;</span>
-            </button>
-            <button className="flex items-center gap-1.5 rounded-full border border-white/30 px-7 py-3.5 text-sm font-bold text-white transition hover:border-white/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+            </Link>
+            <Link
+              href="/looking-for-work"
+              className="flex items-center gap-1.5 rounded-full border border-white/30 px-7 py-3.5 text-sm font-bold text-white transition hover:border-white/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
               I&rsquo;m looking for work
               <span aria-hidden="true">&rarr;</span>
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -401,12 +459,18 @@ export default function Home() {
               better communication and complete control over your workforce.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <button className="rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy">
+              <Link
+                href="/book-a-demo"
+                className="rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+              >
                 Book a demo
-              </button>
-              <button className="rounded-full border border-navy/20 px-6 py-3 text-sm font-bold text-navy transition hover:border-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy">
+              </Link>
+              <Link
+                href="/book-a-call"
+                className="rounded-full border border-navy/20 px-6 py-3 text-sm font-bold text-navy transition hover:border-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+              >
                 Book a call
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -445,9 +509,9 @@ export default function Home() {
                   </div>
 
                   <div key={screenIndex} className="flex-1 space-y-1.5 overflow-hidden p-2.5 animate-[fadeIn_0.4s_ease]">
-                    {activeScreen.items.map((item) => (
+                    {activeScreen.items.map((item, itemIndex) => (
                       <div
-                        key={item.title}
+                        key={`${item.title}-${itemIndex}`}
                         className="rounded-lg bg-navy px-3 py-2.5"
                       >
                         <p className="text-[11px] font-bold text-white">
@@ -511,10 +575,10 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             {STATS.map((stat) => (
               <div key={stat.label}>
-                <p className="font-display text-2xl font-extrabold text-white sm:text-3xl">
+                <p className="font-display whitespace-nowrap text-xl font-extrabold text-white sm:text-2xl">
                   {stat.value}
                 </p>
                 <p className="mt-1.5 text-xs text-white/60 sm:text-sm">

@@ -1,220 +1,170 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
 
-const TRUST_POINTS = [
-  { label: "Quality people, fast" },
-  { label: "Reliable and honest" },
-  { label: "Industry specialists" },
-  { label: "Safety & compliance first" },
-  { label: "Support every step" },
+const TIME_SLOTS = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+
+const HELP_OPTIONS = [
+  "Hiring warehouse staff",
+  "Hiring drivers",
+  "Hiring manufacturing staff",
+  "Hiring engineers",
+  "General enquiry",
 ];
 
-const HERO_IMAGES = [
-  { src: "/hero/Hero Warehouse.png", alt: "Warehouse worker" },
-  { src: "/hero/Hero Driving.png", alt: "HGV driver" },
-  { src: "/hero/Hero Manufacturing.png", alt: "Manufacturing worker" },
-  { src: "/hero/Hero Engineering.png", alt: "Engineer" },
+const WHAT_TO_EXPECT = [
+  { title: "Understand your needs", sub: "We'll learn about your roles, challenges, and hiring goals." },
+  { title: "Explore solutions", sub: "We'll share how our recruitment services can meet your needs." },
+  { title: "Get expert advice", sub: "Our specialists will offer insights and best-practice guidance." },
+  { title: "Next steps", sub: "We'll outline a clear plan to help you move forward." },
 ];
 
-const INDUSTRY_IMAGES: Record<string, { src: string; alt: string }> = {
-  Driving: { src: "/industries/industry-driving.png", alt: "HGV driver on the road" },
-  Warehousing: { src: "/industries/industry-warehousing.png", alt: "Warehouse forklift operator" },
-  Manufacturing: { src: "/industries/industry-manufacturing.png", alt: "Manufacturing worker welding" },
-  Engineering: { src: "/industries/industry-engineering.png", alt: "Engineer at work" },
-};
-
-const FEATURES = [
+const FAQS = [
   {
-    title: "Real-time updates",
-    description: "Know what's happening, right now.",
+    q: "I'm a candidate / hiring manager, do you charge for these calls?",
+    a: "No, our calls are completely free. We would never charge you.",
   },
   {
-    title: "Simplified compliance",
-    description: "Everything in one place, always up to date.",
+    q: "I've seen a role on your website I'm interested in applying for, can I book a call in with you?",
+    a: "Of course, feel free to book a call in with us, we would love to chat. However, please make sure you send your CV before the call so we can discuss that too.",
   },
   {
-    title: "Better communication",
-    description: "Connect your team, anytime, anywhere.",
+    q: "What if I need to cancel or reschedule?",
+    a: "Easy — you'll get a calendar invite after you book, which will land in your diary. If you need to cancel or rebook, simply re-arrange or cancel it in your own diary.",
   },
   {
-    title: "Powerful reporting",
-    description: "Make smarter decisions with live insights.",
+    q: "What happens after the call?",
+    a: "That depends who you are. If you're a client, we'll arrange a suitable time for a site visit if that's what we've discussed, or set up a look at ReachConnect. If you're a candidate and you've already provided us with your CV, we'll follow up over email with all the details of our client and the role.",
   },
 ];
 
-const APP_SCREENS = [
-  {
-    persona: "Candidate app",
-    tab: "Home",
-    heading: "Good morning, James",
-    items: [
-      { title: "My Shifts", sub: "View your upcoming shifts" },
-      { title: "Messages", sub: "Stay in the loop" },
-      { title: "Timesheets", sub: "Submit and approve" },
-      { title: "Documents", sub: "Access important docs" },
-    ],
-  },
-  {
-    persona: "Candidate app",
-    tab: "Shifts",
-    heading: "Your shifts",
-    items: [
-      { title: "Today, 8:00 - 16:00", sub: "Amazon Fulfilment, Coventry" },
-      { title: "Tomorrow, 6:00 - 14:00", sub: "DHL Logistics, Birmingham" },
-      { title: "Thu, 14:00 - 22:00", sub: "Amazon Fulfilment, Coventry" },
-      { title: "Fri, 8:00 - 16:00", sub: "JCB Manufacturing, Rocester" },
-    ],
-  },
-  {
-    persona: "Candidate app",
-    tab: "Messages",
-    heading: "Messages",
-    items: [
-      { title: "Reach Network", sub: "Your timesheet was approved ✅" },
-      { title: "Site Supervisor", sub: "Please arrive 15 mins early tomorrow" },
-      { title: "Reach Network", sub: "New shift available near you" },
-      { title: "Payroll", sub: "Your payslip is ready to view" },
-    ],
-  },
-  {
-    persona: "Client portal",
-    tab: "Dashboard",
-    heading: "Welcome back, Sarah",
-    items: [
-      { title: "Active workers today", sub: "38 on shift across 3 sites" },
-      { title: "Pending approvals", sub: "6 timesheets need review" },
-      { title: "Open requests", sub: "2 new staffing requests" },
-      { title: "Compliance alerts", sub: "1 document expiring soon" },
-    ],
-  },
-  {
-    persona: "Client portal",
-    tab: "Timesheets",
-    heading: "Timesheet approvals",
-    items: [
-      { title: "J. Mensah — Warehouse", sub: "38.5 hrs · Awaiting approval" },
-      { title: "R. Nowak — Driving", sub: "42 hrs · Awaiting approval" },
-      { title: "A. Khan — Manufacturing", sub: "36 hrs · Approved" },
-      { title: "L. Evans — Engineering", sub: "40 hrs · Approved" },
-    ],
-  },
-  {
-    persona: "Client portal",
-    tab: "Workforce",
-    heading: "Your workforce",
-    items: [
-      { title: "Amazon Fulfilment, Coventry", sub: "14 workers placed" },
-      { title: "DHL Logistics, Birmingham", sub: "9 workers placed" },
-      { title: "JCB Manufacturing, Rocester", sub: "11 workers placed" },
-      { title: "New request", sub: "Book more staff" },
-    ],
-  },
-] as const;
-
-const STATS = [
-  { value: "20+", label: "Years of industry experience" },
-  { value: "1000s", label: "People placed every year" },
-  { value: "Dedicated", label: "Account managers who care" },
-  { value: "Trusted by", label: "Businesses across the UK" },
-];
-
-const INDUSTRIES = [
-  {
-    title: "Driving",
-    description: "HGV, LGV, 7.5t, ADR and driver support roles.",
-  },
-  {
-    title: "Warehousing",
-    description: "Warehouse operatives, FLT, pickers, packers and more.",
-  },
-  {
-    title: "Manufacturing",
-    description: "Production, assembly, machine operators and more.",
-  },
-  {
-    title: "Engineering",
-    description: "Skilled engineers, technicians and industrial specialists.",
-  },
-];
-
-const TESTIMONIALS = [
-  {
-    quote:
-      "Reach Network always deliver the right people, when we need them.",
-    name: "Operations Manager",
-    company: "Logistics Company",
-  },
-  {
-    quote:
-      "Great communication, reliable staff and a team that genuinely cares.",
-    name: "HR Manager",
-    company: "Manufacturing Business",
-  },
-  {
-    quote: "Professional, efficient and a refreshingly different approach.",
-    name: "Site Manager",
-    company: "Engineering Company",
-  },
-];
-
-function PlaceholderPanel({ className = "" }: { className?: string }) {
-  return (
-    <div
-      className={`relative overflow-hidden bg-gradient-to-br from-navy via-navy to-navy-deep ${className}`}
-    >
-      <div
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 30% 20%, rgba(247,147,30,0.5), transparent 55%)",
-        }}
-      />
-      <div
-        className="absolute inset-0 opacity-[0.07]"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(45deg, #fff 0px, #fff 1px, transparent 1px, transparent 14px)",
-        }}
-      />
-    </div>
-  );
+function formatDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
-function StarRow({ count = 5, color = "text-emerald-500" }: { count?: number; color?: string }) {
-  return (
-    <div className={`flex gap-0.5 ${color}`} aria-hidden="true">
-      {Array.from({ length: count }).map((_, i) => (
-        <svg key={i} viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-          <path d="M10 1.5l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6z" />
-        </svg>
-      ))}
-    </div>
-  );
+function formatTimeLabel(time: string): string {
+  const [h, m] = time.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
 }
 
-export default function Home() {
-  const [screenIndex, setScreenIndex] = useState(0);
-  const activeScreen = APP_SCREENS[screenIndex];
+const NAV_SECTIONS = [
+  {
+    label: "For Employers",
+    links: [
+      { label: "I need staff", href: "/i-need-staff" },
+      { label: "Book a call", href: "/book-a-call" },
+      { label: "Our services", href: "/our-services" },
+      { label: "How it works", href: "/how-it-works" },
+      { label: "Reach Connect sign in", href: "#" },
+    ],
+  },
+  {
+    label: "For Candidates",
+    links: [
+      { label: "Find a job", href: "/looking-for-work" },
+      { label: "Register for work", href: "/looking-for-work" },
+      { label: "Register CV", href: "/looking-for-work" },
+      { label: "Career advice", href: "/looking-for-work" },
+    ],
+  },
+  {
+    label: "Reach Connect",
+    links: [
+      { label: "Book a demo", href: "/book-a-demo" },
+      { label: "Features", href: "/book-a-demo#features" },
+    ],
+  },
+  {
+    label: "Reach Network Recruitment",
+    links: [
+      { label: "About us", href: "/about-us" },
+      { label: "Why choose us", href: "/about-us" },
+      { label: "FAQ", href: "/book-a-call#faq" },
+    ],
+  },
+];
+
+export default function BookACall() {
+  const today = new Date();
+  const [viewMonth, setViewMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [openSection, setOpenSection] = useState<string | null>(null);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setScreenIndex((current) => (current + 1) % APP_SCREENS.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  const [form, setForm] = useState({
+    fullName: "",
+    workEmail: "",
+    phoneNumber: "",
+    companyName: "",
+    jobTitle: "",
+    helpTopic: "",
+    notes: "",
+  });
+
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const startOfMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
+  const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
+  const firstWeekday = (startOfMonth.getDay() + 6) % 7;
+
+  const calendarCells: (Date | null)[] = [
+    ...Array(firstWeekday).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => new Date(viewMonth.getFullYear(), viewMonth.getMonth(), i + 1)),
+  ];
+
+  const todayKey = formatDateKey(today);
+
+  function isSelectable(date: Date) {
+    const day = date.getDay();
+    const isWeekend = day === 0 || day === 6;
+    const isPast = formatDateKey(date) < todayKey;
+    return !isWeekend && !isPast;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedDate || !selectedTime) {
+      setErrorMessage("Please select a date and time.");
+      setStatus("error");
+      return;
+    }
+    setStatus("submitting");
+    setErrorMessage("");
+
+    try {
+      const res = await fetch("/api/book-call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          date: formatDateKey(selectedDate),
+          time: selectedTime,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Something went wrong.");
+      }
+      setStatus("success");
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
+      setStatus("error");
+    }
+  }
 
   return (
     <main className="overflow-x-hidden font-body">
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(4px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
       {/* HEADER */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-navy">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3 lg:px-8">
@@ -223,9 +173,7 @@ export default function Home() {
               <span className="h-3 w-3 rounded-full bg-orange" />
             </span>
             <span className="font-display leading-none">
-              <span className="block text-lg font-extrabold tracking-tight text-white">
-                REACH
-              </span>
+              <span className="block text-lg font-extrabold tracking-tight text-white">REACH</span>
               <span className="block text-[9px] font-semibold tracking-[0.2em] text-white/60">
                 NETWORK RECRUITMENT
               </span>
@@ -233,15 +181,21 @@ export default function Home() {
           </Link>
 
           <div className="flex shrink-0 items-center gap-3">
-            <a href="tel:01216301643" className="hidden shrink-0 items-center gap-2 whitespace-nowrap text-sm font-semibold text-white/85 transition hover:text-white sm:flex">
+            <a
+              href="tel:01216301643"
+              className="hidden shrink-0 items-center gap-2 whitespace-nowrap text-sm font-semibold text-white/85 transition hover:text-white sm:flex"
+            >
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
                 <path d="M3.5 2.5A1.5 1.5 0 0 1 5 1h1.3a1.5 1.5 0 0 1 1.46 1.16l.62 2.68a1.5 1.5 0 0 1-.4 1.42l-1.1 1.1a11.5 11.5 0 0 0 5 5l1.1-1.1a1.5 1.5 0 0 1 1.42-.4l2.68.62A1.5 1.5 0 0 1 18 12.7V14a1.5 1.5 0 0 1-1.5 1.5C8.5 15.5 3.5 10.5 3.5 2.5z" />
               </svg>
               0121 630 1643
             </a>
-            <button className="hidden rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:block">
+            <Link
+              href="/book-a-call"
+              className="hidden rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:block"
+            >
               Let&rsquo;s Talk
-            </button>
+            </Link>
 
             <button
               type="button"
@@ -263,23 +217,23 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Collapsible menu panel */}
         <div
           className={`overflow-hidden border-t border-white/10 bg-navy transition-[max-height] duration-300 ease-in-out ${
             menuOpen ? "max-h-96" : "max-h-0 border-t-0"
           }`}
         >
           <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-4 lg:px-8">
-            {["For Employers", "For Candidates", "Industries", "About Us"].map(
-              (item) => (
+            {NAV_SECTIONS.map((section) => (
+              <div key={section.label}>
                 <button
-                  key={item}
-                  className="flex items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
+                  type="button"
+                  onClick={() => setOpenSection(openSection === section.label ? null : section.label)}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
                 >
-                  {item}
+                  {section.label}
                   <svg
                     viewBox="0 0 12 12"
-                    className="h-3 w-3 opacity-60"
+                    className={`h-3 w-3 opacity-60 transition-transform ${openSection === section.label ? "rotate-180" : ""}`}
                     fill="none"
                   >
                     <path
@@ -291,21 +245,24 @@ export default function Home() {
                     />
                   </svg>
                 </button>
-              )
-            )}
-            <Link
-              href="#insights"
-              className="rounded-lg px-3 py-3 text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
-            >
-              Insights
+                {openSection === section.label && (
+                  <div className="ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+                    {section.links.map((link) => (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        className="rounded-lg px-3 py-2 text-left text-xs font-semibold text-white/70 transition hover:bg-white/5 hover:text-white"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            <Link href="/contact-us" className="rounded-lg px-3 py-3 text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white">
+              Contact us
             </Link>
-            <Link
-              href="#contact"
-              className="rounded-lg px-3 py-3 text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
-            >
-              Contact
-            </Link>
-
             <div className="mt-2 flex flex-col gap-3 border-t border-white/10 pt-4 sm:hidden">
               <a href="tel:01216301643" className="flex items-center gap-2 px-3 text-sm font-semibold text-white/85">
                 <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
@@ -313,370 +270,330 @@ export default function Home() {
                 </svg>
                 0121 630 1643
               </a>
-              <button className="mx-3 rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark">
-                Let&rsquo;s Talk
-              </button>
             </div>
           </nav>
         </div>
       </header>
 
-      {/* HERO */}
-      <section className="relative isolate overflow-hidden bg-navy">
-        {/* Full-bleed background image strip */}
-        <div className="absolute inset-0 grid grid-cols-2 sm:grid-cols-4">
-          {HERO_IMAGES.map((img) => (
-            <div key={img.src} className="relative h-full w-full">
-              <Image
-                src={img.src}
-                alt={img.alt}
-                fill
-                sizes="(max-width: 640px) 50vw, 25vw"
-                className="object-cover"
-                priority
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Dark gradient overlay so text stays readable */}
-        <div className="absolute inset-0 bg-gradient-to-b from-navy/60 via-navy/85 to-navy" />
-
-        <div className="relative mx-auto max-w-4xl px-6 pb-14 pt-28 text-center sm:pt-36 lg:px-8 lg:pt-44">
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">
-            Recruitment done different
-          </p>
-
-          <h1 className="font-display mt-4 text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Connecting great people with
-            <br className="hidden sm:block" /> great{" "}
-            <span className="text-orange">opportunities.</span>
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-base text-white/70 sm:text-lg">
-            We go beyond recruitment to deliver the right people, the right
-            support and the right results.
-          </p>
-
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <button className="flex items-center gap-1.5 rounded-full bg-orange px-7 py-3.5 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-              I need staff
-              <span aria-hidden="true">&rarr;</span>
-            </button>
-            <button className="flex items-center gap-1.5 rounded-full border border-white/30 px-7 py-3.5 text-sm font-bold text-white transition hover:border-white/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-              I&rsquo;m looking for work
-              <span aria-hidden="true">&rarr;</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="relative mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-10 gap-y-4 border-t border-white/10 px-6 pb-8 pt-8 lg:px-8">
-          {TRUST_POINTS.map((point) => (
-            <div key={point.label} className="flex items-center gap-2.5">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-                <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
-                  <path d="M6.2 10.9 3.5 8.2l1-1 1.7 1.7 4.6-4.6 1 1z" />
-                </svg>
-              </span>
-              <span className="text-xs font-semibold text-white/75 sm:text-sm">
-                {point.label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* SMARTER RECRUITMENT / PRODUCT PREVIEW */}
-      <section className="bg-cream py-20 lg:py-28">
-        <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-[1fr_1.1fr_1fr] lg:px-8">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">
-              Smarter recruitment
-            </p>
-            <h2 className="font-display mt-4 text-3xl font-extrabold leading-tight tracking-tight text-navy sm:text-4xl">
-              More than recruitment. Built around you.
-            </h2>
-            <p className="mt-5 text-slate-600">
-              Our technology, ReachConnect, gives you real-time visibility,
-              better communication and complete control over your workforce.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button className="rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy">
-                Book a demo
-              </button>
-              <Link
-                href="/book-a-call"
-                className="rounded-full border border-navy/20 px-6 py-3 text-sm font-bold text-navy transition hover:border-navy/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
-              >
-                Book a call
-              </Link>
-            </div>
-          </div>
-
-          <div className="relative mx-auto w-full max-w-[220px] overflow-hidden py-6 sm:max-w-[300px] sm:overflow-visible">
-            {/* Floating shadow beneath the phone */}
-            <div className="absolute inset-x-6 bottom-2 h-8 rounded-full bg-black/30 blur-2xl" />
-
-            <div className="relative sm:-rotate-6 transition-transform duration-500 sm:hover:rotate-0">
-              <div className="relative aspect-[9/19.5] rounded-[3rem] border-[8px] border-navy bg-navy shadow-2xl drop-shadow-2xl">
-                {/* Dynamic Island */}
-                <div className="absolute left-1/2 top-3 z-10 h-6 w-24 -translate-x-1/2 rounded-full bg-navy" />
-
-                {/* Side buttons */}
-                <div className="absolute -left-[8px] top-24 h-6 w-[8px] rounded-l-sm bg-navy" />
-                <div className="absolute -left-[8px] top-36 h-10 w-[8px] rounded-l-sm bg-navy" />
-                <div className="absolute -right-[8px] top-32 h-14 w-[8px] rounded-r-sm bg-navy" />
-
-                <div className="flex h-full flex-col overflow-hidden rounded-[2.4rem] bg-slate-50">
-                  <div className="flex items-center justify-between bg-navy px-4 pb-3 pt-9">
-                    <div>
-                      <span className="inline-block rounded-full bg-orange/20 px-2 py-0.5 text-[7px] font-bold uppercase tracking-wide text-orange">
-                        {activeScreen.persona}
-                      </span>
-                      <p className="mt-1 text-[9px] font-semibold text-white/60">
-                        {activeScreen.heading}
-                      </p>
-                      <p className="font-display text-xs font-bold text-white">
-                        Reach<span className="text-orange">Connect</span>
-                      </p>
-                    </div>
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-white/70">
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-2.5 w-2.5">
-                        <path d="M10 2a5 5 0 0 0-5 5v3.2l-1 2.3h12l-1-2.3V7a5 5 0 0 0-5-5z" />
-                      </svg>
-                    </span>
-                  </div>
-
-                  <div key={screenIndex} className="flex-1 space-y-1.5 overflow-hidden p-2.5 animate-[fadeIn_0.4s_ease]">
-                    {activeScreen.items.map((item) => (
-                      <div
-                        key={item.title}
-                        className="rounded-lg bg-navy px-3 py-2.5"
-                      >
-                        <p className="text-[11px] font-bold text-white">
-                          {item.title}
-                        </p>
-                        <p className="mt-0.5 text-[9px] leading-tight text-white/50">
-                          {item.sub}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-around border-t border-slate-200 bg-white px-2 py-2.5">
-                    {APP_SCREENS.filter((s) => s.persona === activeScreen.persona).map((s) => (
-                      <span
-                        key={s.tab}
-                        className={`text-[8px] font-semibold transition-colors duration-500 ${
-                          s.tab === activeScreen.tab ? "text-orange" : "text-slate-400"
-                        }`}
-                      >
-                        {s.tab}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <ul className="space-y-6">
-            {FEATURES.map((feature) => (
-              <li key={feature.title} className="flex items-start gap-3.5">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-orange/30 text-orange">
-                  <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
-                    <circle cx="8" cy="8" r="3" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="font-display text-sm font-bold text-navy">
-                    {feature.title}
-                  </p>
-                  <p className="mt-0.5 text-sm text-slate-500">
-                    {feature.description}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* STATS BAND */}
-      <section className="bg-navy py-14">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 lg:grid-cols-[1fr_2fr] lg:px-8">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">
-              We do things differently
-            </p>
-            <h2 className="font-display mt-4 text-2xl font-extrabold leading-snug tracking-tight text-white sm:text-3xl">
-              People first. Service always. Results that last.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
-            {STATS.map((stat) => (
-              <div key={stat.label}>
-                <p className="font-display text-2xl font-extrabold text-white sm:text-3xl">
-                  {stat.value}
-                </p>
-                <p className="mt-1.5 text-xs text-white/60 sm:text-sm">
-                  {stat.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* INDUSTRIES */}
-      <section className="bg-white py-20 lg:py-28">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">
-                Specialist recruitment across key industries
-              </p>
-              <h2 className="font-display mt-4 max-w-xl text-3xl font-extrabold leading-tight tracking-tight text-navy sm:text-4xl">
-                We know your industry. We speak your language.
-              </h2>
-            </div>
-            <button className="flex items-center gap-1.5 text-sm font-bold text-orange hover:text-orange-dark">
-              View all industries <span aria-hidden="true">&rarr;</span>
-            </button>
-          </div>
-
-          <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {INDUSTRIES.map((industry) => (
-              <div
-                key={industry.title}
-                className="group relative aspect-[3/4] overflow-hidden rounded-2xl"
-              >
-                <Image
-                  src={INDUSTRY_IMAGES[industry.title].src}
-                  alt={INDUSTRY_IMAGES[industry.title].alt}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover object-top transition duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/60 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-5">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full border border-orange/40 text-orange">
-                    <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
-                      <rect x="3" y="6" width="10" height="7" rx="1" />
-                      <path d="M5 6V4.5A1.5 1.5 0 0 1 6.5 3h3A1.5 1.5 0 0 1 11 4.5V6" />
-                    </svg>
-                  </span>
-                  <p className="font-display mt-3.5 text-base font-extrabold text-white">
-                    {industry.title}
-                  </p>
-                  <p className="mt-1.5 text-xs text-white/60">
-                    {industry.description}
-                  </p>
-                  <span className="mt-4 flex items-center gap-1 text-xs font-bold text-orange">
-                    View roles <span aria-hidden="true">&rarr;</span>
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS */}
-      <section className="bg-slate-50 py-20 lg:py-28">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex flex-wrap items-end justify-between gap-8">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">
-                Don&rsquo;t just take our word for it
-              </p>
-              <h2 className="font-display mt-4 max-w-lg text-3xl font-extrabold leading-tight tracking-tight text-navy sm:text-4xl">
-                Trusted by businesses. Recommended by people.
-              </h2>
-            </div>
-
-            <a
-              href="https://uk.trustpilot.com/review/reachnetworkrec.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group/tp"
-            >
-              <p className="text-sm font-bold text-emerald-600">&#9733; Trustpilot</p>
-              <div className="mt-2 flex items-center gap-2">
-                <div className="flex gap-0.5 rounded bg-emerald-500 px-2 py-1 transition group-hover/tp:bg-emerald-600">
-                  <StarRow color="text-white" />
-                </div>
-              </div>
-              <p className="mt-2 text-xs text-slate-500 underline-offset-2 group-hover/tp:underline">
-                <span className="font-bold text-navy">Great</span> &middot;
-                4.0 out of 5 &middot; Based on 3 reviews
-              </p>
-            </a>
-          </div>
-
-          <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
-            {TESTIMONIALS.map((t) => (
-              <div
-                key={t.name}
-                className="rounded-2xl border border-slate-200 bg-white p-6"
-              >
-                <StarRow />
-                <p className="mt-4 text-sm text-slate-700">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <p className="font-display mt-5 text-sm font-bold text-navy">
-                  {t.name}
-                </p>
-                <p className="text-xs text-slate-500">{t.company}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CANDIDATE CTA */}
-      <section className="relative isolate overflow-hidden bg-navy py-24 lg:py-32">
+      {/* HERO — full-bleed, matching the Candidate CTA treatment on the homepage */}
+      <section className="relative isolate overflow-hidden bg-navy py-14 lg:py-16">
         <div className="absolute inset-0">
           <Image
             src="/PlaceholderPanel/coverphoto.png"
-            alt="Candidate ready to register for work"
+            alt="Reach Network team member"
             fill
             sizes="100vw"
             className="object-cover"
+            priority
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/20" />
 
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
           <div className="max-w-lg">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">
-              Looking for your next opportunity?
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Book a call</p>
+            <h1 className="font-display mt-3 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
+              Let&rsquo;s talk about your hiring goals.
+            </h1>
+            <p className="mt-4 max-w-md text-sm text-white/70 sm:text-base">
+              Schedule a free call with our team and discover how Reach can help you find the right people, faster.
             </p>
-            <h2 className="font-display mt-4 text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl">
-              Register today and let us help you find the right role.
-            </h2>
-
-            <button className="mt-7 flex items-center gap-1.5 rounded-full bg-orange px-7 py-3.5 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-              Register as a candidate <span aria-hidden="true">&rarr;</span>
-            </button>
-
-            <ul className="mt-8 space-y-3">
-              {[
-                "Access 100s of live roles",
-                "Free and easy to register",
-                "We'll match you with the right opportunities",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-2.5 text-sm text-white/80">
+            <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2">
+              {["No obligation", "Quick and easy", "Tailored to you"].map((label) => (
+                <div key={label} className="flex items-center gap-2">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
                     <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
                       <path d="M6.2 10.9 3.5 8.2l1-1 1.7 1.7 4.6-4.6 1 1z" />
                     </svg>
                   </span>
-                  {item}
-                </li>
+                  <span className="text-xs font-semibold text-white/75">{label}</span>
+                </div>
               ))}
-            </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BOOKING CARD — pulled up close to the hero */}
+      <section className="bg-slate-50 pb-12 pt-6 lg:pb-16 lg:pt-8">
+        <div className="mx-auto max-w-6xl px-6 lg:px-8">
+          <form
+            onSubmit={handleSubmit}
+            className="grid gap-8 rounded-3xl bg-white p-5 shadow-xl shadow-navy/5 sm:p-6 lg:grid-cols-2 lg:p-10"
+          >
+            {/* Calendar */}
+            <div>
+              <h2 className="font-display text-lg font-extrabold text-navy">1. Select a date and time</h2>
+
+              <div className="mt-4 rounded-2xl border border-slate-200 p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"
+                    aria-label="Previous month"
+                  >
+                    &#8249;
+                  </button>
+                  <p className="text-sm font-bold text-navy">
+                    {viewMonth.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"
+                    aria-label="Next month"
+                  >
+                    &#8250;
+                  </button>
+                </div>
+
+                <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[9px] font-bold uppercase text-slate-400 sm:text-[10px]">
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+                    <span key={d}>{d}</span>
+                  ))}
+                </div>
+
+                <div className="mt-1 grid grid-cols-7 gap-1">
+                  {calendarCells.map((date, i) => {
+                    if (!date) return <div key={i} />;
+                    const selectable = isSelectable(date);
+                    const isSelected = selectedDate && formatDateKey(date) === formatDateKey(selectedDate);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        disabled={!selectable}
+                        onClick={() => {
+                          setSelectedDate(date);
+                          setSelectedTime(null);
+                        }}
+                        className={`aspect-square rounded-full text-xs font-semibold transition ${
+                          isSelected
+                            ? "bg-navy text-white"
+                            : selectable
+                            ? "text-navy hover:bg-slate-100"
+                            : "cursor-not-allowed text-slate-300"
+                        }`}
+                      >
+                        {date.getDate()}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {selectedDate && (
+                  <div className="mt-5 border-t border-slate-200 pt-4">
+                    <p className="text-xs font-semibold text-slate-500">
+                      Available times for{" "}
+                      {selectedDate.toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" })}
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {TIME_SLOTS.map((time) => (
+                        <button
+                          key={time}
+                          type="button"
+                          onClick={() => setSelectedTime(time)}
+                          className={`rounded-lg border px-2 py-2 text-xs font-semibold transition ${
+                            selectedTime === time
+                              ? "border-navy bg-navy text-white"
+                              : "border-slate-200 text-navy hover:border-navy/40"
+                          }`}
+                        >
+                          {formatTimeLabel(time)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <p className="mt-4 flex items-center gap-1.5 text-[11px] text-slate-400">
+                  <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
+                    <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.5 3v4.3l3 1.8-.5.9-3.5-2.1V4h1z" />
+                  </svg>
+                  The call will last about 30 minutes.
+                </p>
+              </div>
+            </div>
+
+            {/* Form fields */}
+            <div>
+              <h2 className="font-display text-lg font-extrabold text-navy">2. Tell us about you</h2>
+
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-navy">
+                    Full name <span className="text-orange">*</span>
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="e.g. Alex Johnson"
+                    value={form.fullName}
+                    onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-navy">
+                    Work email <span className="text-orange">*</span>
+                  </label>
+                  <input
+                    required
+                    type="email"
+                    placeholder="e.g. alex.johnson@company.com"
+                    value={form.workEmail}
+                    onChange={(e) => setForm({ ...form, workEmail: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-navy">
+                    Phone number <span className="text-orange">*</span>
+                  </label>
+                  <input
+                    required
+                    type="tel"
+                    placeholder="e.g. (555) 123-4567"
+                    value={form.phoneNumber}
+                    onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-navy">
+                    Company name <span className="text-orange">*</span>
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="e.g. Acme Logistics"
+                    value={form.companyName}
+                    onChange={(e) => setForm({ ...form, companyName: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-navy">
+                    Job title <span className="text-orange">*</span>
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="e.g. Operations Manager"
+                    value={form.jobTitle}
+                    onChange={(e) => setForm({ ...form, jobTitle: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-navy">
+                    What can we help you with? <span className="text-orange">*</span>
+                  </label>
+                  <select
+                    required
+                    value={form.helpTopic}
+                    onChange={(e) => setForm({ ...form, helpTopic: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none"
+                  >
+                    <option value="">Select an option</option>
+                    {HELP_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-navy">Anything else we should know?</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Briefly tell us about your hiring needs..."
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                    className="mt-1 w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
+                  />
+                </div>
+
+                {status === "error" && <p className="text-sm font-semibold text-red-600">{errorMessage}</p>}
+
+                {status === "success" ? (
+                  <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                    You&rsquo;re booked in! Check your email for a confirmation and calendar invite.
+                  </div>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={status === "submitting"}
+                    className="flex items-center gap-1.5 rounded-full bg-orange px-7 py-3.5 text-sm font-bold text-white transition hover:bg-orange-dark disabled:opacity-60"
+                  >
+                    {status === "submitting" ? "Booking..." : "Confirm booking"}
+                    {status !== "submitting" && <span aria-hidden="true">&rarr;</span>}
+                  </button>
+                )}
+              </div>
+            </div>
+          </form>
+
+          <p className="mt-5 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+            <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
+              <path d="M8 1a3 3 0 00-3 3v2H4a1 1 0 00-1 1v6a1 1 0 001 1h8a1 1 0 001-1V7a1 1 0 00-1-1h-1V4a3 3 0 00-3-3zm-1.5 5V4a1.5 1.5 0 013 0v2h-3z" />
+            </svg>
+            Your information is secure and will never be shared.
+          </p>
+        </div>
+      </section>
+
+      {/* WHAT TO EXPECT */}
+      <section className="bg-white py-16 lg:py-20">
+        <div className="mx-auto max-w-6xl px-6 lg:px-8">
+          <div className="grid gap-10 lg:grid-cols-[220px_1fr] lg:gap-6">
+            <h2 className="font-display text-2xl font-extrabold text-navy">What to expect on the call</h2>
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              {WHAT_TO_EXPECT.map((item) => (
+                <div key={item.title}>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-orange/40 text-orange">
+                    <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
+                      <circle cx="8" cy="8" r="3" />
+                    </svg>
+                  </span>
+                  <p className="font-display mt-3 text-sm font-bold text-navy">{item.title}</p>
+                  <p className="mt-1 text-xs text-slate-500">{item.sub}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="bg-slate-50 py-16 lg:py-20">
+        <div className="mx-auto max-w-4xl px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-2xl font-extrabold text-navy">Frequently asked questions</h2>
+            <a href="#contact" className="hidden text-xs font-bold text-orange hover:text-orange-dark sm:block">
+              More questions? Contact us
+            </a>
+          </div>
+
+          <div className="mt-6 space-y-2">
+            {FAQS.map((faq, i) => (
+              <div key={faq.q} className="rounded-xl bg-white">
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-navy"
+                >
+                  {faq.q}
+                  <span className={`shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`}>&#9660;</span>
+                </button>
+                {openFaq === i && <p className="px-5 pb-4 text-sm text-slate-500">{faq.a}</p>}
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -690,19 +607,14 @@ export default function Home() {
                 <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-orange">
                   <span className="h-2.5 w-2.5 rounded-full bg-orange" />
                 </span>
-                <span className="font-display text-sm font-extrabold text-white">
-                  REACH
-                </span>
+                <span className="font-display text-sm font-extrabold text-white">REACH</span>
               </div>
               <p className="mt-4 text-xs leading-relaxed text-white/50">
                 Recruitment done different. People focused. Results driven.
               </p>
               <div className="mt-5 flex gap-3">
                 {["in", "f", "ig"].map((icon) => (
-                  <span
-                    key={icon}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-[10px] font-bold text-white/60"
-                  >
+                  <span key={icon} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-[10px] font-bold text-white/60">
                     {icon}
                   </span>
                 ))}
@@ -710,38 +622,17 @@ export default function Home() {
             </div>
 
             {[
-              {
-                heading: "For Employers",
-                links: ["I need staff", "Our services", "Why choose us", "Case studies"],
-              },
-              {
-                heading: "For Candidates",
-                links: [
-                  "I'm looking for work",
-                  "Search jobs",
-                  "Register your CV",
-                  "Candidate support",
-                ],
-              },
-              {
-                heading: "About Us",
-                links: ["About us", "Our team", "Our values", "Work for us"],
-              },
-              {
-                heading: "Contact",
-                links: ["0121 630 1643", "info@reachnetworkrec.com"],
-              },
+              { heading: "For Employers", links: ["I need staff", "Our services", "Why choose us", "Case studies"] },
+              { heading: "For Candidates", links: ["I'm looking for work", "Search jobs", "Register your CV", "Candidate support"] },
+              { heading: "About Us", links: ["About us", "Our team", "Our values", "Work for us"] },
+              { heading: "Contact", links: ["0121 630 1643", "info@reachnetworkrec.com"] },
             ].map((col) => (
               <div key={col.heading}>
-                <p className="text-xs font-bold uppercase tracking-wider text-orange">
-                  {col.heading}
-                </p>
+                <p className="text-xs font-bold uppercase tracking-wider text-orange">{col.heading}</p>
                 <ul className="mt-4 space-y-2.5">
                   {col.links.map((link) => (
                     <li key={link}>
-                      <a href="#" className="text-xs text-white/60 transition hover:text-white">
-                        {link}
-                      </a>
+                      <a href="#" className="text-xs text-white/60 transition hover:text-white">{link}</a>
                     </li>
                   ))}
                 </ul>
