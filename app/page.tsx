@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import Footer from "./components/Footer";
 
 const TRUST_POINTS = [
   { label: "Quality people, fast" },
@@ -376,7 +377,7 @@ export default function Home() {
       {/* HERO */}
       <section className="relative isolate overflow-hidden bg-navy">
         {/* Full-bleed background image strip */}
-        <div className="absolute inset-0 grid grid-cols-2 sm:grid-cols-4">
+        <div className="absolute inset-0 min-h-[480px] grid grid-cols-2 sm:grid-cols-4">
           {HERO_IMAGES.map((img) => (
             <div key={img.src} className="relative h-full w-full">
               <Image
@@ -384,7 +385,7 @@ export default function Home() {
                 alt={img.alt}
                 fill
                 sizes="(max-width: 640px) 50vw, 25vw"
-                className="object-cover"
+                className="object-cover object-top"
                 priority
               />
             </div>
@@ -602,9 +603,9 @@ export default function Home() {
                 We know your industry. We speak your language.
               </h2>
             </div>
-            <button className="flex items-center gap-1.5 text-sm font-bold text-orange hover:text-orange-dark">
+            <Link href="/industries" className="flex items-center gap-1.5 text-sm font-bold text-orange hover:text-orange-dark">
               View all industries <span aria-hidden="true">&rarr;</span>
-            </button>
+            </Link>
           </div>
 
           <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -634,9 +635,9 @@ export default function Home() {
                   <p className="mt-1.5 text-xs text-white/60">
                     {industry.description}
                   </p>
-                  <span className="mt-4 flex items-center gap-1 text-xs font-bold text-orange">
+                  <Link href="/looking-for-work" className="mt-4 flex items-center gap-1 text-xs font-bold text-orange">
                     View roles <span aria-hidden="true">&rarr;</span>
-                  </span>
+                  </Link>
                 </div>
               </div>
             ))}
@@ -704,7 +705,7 @@ export default function Home() {
             alt="Candidate ready to register for work"
             fill
             sizes="100vw"
-            className="object-cover"
+            className="object-cover object-top"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/20" />
@@ -743,82 +744,7 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-navy-deep pt-16">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-5">
-            <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-orange">
-                  <span className="h-2.5 w-2.5 rounded-full bg-orange" />
-                </span>
-                <span className="font-display text-sm font-extrabold text-white">
-                  REACH
-                </span>
-              </div>
-              <p className="mt-4 text-xs leading-relaxed text-white/50">
-                Recruitment done different. People focused. Results driven.
-              </p>
-              <div className="mt-5 flex gap-3">
-                {["in", "f", "ig"].map((icon) => (
-                  <span
-                    key={icon}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-[10px] font-bold text-white/60"
-                  >
-                    {icon}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {[
-              {
-                heading: "For Employers",
-                links: ["I need staff", "Our services", "Why choose us", "Case studies"],
-              },
-              {
-                heading: "For Candidates",
-                links: [
-                  "I'm looking for work",
-                  "Search jobs",
-                  "Register your CV",
-                  "Candidate support",
-                ],
-              },
-              {
-                heading: "About Us",
-                links: ["About us", "Our team", "Our values", "Work for us"],
-              },
-              {
-                heading: "Contact",
-                links: ["0121 630 1643", "info@reachnetworkrec.com"],
-              },
-            ].map((col) => (
-              <div key={col.heading}>
-                <p className="text-xs font-bold uppercase tracking-wider text-orange">
-                  {col.heading}
-                </p>
-                <ul className="mt-4 space-y-2.5">
-                  {col.links.map((link) => (
-                    <li key={link}>
-                      <a href="#" className="text-xs text-white/60 transition hover:text-white">
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 py-6 text-xs text-white/40 sm:flex-row">
-            <p>&copy; {new Date().getFullYear()} Reach Network Recruitment. All rights reserved.</p>
-            <div className="flex gap-5">
-              <a href="#" className="hover:text-white/70">Privacy Policy</a>
-              <a href="#" className="hover:text-white/70">Terms of Use</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }

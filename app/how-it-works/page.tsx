@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import Footer from "../components/Footer";
 
 const NAV_SECTIONS = [
   {
@@ -159,7 +160,7 @@ export default function HowItWorks() {
       </header>
 
       {/* HERO */}
-      <section className="relative isolate overflow-hidden bg-navy">
+      <section className="relative isolate min-h-[480px] overflow-hidden bg-navy">
         <div className="absolute inset-0">
           <Image
             src="/industries/howitworks.png"
@@ -282,56 +283,7 @@ export default function HowItWorks() {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-navy-deep pt-16">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-5">
-            <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-orange">
-                  <span className="h-2.5 w-2.5 rounded-full bg-orange" />
-                </span>
-                <span className="font-display text-sm font-extrabold text-white">REACH</span>
-              </div>
-              <p className="mt-4 text-xs leading-relaxed text-white/50">
-                Recruitment done different. People focused. Results driven.
-              </p>
-              <div className="mt-5 flex gap-3">
-                {["in", "f", "ig"].map((icon) => (
-                  <span key={icon} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-[10px] font-bold text-white/60">
-                    {icon}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {[
-              { heading: "For Employers", links: ["I need staff", "Our services", "Why choose us", "Case studies"] },
-              { heading: "For Candidates", links: ["I'm looking for work", "Search jobs", "Register your CV", "Candidate support"] },
-              { heading: "About Us", links: ["About us", "Our team", "Our values", "Work for us"] },
-              { heading: "Contact", links: ["0121 630 1643", "info@reachnetworkrec.com"] },
-            ].map((col) => (
-              <div key={col.heading}>
-                <p className="text-xs font-bold uppercase tracking-wider text-orange">{col.heading}</p>
-                <ul className="mt-4 space-y-2.5">
-                  {col.links.map((link) => (
-                    <li key={link}>
-                      <a href="#" className="text-xs text-white/60 transition hover:text-white">{link}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 py-6 text-xs text-white/40 sm:flex-row">
-            <p>&copy; {new Date().getFullYear()} Reach Network Recruitment. All rights reserved.</p>
-            <div className="flex gap-5">
-              <a href="#" className="hover:text-white/70">Privacy Policy</a>
-              <a href="#" className="hover:text-white/70">Terms of Use</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }

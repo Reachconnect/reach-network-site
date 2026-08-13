@@ -2,33 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import Footer from "../components/Footer";
-
-const INDUSTRIES = [
-  {
-    title: "Driving",
-    description: "HGV, LGV, 7.5t, ADR and driver support roles that keep goods moving.",
-    image: "/industries/industry-driving.png",
-  },
-  {
-    title: "Warehousing",
-    description: "Warehouse operatives, FLT, pickers and packers keeping supply chains moving.",
-    image: "/industries/industry-warehousing.png",
-  },
-  {
-    title: "Manufacturing",
-    description: "Skilled and dependable talent to power production and drive operational excellence.",
-    image: "/industries/industry-manufacturing.png",
-  },
-  {
-    title: "Engineering",
-    description: "Skilled engineers, technicians and industrial specialists for demanding environments.",
-    image: "/industries/industry-engineering.png",
-  },
-];
-
-const FILTERS = ["All industries", ...INDUSTRIES.map((i) => i.title)];
 
 const NAV_SECTIONS = [
   {
@@ -61,19 +35,15 @@ const NAV_SECTIONS = [
     label: "Reach Network Recruitment",
     links: [
       { label: "About us", href: "/about-us" },
-      { label: "Why choose us", href: "/about-us" },
+      { label: "Why choose us", href: "/why-choose-us" },
       { label: "FAQ", href: "/book-a-call#faq" },
     ],
   },
 ];
 
-export default function Industries() {
+export default function PrivacyNotice() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState("All industries");
-
-  const visibleIndustries =
-    activeFilter === "All industries" ? INDUSTRIES : INDUSTRIES.filter((i) => i.title === activeFilter);
 
   return (
     <main className="overflow-x-hidden font-body">
@@ -102,7 +72,7 @@ export default function Industries() {
             </Link>
             <button
               type="button"
-              onClick={() => setMenuOpen((o) => !o)}
+              onClick={() => setMenuOpen((open) => !open)}
               aria-expanded={menuOpen}
               aria-label="Toggle menu"
               className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white transition hover:border-white/40"
@@ -169,107 +139,82 @@ export default function Industries() {
         </div>
       </header>
 
-      {/* HERO */}
-      <section className="relative isolate min-h-[480px] overflow-hidden bg-navy">
-        <div className="absolute inset-0">
-          <Image
-            src="/industries/needstaff.png"
-            alt="Warehouse team at work"
-            fill
-            sizes="100vw"
-            className="object-cover object-top"
-            priority
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/90 to-navy/40" />
+      {/* CONTENT */}
+      <section className="bg-white py-16 lg:py-24">
+        <div className="mx-auto max-w-3xl px-6 lg:px-8">
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+            <Link href="/" className="hover:text-navy">Home</Link>
+            <span>&#8250;</span>
+            <span>Privacy Notice</span>
+          </p>
 
-        <div className="relative mx-auto max-w-7xl px-6 py-14 lg:px-8 lg:py-20">
-          <div className="max-w-lg">
-            <h1 className="font-display text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
-              All industries
-            </h1>
-            <p className="font-display mt-2 text-2xl font-extrabold leading-tight text-orange sm:text-3xl">
-              We work with businesses across a wide range of sectors.
+          <h1 className="font-display mt-4 text-3xl font-extrabold tracking-tight text-navy sm:text-4xl">
+            Privacy Notice
+          </h1>
+          <p className="mt-2 text-sm text-slate-400">Last updated: [add date]</p>
+
+          <div className="mt-8 space-y-6 text-sm leading-relaxed text-slate-600">
+            <p>
+              Reach Network Recruitment (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is committed to
+              protecting the privacy of everyone we work with, including candidates, clients and visitors to our
+              website. This notice explains what personal information we collect, how we use it, and the rights
+              you have over your data.
             </p>
-            <p className="mt-4 max-w-md text-sm text-white/70 sm:text-base">
-              From logistics and warehousing to transport, manufacturing and beyond, we help organisations find the people they need to keep moving forward.
-            </p>
-          </div>
-        </div>
-      </section>
 
-      {/* FILTERS + GRID */}
-      <section className="bg-slate-50 py-14 lg:py-20">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex flex-wrap gap-2.5">
-            {FILTERS.map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                onClick={() => setActiveFilter(filter)}
-                className={`rounded-full border px-5 py-2.5 text-sm font-semibold transition ${
-                  activeFilter === filter
-                    ? "border-orange bg-white text-orange"
-                    : "border-slate-200 bg-white text-navy hover:border-navy/30"
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {visibleIndustries.map((industry) => (
-              <div key={industry.title} className="overflow-hidden rounded-2xl bg-white shadow-sm">
-                <div className="relative aspect-[4/3] w-full">
-                  <Image
-                    src={industry.image}
-                    alt={industry.title}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover object-top"
-                  />
-                </div>
-                <div className="p-5">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orange/15 text-orange">
-                    <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
-                      <rect x="3" y="6" width="10" height="7" rx="1" />
-                      <path d="M5 6V4.5A1.5 1.5 0 0 1 6.5 3h3A1.5 1.5 0 0 1 11 4.5V6" />
-                    </svg>
-                  </span>
-                  <p className="font-display mt-3.5 text-base font-extrabold text-navy">{industry.title}</p>
-                  <p className="mt-1.5 text-xs text-slate-500">{industry.description}</p>
-                  <Link href="/looking-for-work" className="mt-4 flex items-center gap-1 text-xs font-bold text-orange hover:text-orange-dark">
-                    View roles <span aria-hidden="true">&rarr;</span>
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* CTA STRIP */}
-          <div className="mt-8 flex flex-col items-start justify-between gap-5 rounded-2xl bg-white p-6 shadow-sm sm:flex-row sm:items-center">
-            <div className="flex items-center gap-3.5">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-orange/15 text-orange">
-                <svg viewBox="0 0 16 16" fill="currentColor" className="h-4.5 w-4.5">
-                  <circle cx="6" cy="5" r="2" />
-                  <circle cx="11" cy="6" r="1.6" />
-                  <path d="M2 13a4 4 0 0 1 8 0M9.5 8.2A3 3 0 0 1 14 11" />
-                </svg>
-              </span>
-              <div>
-                <p className="font-display text-sm font-bold text-navy">Need help finding talent in your industry?</p>
-                <p className="mt-0.5 text-xs text-slate-500">Our team can provide a tailored workforce solution for your business.</p>
-              </div>
+            <div>
+              <h2 className="font-display text-lg font-bold text-navy">Information we collect</h2>
+              <p className="mt-2">
+                [Add detail: e.g. contact details, CV and work history, right-to-work documents, payroll
+                information, website usage data.]
+              </p>
             </div>
-            <Link href="/book-a-call" className="flex shrink-0 items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark">
-              Let&rsquo;s talk <span aria-hidden="true">&rarr;</span>
-            </Link>
+
+            <div>
+              <h2 className="font-display text-lg font-bold text-navy">How we use your information</h2>
+              <p className="mt-2">
+                [Add detail: e.g. matching candidates to roles, managing client relationships, complying with
+                employment and payroll law, improving our website and services.]
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-display text-lg font-bold text-navy">Sharing your information</h2>
+              <p className="mt-2">
+                [Add detail: e.g. with prospective employers/clients, payroll and compliance providers,
+                regulatory bodies where required.]
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-display text-lg font-bold text-navy">Data retention</h2>
+              <p className="mt-2">
+                [Add detail on how long different categories of data are kept and why.]
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-display text-lg font-bold text-navy">Your rights</h2>
+              <p className="mt-2">
+                Under UK GDPR, you have the right to access, correct, delete or restrict the use of your personal
+                data, and the right to object to certain processing or request that your data be transferred.
+                [Add detail on how to exercise these rights.]
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-display text-lg font-bold text-navy">Contact us</h2>
+              <p className="mt-2">
+                If you have any questions about this notice or how we handle your data, please contact us at{" "}
+                <a href="mailto:info@reachnetworkrec.com" className="font-bold text-orange">
+                  info@reachnetworkrec.com
+                </a>{" "}
+                or write to us at 132a High Street, Bromsgrove, United Kingdom, B61 8ES.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
       <Footer />
     </main>
   );

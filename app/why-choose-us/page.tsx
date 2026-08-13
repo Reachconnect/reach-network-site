@@ -5,62 +5,43 @@ import Link from "next/link";
 import Image from "next/image";
 import Footer from "../components/Footer";
 
-const HERO_STATS = [
-  { value: "20+", label: "Years of industry experience" },
-  { value: "1000+", label: "People placed each year" },
-  { value: "100%", label: "Dedicated to finding the right fit" },
-  { value: "Trusted by", label: "Businesses across the UK" },
-  { value: "Thousands", label: "Of careers changed for the better" },
+const FEATURES = [
+  { title: "People first", description: "We care about people and put relationships at the heart of everything we do." },
+  { title: "Proven expertise", description: "Decades of experience connecting great people with great opportunities." },
+  { title: "Reliable & responsive", description: "We're quick to respond, easy to work with and always deliver on our promises." },
+  { title: "Quality guaranteed", description: "We're committed to high standards and delivering the right solutions every time." },
+  { title: "Stronger together", description: "Your success is our success. We grow stronger by helping you grow." },
+  { title: "Results that matter", description: "We focus on outcomes that drive performance, productivity and long-term impact." },
 ];
 
-function StatIcon({ index }: { index: number }) {
+const VALUE_POINTS = [
+  { title: "Industry specialists", description: "Deep knowledge of your market and workforce." },
+  { title: "Tailored solutions", description: "Flexible services designed around your business needs." },
+  { title: "Consistent quality", description: "Rigorous standards to ensure the best outcomes." },
+  { title: "Long-term partnerships", description: "Built on trust, collaboration and shared success." },
+];
+
+function FeatureIcon({ index }: { index: number }) {
   const icons = [
     // people
     <path key="0" d="M6 8a2 2 0 100-4 2 2 0 000 4zm4 8v-2a4 4 0 00-8 0v2M12 8a2 2 0 100-4 2 2 0 000 4zm2 8v-2a4 4 0 00-2.5-3.7" />,
-    // star
-    <path key="1" d="M8 1.5l2 4 4.5.6-3.3 3.1.8 4.4L8 11.5l-4 2.1.8-4.4L1.5 6.1 6 5.5z" />,
+    // ribbon / award
+    <path key="1" d="M8 1.5a3.2 3.2 0 100 6.4 3.2 3.2 0 000-6.4zM5.5 7.6L4 14.5l4-1.5 4 1.5-1.5-6.9" />,
+    // puzzle piece
+    <path key="2" d="M5 2.5h3v1.3a1 1 0 001.7.7 1 1 0 011.7.7v3.3H10.4a1 1 0 00-.7 1.7 1 1 0 00-.7 1.7v3.1H5.7a1 1 0 01-1-1v-3H3.4a1 1 0 010-1.7A1 1 0 013.4 8H4.7V5H2.5V2.5H5z" />,
     // shield check
-    <path key="2" d="M8 1l6 2v4c0 4-2.5 6.5-6 8-3.5-1.5-6-4-6-8V3l6-2zm-1.5 8.5l1 1 2.5-2.5" />,
-    // thumbs up
-    <path key="3" d="M4 8h2v6H4a1 1 0 01-1-1V9a1 1 0 011-1zm3.5 6h5a1.5 1.5 0 001.4-1l1-4a1 1 0 00-1-1.3H10l.5-3A1.3 1.3 0 009.2 3c-.3 0-.6.15-.8.4L6 7.5V14z" />,
+    <path key="3" d="M8 1l6 2v4c0 4-2.5 6.5-6 8-3.5-1.5-6-4-6-8V3l6-2zm-1.5 8.5l1 1 2.5-2.5" />,
+    // thumbs up with star
+    <path key="4" d="M4 8h2v6H4a1 1 0 01-1-1V9a1 1 0 011-1zm3.5 6h5a1.5 1.5 0 001.4-1l1-4a1 1 0 00-1-1.3H10l.5-3A1.3 1.3 0 009.2 3c-.3 0-.6.15-.8.4L6 7.5V14z" />,
     // target
     <>
-      <circle key="4a" cx="8" cy="8" r="6.5" />
-      <circle key="4b" cx="8" cy="8" r="3.3" />
-      <circle key="4c" cx="8" cy="8" r="0.6" fill="currentColor" />
+      <circle key="5a" cx="8" cy="8" r="6.5" />
+      <circle key="5b" cx="8" cy="8" r="3.3" />
+      <path key="5c" d="M8 8l3.5-3.5M11.5 4.5V2M11.5 4.5H14" />
     </>,
   ];
   return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-      {icons[index]}
-    </svg>
-  );
-}
-
-const SOLUTIONS_POINTS = [
-  "Temporary & contract staffing",
-  "Permanent recruitment",
-  "Volume hiring solutions",
-  "On-site account management",
-  "Payroll & compliance support",
-];
-
-const WHY_WORK_WITH_US = [
-  { title: "Quality candidates", description: "We hand-pick people who are skilled, reliable and ready to work." },
-  { title: "Speed & flexibility", description: "We respond quickly to your needs and adapt to your business." },
-  { title: "Industry expertise", description: "We understand your industry and the demands of your role." },
-  { title: "Compliance assured", description: "We handle right to work, payroll and compliance so you don't have to." },
-];
-
-function WhyIcon({ index }: { index: number }) {
-  const icons = [
-    <path key="0" d="M6 8a2 2 0 100-4 2 2 0 000 4zm4 8v-2a4 4 0 00-8 0v2M12 8a2 2 0 100-4 2 2 0 000 4zm2 8v-2a4 4 0 00-2.5-3.7" />,
-    <path key="1" d="M8 1l6 2v4c0 4-2.5 6.5-6 8-3.5-1.5-6-4-6-8V3l6-2z" />,
-    <path key="2" d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 3a4 4 0 100 8 4 4 0 000-8z" />,
-    <path key="3" d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 3.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM8 8h.01" />,
-  ];
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
       {icons[index]}
     </svg>
   );
@@ -97,13 +78,13 @@ const NAV_SECTIONS = [
     label: "Reach Network Recruitment",
     links: [
       { label: "About us", href: "/about-us" },
-      { label: "Why choose us", href: "/about-us" },
+      { label: "Why choose us", href: "/why-choose-us" },
       { label: "FAQ", href: "/book-a-call#faq" },
     ],
   },
 ];
 
-export default function INeedStaff() {
+export default function WhyChooseUs() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
 
@@ -204,10 +185,9 @@ export default function INeedStaff() {
       {/* HERO */}
       <section className="relative isolate min-h-[480px] overflow-hidden bg-navy">
         <div className="absolute inset-0">
-          {/* Add an image at public/industries/i-need-staff-hero.png, or swap this src for one you already have */}
           <Image
-            src="/industries/happyworker.png"
-            alt="Reach Network team member helping a client"
+            src="/industries/aboutusone.png"
+            alt="Reach Network team members"
             fill
             sizes="100vw"
             className="object-cover object-top"
@@ -216,156 +196,138 @@ export default function INeedStaff() {
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/90 to-navy/40" />
 
-        <div className="relative mx-auto max-w-7xl px-6 pb-20 pt-8 lg:px-8 lg:pb-24">
+        <div className="relative mx-auto max-w-7xl px-6 pb-24 pt-8 lg:px-8 lg:pb-28">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-white/50">
             <Link href="/" className="hover:text-white">Home</Link>
             <span>&#8250;</span>
-            <span>I need staff</span>
+            <Link href="/about-us" className="hover:text-white">About us</Link>
+            <span>&#8250;</span>
+            <span>Why choose us</span>
           </p>
 
           <div className="mt-6 max-w-lg">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">I need staff</p>
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Why choose us</p>
             <h1 className="font-display mt-3 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
-              The right people.
+              More than recruitment.
               <br />
-              <span className="text-orange">Right when you need them.</span>
+              <span className="text-orange">A partner in your success.</span>
             </h1>
             <p className="mt-4 max-w-md text-sm text-white/70 sm:text-base">
-              Flexible staffing solutions that help your business stay productive, compliant and ahead of the curve.
+              We go beyond filling roles. We build partnerships, understand your goals and deliver results that make a real difference.
             </p>
-
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link
-                href="/book-a-call"
-                className="flex items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark"
-              >
-                Talk to our team <span aria-hidden="true">&rarr;</span>
-              </Link>
-              <Link
-                href="/our-services"
-                className="flex items-center gap-1.5 rounded-full border border-white/30 px-6 py-3 text-sm font-bold text-white transition hover:border-white/60"
-              >
-                View our solutions <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </div>
           </div>
         </div>
-
       </section>
 
-      {/* Stats strip, overlapping bottom of hero */}
+      {/* FEATURES */}
       <div className="relative z-10 mx-auto -mt-16 max-w-6xl px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-y-6 rounded-2xl bg-[#FDFBF5] p-6 shadow-[0_30px_80px_-15px_rgba(15,36,56,0.65)] ring-1 ring-slate-200 sm:grid-cols-5 sm:gap-y-0">
-          {HERO_STATS.map((stat, i) => (
-            <div
-              key={stat.label}
-              className={`px-3 py-2 text-center ${
-                i !== 0 ? "sm:border-l sm:border-slate-200" : ""
-              }`}
-            >
-              <span className="mx-auto flex h-6 w-6 items-center justify-center text-orange">
-                <StatIcon index={i} />
-              </span>
-              <p className="mt-2 font-display text-xl font-extrabold text-orange sm:text-2xl">{stat.value}</p>
-              <p className="mt-1 text-[11px] text-slate-500">{stat.label}</p>
-            </div>
-          ))}
+        <div className="rounded-2xl bg-white p-6 shadow-[0_30px_80px_-15px_rgba(15,36,56,0.65)] ring-1 ring-slate-200 sm:p-8">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-6">
+            {FEATURES.map((feature, i) => (
+              <div key={feature.title} className="text-center">
+                <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-navy">
+                  <FeatureIcon index={i} />
+                </span>
+                <p className="font-display mt-3 text-sm font-bold text-navy">{feature.title}</p>
+                <p className="mt-1.5 text-xs text-slate-500">{feature.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* OUR SOLUTIONS */}
-      <section className="bg-white pb-20 pt-12 lg:pb-28 lg:pt-16">
+      {/* DISCOVER THE REACH DIFFERENCE */}
+      <section className="bg-white pb-16 pt-12 lg:pb-20 lg:pt-16">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Our solutions</p>
-              <h2 className="font-display mt-3 text-2xl font-extrabold leading-tight tracking-tight text-navy sm:text-3xl">
-                Tailored staffing solutions for your business needs.
-              </h2>
-              <p className="mt-4 text-sm text-slate-600">
-                From temporary cover to permanent hires, we provide skilled, reliable people across a wide range of industries.
-              </p>
-
-              <ul className="mt-6 space-y-2.5">
-                {SOLUTIONS_POINTS.map((point) => (
-                  <li key={point} className="flex items-center gap-2.5 text-sm text-slate-600">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange/15 text-orange">
-                      <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
-                        <path d="M6.2 10.9 3.5 8.2l1-1 1.7 1.7 4.6-4.6 1 1z" />
-                      </svg>
-                    </span>
-                    {point}
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                href="/book-a-call"
-                className="mt-7 flex w-fit items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark"
-              >
-                Talk to our team <span aria-hidden="true">&rarr;</span>
-              </Link>
+          <div className="flex flex-col items-start justify-between gap-6 rounded-2xl bg-navy p-6 sm:flex-row sm:items-center sm:p-8">
+            <div className="flex items-center gap-4">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/10 text-orange">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                  <path d="M6 8a2 2 0 100-4 2 2 0 000 4zm4 8v-2a4 4 0 00-8 0v2M12 8a2 2 0 100-4 2 2 0 000 4zm2 8v-2a4 4 0 00-2.5-3.7" />
+                </svg>
+              </span>
+              <div>
+                <p className="font-display text-lg font-extrabold text-white sm:text-xl">
+                  Discover the Reach difference.
+                </p>
+                <p className="mt-1 max-w-md text-sm text-white/70">
+                  Let&rsquo;s work together to build a stronger, more successful future.
+                </p>
+              </div>
             </div>
 
+            <Link
+              href="/book-a-call"
+              className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/30 px-6 py-3 text-sm font-bold text-white transition hover:border-white/60"
+            >
+              Let&rsquo;s talk <span aria-hidden="true">&rarr;</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* COMMITTED TO LASTING VALUE */}
+      <section className="bg-white pb-16 lg:pb-20">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
-              {/* Using an existing image so nothing is broken — swap for a dedicated photo whenever you have one */}
               <Image
-                src="/industries/contactus.png"
-                alt="Reach Network consultant at work"
+                src="/industries/secondimage.png"
+                alt="Reach Network colleagues in a warehouse"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover object-center"
               />
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* WHY WORK WITH US */}
-      <section className="bg-slate-50 py-16 lg:py-20">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="rounded-2xl bg-navy p-8 sm:p-10">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Why work with us?</p>
+            <div>
+              <h2 className="font-display text-2xl font-extrabold leading-tight tracking-tight text-navy sm:text-3xl">
+                We&rsquo;re committed to delivering lasting value.
+              </h2>
 
-            <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              {WHY_WORK_WITH_US.map((item, i) => (
-                <div key={item.title}>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-orange/40 text-orange">
-                    <WhyIcon index={i} />
-                  </span>
-                  <p className="font-display mt-3 text-sm font-bold text-white">{item.title}</p>
-                  <p className="mt-1.5 text-xs text-white/60">{item.description}</p>
-                </div>
-              ))}
+              <ul className="mt-6 space-y-5">
+                {VALUE_POINTS.map((point) => (
+                  <li key={point.title} className="flex gap-3">
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-navy text-white">
+                      <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
+                        <path d="M6.2 10.9 3.5 8.2l1-1 1.7 1.7 4.6-4.6 1 1z" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p className="font-display text-sm font-bold text-navy">{point.title}</p>
+                      <p className="mt-0.5 text-sm text-slate-600">{point.description}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA BAND */}
-      <section className="relative isolate min-h-[320px] overflow-hidden bg-navy py-16 lg:py-20">
-        <div className="absolute inset-0">
-          <Image
-            src="/industries/happyman.png"
-            alt="Reach Network colleagues talking on site"
-            fill
-            sizes="100vw"
-            className="object-cover object-top"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/60 to-transparent" />
+      {/* LET'S ACHIEVE MORE TOGETHER */}
+      <section className="bg-slate-50 pb-16 lg:pb-20">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:flex-row sm:items-center sm:p-8">
+            <div className="flex items-center gap-4">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-navy text-orange">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                  <path d="M3 8l2.5 2.5L8 8l2.5 2.5L13 8M2 8V6a1 1 0 011-1h1.5L7 2.5a1.4 1.4 0 012 0L11.5 5H13a1 1 0 011 1v2" />
+                </svg>
+              </span>
+              <div>
+                <p className="font-display text-lg font-extrabold text-navy sm:text-xl">
+                  Let&rsquo;s achieve more together.
+                </p>
+                <p className="mt-1 max-w-md text-sm text-slate-600">
+                  Get in touch today and see how we can support your business.
+                </p>
+              </div>
+            </div>
 
-        <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="max-w-lg">
-            <p className="font-display text-2xl font-extrabold text-white sm:text-3xl">
-              Let&rsquo;s build something great together.
-            </p>
-            <p className="mt-3 text-sm text-white/70">
-              Get in touch today and discover how we can support your business.
-            </p>
             <Link
               href="/book-a-call"
-              className="mt-6 flex w-fit items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark"
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-navy px-6 py-3 text-sm font-bold text-white transition hover:bg-navy-deep"
             >
               Let&rsquo;s talk <span aria-hidden="true">&rarr;</span>
             </Link>
