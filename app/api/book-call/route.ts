@@ -5,7 +5,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Where booking notifications land internally.
-const TEAM_EMAIL = "info@reachnetworkrec.com";
+const TEAM_EMAIL = "hello@reachnetworkrec.com";
 const TEAM_NAME = "Reach Network Recruitment";
 
 type BookingPayload = {
@@ -21,7 +21,6 @@ type BookingPayload = {
 };
 
 function formatICSDate(date: Date): string {
-  // Produces UTC-format ICS datetime: YYYYMMDDTHHMMSSZ
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 }
 
@@ -89,7 +88,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
 
-    // Build start/end Date objects (30 minute call, assumes server/UK local time).
     const start = new Date(`${date}T${time}:00`);
     const end = new Date(start.getTime() + 30 * 60 * 1000);
 
@@ -140,7 +138,6 @@ export async function POST(req: NextRequest) {
       minute: "2-digit",
     });
 
-    // Email to the internal team.
     const teamEmailPromise = resend.emails.send({
       from: `Reach Network Website <bookings@reachnetworkrec.com>`,
       to: TEAM_EMAIL,
@@ -161,7 +158,6 @@ export async function POST(req: NextRequest) {
       attachments: [icsAttachment],
     });
 
-    // Confirmation email to the person who booked.
     const candidateEmailPromise = resend.emails.send({
       from: `Reach Network Recruitment <bookings@reachnetworkrec.com>`,
       to: workEmail,
