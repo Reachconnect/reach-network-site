@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const TEAM_EMAIL = "info@reachnetworkrec.com";
+const TEAM_EMAIL = "hello@reachnetworkrec.com";
 
 type DemoRequestPayload = {
   fullName: string;
