@@ -89,15 +89,15 @@ const NAV_SECTIONS = [
     label: "Reach Connect",
     links: [
       { label: "Book a demo", href: "/book-a-demo" },
-      { label: "Features", href: "/book-a-demo#features" },
+      { label: "Features", href: "/reach-connect" },
     ],
   },
   {
     label: "Reach Network Recruitment",
     links: [
       { label: "About us", href: "/about-us" },
-      { label: "Why choose us", href: "/about-us" },
-      { label: "FAQ", href: "/book-a-call#faq" },
+      { label: "Why choose us", href: "/why-choose-us" },
+      { label: "FAQ", href: "/faq" },
     ],
   },
 ];
@@ -208,7 +208,7 @@ export default function AboutUs() {
             alt="Reach Network team members"
             fill
             sizes="100vw"
-            className="object-cover object-top"
+            className="object-cover object-center"
             priority
           />
         </div>
@@ -325,7 +325,7 @@ export default function AboutUs() {
             alt="Reach Network team"
             fill
             sizes="100vw"
-            className="object-cover object-top"
+            className="object-cover object-center"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/40" />
@@ -413,7 +413,7 @@ export default function AboutUs() {
             alt="Reach Network candidate"
             fill
             sizes="100vw"
-            className="object-cover object-top"
+            className="object-cover object-center"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/30" />

@@ -20,5 +20,22 @@ export default async function AdminDashboardPage() {
     .select('*, jobs(title)')
     .order('created_at', { ascending: false })
 
-  return <DashboardClient initialJobs={jobs || []} initialApplications={applications || []} />
+  const { data: alerts } = await supabase
+    .from('job_alerts')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  const { data: posts } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  return (
+    <DashboardClient
+      initialJobs={jobs || []}
+      initialApplications={applications || []}
+      initialAlerts={alerts || []}
+      initialPosts={posts || []}
+    />
+  )
 }

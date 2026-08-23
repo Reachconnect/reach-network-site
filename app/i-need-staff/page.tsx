@@ -90,7 +90,7 @@ const NAV_SECTIONS = [
     label: "Reach Connect",
     links: [
       { label: "Book a demo", href: "/book-a-demo" },
-      { label: "Features", href: "/book-a-demo#features" },
+      { label: "Features", href: "/reach-connect" },
     ],
   },
   {
@@ -98,7 +98,7 @@ const NAV_SECTIONS = [
     links: [
       { label: "About us", href: "/about-us" },
       { label: "Why choose us", href: "/about-us" },
-      { label: "FAQ", href: "/book-a-call#faq" },
+      { label: "FAQ", href: "/faq" },
     ],
   },
 ];
@@ -204,9 +204,8 @@ export default function INeedStaff() {
       {/* HERO */}
       <section className="relative isolate min-h-[480px] overflow-hidden bg-navy">
         <div className="absolute inset-0">
-          {/* Add an image at public/industries/i-need-staff-hero.png, or swap this src for one you already have */}
           <Image
-            src="/industries/happyworker.png"
+            src="/industries/driverwow.png"
             alt="Reach Network team member helping a client"
             fill
             sizes="100vw"
@@ -308,7 +307,6 @@ export default function INeedStaff() {
             </div>
 
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
-              {/* Using an existing image so nothing is broken — swap for a dedicated photo whenever you have one */}
               <Image
                 src="/industries/contactus.png"
                 alt="Reach Network consultant at work"
@@ -346,11 +344,11 @@ export default function INeedStaff() {
       <section className="relative isolate min-h-[320px] overflow-hidden bg-navy py-16 lg:py-20">
         <div className="absolute inset-0">
           <Image
-            src="/industries/happyman.png"
+            src="/industries/buildsomething.png"
             alt="Reach Network colleagues talking on site"
             fill
             sizes="100vw"
-            className="object-cover object-top"
+            className="object-cover object-center"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/60 to-transparent" />

@@ -16,14 +16,28 @@ export default function Footer() {
               Recruitment done different. People focused. Results driven.
             </p>
             <div className="mt-5 flex gap-3">
-              {["in", "f", "ig"].map((icon) => (
-                <span
-                  key={icon}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-[10px] font-bold text-white/60"
-                >
-                  {icon}
-                </span>
-              ))}
+              <a
+                href="https://www.linkedin.com/company/reachnetworkrecruitment"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-white/60 transition hover:border-white/40 hover:text-white"
+              >
+                <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
+                  <path d="M2.4 5.3h2.6V13H2.4V5.3zM3.7 4.2c-.9 0-1.5-.6-1.5-1.4S2.8 1.5 3.7 1.5s1.5.6 1.5 1.3-.6 1.4-1.5 1.4zM6.4 5.3h2.5v1.1h.03c.35-.65 1.2-1.3 2.47-1.3 2.64 0 3.13 1.6 3.13 3.7V13H11.9V9.3c0-.9-.02-2.05-1.25-2.05-1.26 0-1.45.95-1.45 1.98V13H6.4V5.3z" />
+                </svg>
+              </a>
+              <a
+                href="https://www.facebook.com/reachnetworkrec"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-white/60 transition hover:border-white/40 hover:text-white"
+              >
+                <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
+                  <path d="M10.5 3H12V.9C11.7.87 10.9.8 9.9.8 7.9.8 6.5 2 6.5 4.2v1.8H4.3V8.5h2.2V15h2.7V8.5h2.2l.3-2.5H9.2V4.4c0-.7.2-1.4 1.3-1.4z" />
+                </svg>
+              </a>
             </div>
           </div>
 
@@ -94,8 +108,8 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="mailto:info@reachnetworkrec.com" className="text-xs text-white/60 transition hover:text-white">
-                  info@reachnetworkrec.com
+                <a href="mailto:hello@reachnetworkrec.com" className="text-xs text-white/60 transition hover:text-white">
+                  hello@reachnetworkrec.com
                 </a>
               </li>
               <li className="text-xs leading-relaxed text-white/60">
@@ -141,9 +155,9 @@ export default function Footer() {
             <Link href="/privacy-notice" className="hover:text-white/70">
               Privacy Notice
             </Link>
-            <a href="#" className="hover:text-white/70">
+            <Link href="/terms-of-use" className="hover:text-white/70">
               Terms of Use
-            </a>
+            </Link>
           </div>
         </div>
       </div>

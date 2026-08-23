@@ -126,18 +126,22 @@ const INDUSTRIES = [
   {
     title: "Driving",
     description: "HGV, LGV, 7.5t, ADR and driver support roles.",
+    slug: "drivers",
   },
   {
     title: "Warehousing",
     description: "Warehouse operatives, FLT, pickers, packers and more.",
+    slug: "warehouse",
   },
   {
     title: "Manufacturing",
     description: "Production, assembly, machine operators and more.",
+    slug: "manufacturing",
   },
   {
     title: "Engineering",
     description: "Skilled engineers, technicians and industrial specialists.",
+    slug: "engineering",
   },
 ];
 
@@ -220,7 +224,7 @@ const NAV_SECTIONS = [
     label: "Reach Connect",
     links: [
       { label: "Book a demo", href: "/book-a-demo" },
-      { label: "Features", href: "/book-a-demo#features" },
+      { label: "Features", href: "/reach-connect" },
     ],
   },
   {
@@ -228,7 +232,7 @@ const NAV_SECTIONS = [
     links: [
       { label: "About us", href: "/about-us" },
       { label: "Why choose us", href: "/about-us" },
-      { label: "FAQ", href: "/book-a-call#faq" },
+      { label: "FAQ", href: "/faq" },
     ],
   },
 ];
@@ -572,7 +576,7 @@ export default function Home() {
               We do things differently
             </p>
             <h2 className="font-display mt-4 text-2xl font-extrabold leading-snug tracking-tight text-white sm:text-3xl">
-              People first. Service always. Results that last.
+              People first. <span className="text-orange">Service always.</span> Results that last.
             </h2>
           </div>
 
@@ -600,7 +604,9 @@ export default function Home() {
                 Specialist recruitment across key industries
               </p>
               <h2 className="font-display mt-4 max-w-xl text-3xl font-extrabold leading-tight tracking-tight text-navy sm:text-4xl">
-                We know your industry. We speak your language.
+                We know your industry.
+                <br />
+                <span className="text-orange">We speak your language.</span>
               </h2>
             </div>
             <Link href="/industries" className="flex items-center gap-1.5 text-sm font-bold text-orange hover:text-orange-dark">
@@ -635,8 +641,8 @@ export default function Home() {
                   <p className="mt-1.5 text-xs text-white/60">
                     {industry.description}
                   </p>
-                  <Link href="/looking-for-work" className="mt-4 flex items-center gap-1 text-xs font-bold text-orange">
-                    View roles <span aria-hidden="true">&rarr;</span>
+                  <Link href={`/industries/${industry.slug}`} className="mt-4 flex items-center gap-1 text-xs font-bold text-orange">
+                    Learn more <span aria-hidden="true">&rarr;</span>
                   </Link>
                 </div>
               </div>
@@ -705,7 +711,7 @@ export default function Home() {
             alt="Candidate ready to register for work"
             fill
             sizes="100vw"
-            className="object-cover object-top"
+            className="object-cover object-center"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/20" />

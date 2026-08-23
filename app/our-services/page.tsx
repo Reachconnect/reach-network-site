@@ -29,7 +29,7 @@ const NAV_SECTIONS = [
     label: "Reach Connect",
     links: [
       { label: "Book a demo", href: "/book-a-demo" },
-      { label: "Features", href: "/book-a-demo#features" },
+      { label: "Features", href: "/reach-connect" },
     ],
   },
   {
@@ -37,7 +37,7 @@ const NAV_SECTIONS = [
     links: [
       { label: "About us", href: "/about-us" },
       { label: "Why choose us", href: "/about-us" },
-      { label: "FAQ", href: "/book-a-call#faq" },
+      { label: "FAQ", href: "/faq" },
     ],
   },
 ];
@@ -55,6 +55,7 @@ const SERVICES = [
     description: "From covering absences to managing seasonal demand or driving growth, our temporary staffing solutions give you instant access to skilled, reliable people.",
     points: ["Short or long-term cover", "Fast turnaround", "Fully vetted and compliant candidates", "Scalable to your needs"],
     image: "/industries/ourserviceswarehouse.png",
+    href: "/temporary-recruitment",
   },
   {
     title: "Permanent recruitment",
@@ -62,6 +63,7 @@ const SERVICES = [
     description: "We help you attract and secure the talent your business needs to thrive. Our specialist consultants take the time to understand your goals and find candidates who are the right fit for your team and your culture.",
     points: ["Specialist recruitment consultants", "In-depth candidate screening", "Focus on cultural and role fit", "Support beyond placement"],
     image: "/industries/ourservicesperm.png",
+    href: "/permanent-recruitment",
   },
 ];
 
@@ -178,7 +180,7 @@ export default function OurServices() {
             alt="Reach Network team member"
             fill
             sizes="100vw"
-            className="object-cover object-top"
+            className="object-cover object-center"
             priority
           />
         </div>
@@ -260,7 +262,7 @@ export default function OurServices() {
                 </ul>
 
                 <Link
-                  href="/i-need-staff"
+                  href={service.href}
                   className="mt-6 flex items-center justify-center gap-1.5 rounded-full border border-orange px-6 py-3 text-sm font-bold text-orange transition hover:bg-orange hover:text-white"
                 >
                   Find out more <span aria-hidden="true">&rarr;</span>

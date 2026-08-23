@@ -29,7 +29,7 @@ const NAV_SECTIONS = [
     label: "Reach Connect",
     links: [
       { label: "Book a demo", href: "/book-a-demo" },
-      { label: "Features", href: "/book-a-demo#features" },
+      { label: "Features", href: "/reach-connect" },
     ],
   },
   {
@@ -37,7 +37,7 @@ const NAV_SECTIONS = [
     links: [
       { label: "About us", href: "/about-us" },
       { label: "Why choose us", href: "/about-us" },
-      { label: "FAQ", href: "/book-a-call#faq" },
+      { label: "FAQ", href: "/faq" },
     ],
   },
 ];
@@ -167,7 +167,7 @@ export default function HowItWorks() {
             alt="Reach Network team member"
             fill
             sizes="100vw"
-            className="object-cover object-top"
+            className="object-cover object-center"
             priority
           />
         </div>

@@ -27,8 +27,8 @@ const NAV_SECTIONS = [
     links: [
       { label: "I need staff", href: "/i-need-staff" },
       { label: "Book a call", href: "/book-a-call" },
-      { label: "Our services", href: "/i-need-staff" },
-      { label: "How it works", href: "/i-need-staff" },
+      { label: "Our services", href: "/our-services" },
+      { label: "How it works", href: "/how-it-works" },
       { label: "Reach Connect sign in", href: "#" },
     ],
   },
@@ -45,7 +45,7 @@ const NAV_SECTIONS = [
     label: "Reach Connect",
     links: [
       { label: "Book a demo", href: "/book-a-demo" },
-      { label: "Features", href: "/book-a-demo#features" },
+      { label: "Features", href: "/reach-connect" },
     ],
   },
   {
@@ -53,7 +53,7 @@ const NAV_SECTIONS = [
     links: [
       { label: "About us", href: "/about-us" },
       { label: "Why choose us", href: "/about-us" },
-      { label: "FAQ", href: "/book-a-call#faq" },
+      { label: "FAQ", href: "/faq" },
     ],
   },
 ];
@@ -65,13 +65,19 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
   const [categoryFilter, setCategoryFilter] = useState<(typeof CATEGORIES)[number]>("All categories");
   const [locationFilters, setLocationFilters] = useState<string[]>([]);
   const [typeFilters, setTypeFilters] = useState<string[]>([]);
+
   const [alertEmail, setAlertEmail] = useState("");
-  const [alertStatus, setAlertStatus] = useState<"idle" | "saved">("idle");
+  const [alertStatus, setAlertStatus] = useState<"idle" | "submitting" | "saved" | "error">("idle");
 
   const [applyJob, setApplyJob] = useState<Job | null>(null);
   const [applyForm, setApplyForm] = useState({ name: "", email: "", phone: "" });
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [applyStatus, setApplyStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
+
+  const [showCvModal, setShowCvModal] = useState(false);
+  const [cvOnlyForm, setCvOnlyForm] = useState({ name: "", email: "", phone: "" });
+  const [cvOnlyFile, setCvOnlyFile] = useState<File | null>(null);
+  const [cvOnlyStatus, setCvOnlyStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
 
   const locations = useMemo(
     () => Array.from(new Set(jobs.map((j) => j.location).filter(Boolean))) as string[],
@@ -111,6 +117,22 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
     setApplyStatus("idle");
   }
 
+  async function handleAlertSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!alertEmail.includes("@")) return;
+    setAlertStatus("submitting");
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("job_alerts").insert({ email: alertEmail });
+      if (error) throw error;
+      setAlertStatus("saved");
+    } catch (err) {
+      console.error(err);
+      setAlertStatus("error");
+    }
+  }
+
   async function handleApplySubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!applyJob) return;
@@ -147,6 +169,50 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
       console.error(err);
       setApplyStatus("error");
     }
+  }
+
+  async function handleCvOnlySubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setCvOnlyStatus("submitting");
+
+    try {
+      const supabase = createClient();
+      let cvUrl: string | null = null;
+
+      if (cvOnlyFile) {
+        const fileName = `${Date.now()}-${cvOnlyFile.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("cvs")
+          .upload(fileName, cvOnlyFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage.from("cvs").getPublicUrl(uploadData.path);
+        cvUrl = urlData.publicUrl;
+      }
+
+      const { error: insertError } = await supabase.from("job_applications").insert({
+        job_id: null,
+        name: cvOnlyForm.name,
+        email: cvOnlyForm.email,
+        phone: cvOnlyForm.phone || null,
+        cv_url: cvUrl,
+      });
+
+      if (insertError) throw insertError;
+
+      setCvOnlyStatus("done");
+    } catch (err) {
+      console.error(err);
+      setCvOnlyStatus("error");
+    }
+  }
+
+  function openCvModal() {
+    setCvOnlyForm({ name: "", email: "", phone: "" });
+    setCvOnlyFile(null);
+    setCvOnlyStatus("idle");
+    setShowCvModal(true);
   }
 
   return (
@@ -236,7 +302,7 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
       {/* HERO */}
       <section className="relative isolate min-h-[480px] overflow-hidden bg-navy">
         <div className="absolute inset-0">
-          <Image src="/industries/lookingforwork.png" alt="Candidate ready to work" fill sizes="100vw" className="object-cover object-top" priority />
+          <Image src="/industries/lookingforwork.png" alt="Candidate ready to work" fill sizes="100vw" className="object-cover object-center" priority />
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/20" />
 
@@ -366,22 +432,26 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
                     You&rsquo;re all set — we&rsquo;ll email you about new roles.
                   </p>
                 ) : (
-                  <div className="mt-3 space-y-2">
+                  <form onSubmit={handleAlertSubmit} className="mt-3 space-y-2">
                     <input
                       type="email"
+                      required
                       value={alertEmail}
                       onChange={(e) => setAlertEmail(e.target.value)}
                       placeholder="Enter your email"
                       className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-xs text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
                     />
+                    {alertStatus === "error" && (
+                      <p className="text-[11px] text-red-600">Something went wrong — please try again.</p>
+                    )}
                     <button
-                      type="button"
-                      onClick={() => alertEmail.includes("@") && setAlertStatus("saved")}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-full bg-navy px-5 py-2.5 text-xs font-bold text-white transition hover:bg-navy-deep"
+                      type="submit"
+                      disabled={alertStatus === "submitting"}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-full bg-navy px-5 py-2.5 text-xs font-bold text-white transition hover:bg-navy-deep disabled:opacity-50"
                     >
-                      Create alert
+                      {alertStatus === "submitting" ? "Saving..." : "Create alert"}
                     </button>
-                  </div>
+                  </form>
                 )}
               </div>
 
@@ -431,19 +501,19 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
                 <p className="mt-2 text-xs text-white/70">
                   Upload your CV and let our team match you with suitable opportunities.
                 </p>
-                <Link
-                  href="/book-a-call"
-                  className="mt-4 flex items-center justify-center gap-1.5 rounded-full bg-orange px-5 py-2.5 text-xs font-bold text-white transition hover:bg-orange-dark"
+                <button
+                  onClick={openCvModal}
+                  className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-full bg-orange px-5 py-2.5 text-xs font-bold text-white transition hover:bg-orange-dark"
                 >
                   Upload your CV <span aria-hidden="true">&rarr;</span>
-                </Link>
+                </button>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* APPLY MODAL */}
+      {/* APPLY MODAL (job-specific) */}
       {applyJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 max-h-[90vh] overflow-y-auto">
@@ -523,13 +593,96 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
         </div>
       )}
 
+      {/* GENERAL CV UPLOAD MODAL */}
+      {showCvModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 max-h-[90vh] overflow-y-auto">
+            {cvOnlyStatus === "done" ? (
+              <div className="text-center py-6">
+                <p className="font-display text-lg font-bold text-navy">CV received!</p>
+                <p className="mt-2 text-sm text-slate-500">Our team will match you with suitable opportunities and be in touch.</p>
+                <button
+                  onClick={() => setShowCvModal(false)}
+                  className="mt-5 rounded-full bg-navy px-6 py-2.5 text-sm font-bold text-white"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="font-display text-lg font-bold text-navy">Upload your CV</p>
+                <p className="mt-1 text-xs text-slate-500">We&rsquo;ll match you with suitable roles and get in touch.</p>
+
+                <form onSubmit={handleCvOnlySubmit} className="mt-4 space-y-3">
+                  <input
+                    placeholder="Full name"
+                    required
+                    value={cvOnlyForm.name}
+                    onChange={(e) => setCvOnlyForm({ ...cvOnlyForm, name: e.target.value })}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    required
+                    value={cvOnlyForm.email}
+                    onChange={(e) => setCvOnlyForm({ ...cvOnlyForm, email: e.target.value })}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Phone (optional)"
+                    value={cvOnlyForm.phone}
+                    onChange={(e) => setCvOnlyForm({ ...cvOnlyForm, phone: e.target.value })}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none"
+                  />
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600">Upload CV (PDF or Word)</label>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      required
+                      onChange={(e) => setCvOnlyFile(e.target.files?.[0] || null)}
+                      className="mt-1 w-full text-xs text-slate-500"
+                    />
+                  </div>
+
+                  {cvOnlyStatus === "error" && (
+                    <p className="text-xs text-red-600">Something went wrong — please try again.</p>
+                  )}
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="submit"
+                      disabled={cvOnlyStatus === "submitting"}
+                      className="flex-1 rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark disabled:opacity-50"
+                    >
+                      {cvOnlyStatus === "submitting" ? "Uploading..." : "Submit CV"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCvModal(false)}
+                      className="flex-1 rounded-full bg-slate-100 px-5 py-2.5 text-sm font-bold text-slate-700"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* BOTTOM CTA BAND */}
       <section className="bg-navy py-14">
         <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">New jobs. Real opportunities.</p>
             <h2 className="font-display mt-3 text-2xl font-extrabold text-white sm:text-3xl">
-              Thousands of roles. One perfect fit for you.
+              Thousands of roles.
+              <br />
+              The right fit for you.
             </h2>
             <Link
               href="/book-a-call"
