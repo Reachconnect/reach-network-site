@@ -5,27 +5,28 @@ import Link from "next/link";
 import Footer from "../components/Footer";
 
 const BENEFITS = [
-  { title: "Easy to use", sub: "A simple, intuitive platform that saves you time." },
-  { title: "Post jobs", sub: "Create and manage job vacancies in just a few clicks." },
-  { title: "Track progress", sub: "See live updates on candidates and your vacancies." },
+  { title: "Live visibility", sub: "See exactly who's on site and working, right now." },
+  { title: "Digital timesheets", sub: "No more chasing paper — hours logged and approved digitally." },
+  { title: "Rate your workers", sub: "Give feedback after every shift so quality stays high." },
+  { title: "Track your spend", sub: "Clear, live visibility of workforce spend — no surprises at invoice time." },
   { title: "Stay connected", sub: "Chat with your consultant and get quick updates whenever you need." },
-  { title: "Insight & reporting", sub: "Access data and reports to help you make smarter hiring decisions." },
   { title: "Secure & reliable", sub: "Your data is safe with us. Always secure, always compliant." },
 ];
 
 const FEATURE_LIST = [
-  "Manage multiple vacancies",
-  "Review and shortlist candidates",
-  "Share feedback and make decisions",
-  "Access documents and key information",
-  "Work with your dedicated consultant",
+  "Live fill rate and attendance tracking",
+  "Digital timesheets, no more paper",
+  "Rate workers after every shift",
+  "See exactly who's on site, in real time",
+  "Clear spend tracking, always up to date",
+  "One place for messages with your consultant",
 ];
 
 const PROCESS = [
   { step: "1", title: "Get set up", sub: "Your consultant invites you to Reach Connect and gets you set up in minutes." },
-  { step: "2", title: "Post & manage jobs", sub: "Post your vacancies and manage everything from one easy dashboard." },
-  { step: "3", title: "Review & shortlist", sub: "We find the right candidates. You review, shortlist and provide feedback." },
-  { step: "4", title: "Hire & track", sub: "Make the right hire and track progress with real-time updates." },
+  { step: "2", title: "Staff are placed", sub: "As soon as workers start, they're live in your dashboard." },
+  { step: "3", title: "Track it live", sub: "See fill rate, attendance and spend update in real time." },
+  { step: "4", title: "Rate & review", sub: "Rate workers after each shift so we keep sending you the best people." },
 ];
 
 const NAV_SECTIONS = [
@@ -45,7 +46,7 @@ const NAV_SECTIONS = [
       { label: "Find a job", href: "/looking-for-work" },
       { label: "Register for work", href: "/looking-for-work" },
       { label: "Register CV", href: "/looking-for-work" },
-      { label: "Career advice", href: "/looking-for-work" },
+      { label: "Career advice", href: "/career-advice" },
     ],
   },
   {
@@ -59,7 +60,7 @@ const NAV_SECTIONS = [
     label: "Reach Network Recruitment",
     links: [
       { label: "About us", href: "/about-us" },
-      { label: "Why choose us", href: "/about-us" },
+      { label: "Why choose us", href: "/why-choose-us" },
       { label: "FAQ", href: "/faq" },
     ],
   },
@@ -174,10 +175,10 @@ export default function ReachConnectPage() {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Reach Connect</p>
               <h1 className="font-display mt-3 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
-                Smarter hiring. <span className="text-orange">Stronger connections.</span>
+                Your workforce, <span className="text-orange">visible in real time.</span>
               </h1>
               <p className="mt-4 max-w-md text-sm text-white/70 sm:text-base">
-                Reach Connect is our online platform that brings you and our recruitment experts together. Post jobs, manage vacancies and track progress — all in one place.
+                Reach Connect is our client portal, built for managing your active workforce day to day. See fill rate, attendance, spend and timesheets, live, all in one place.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link href="/book-a-demo" className="flex items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark">
@@ -199,7 +200,7 @@ export default function ReachConnectPage() {
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
                 >
-                  {/* Add your video file here, e.g: <source src="/videos/reach-connect-overview.mp4" type="video/mp4" /> */}
+                  <source src="/industries/reach-network-highlight.mp4" type="video/mp4" />
                 </video>
 
                 {!isPlaying && (
@@ -265,7 +266,7 @@ export default function ReachConnectPage() {
                 Everything you need, all in one place.
               </h2>
               <p className="mt-3 text-sm text-slate-500">
-                Reach Connect gives you full visibility and control of your recruitment activity.
+                Reach Connect gives you full visibility and control of your active workforce, updated live.
               </p>
               <ul className="mt-6 space-y-3">
                 {FEATURE_LIST.map((item) => (
@@ -295,8 +296,8 @@ export default function ReachConnectPage() {
                   </div>
                   <div className="mt-6 space-y-1 text-[10px] font-semibold text-white/70">
                     <p className="rounded-md bg-white/10 px-2 py-1.5 text-white">Dashboard</p>
-                    <p className="px-2 py-1.5">Jobs</p>
-                    <p className="px-2 py-1.5">Candidates</p>
+                    <p className="px-2 py-1.5">Timesheets</p>
+                    <p className="px-2 py-1.5">Workforce</p>
                     <p className="px-2 py-1.5">Messages</p>
                     <p className="px-2 py-1.5">Reports</p>
                   </div>
@@ -306,17 +307,17 @@ export default function ReachConnectPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-bold text-navy">Welcome back</p>
-                      <p className="text-[10px] text-slate-400">Here&rsquo;s what&rsquo;s happening with your recruitment.</p>
+                      <p className="text-[10px] text-slate-400">Here&rsquo;s what&rsquo;s happening with your workforce today.</p>
                     </div>
-                    <span className="rounded-full bg-navy px-3 py-1.5 text-[9px] font-bold text-white">+ Post a new job</span>
+                    <span className="rounded-full bg-navy px-3 py-1.5 text-[9px] font-bold text-white">Request more staff</span>
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {[
-                      { label: "Live jobs", value: "8" },
-                      { label: "Candidates", value: "24" },
-                      { label: "Shortlisted", value: "6" },
-                      { label: "Interviews", value: "3" },
+                      { label: "On site today", value: "38" },
+                      { label: "Fill rate", value: "96%" },
+                      { label: "Open requests", value: "2" },
+                      { label: "Weekly spend", value: "£9.2k" },
                     ].map((stat) => (
                       <div key={stat.label} className="rounded-lg bg-slate-50 p-2.5">
                         <p className="text-[9px] text-slate-400">{stat.label}</p>
@@ -328,9 +329,9 @@ export default function ReachConnectPage() {
                   <div className="mt-4 rounded-lg bg-slate-50 p-3">
                     <p className="text-[10px] font-bold text-navy">Recent activity</p>
                     <div className="mt-2 space-y-1.5 text-[9px] text-slate-500">
-                      <p>New applications received &middot; 10 mins ago</p>
-                      <p>Candidate moved to shortlist &middot; 1 hour ago</p>
-                      <p>Interview scheduled &middot; 3 hours ago</p>
+                      <p>Timesheet approved for J. Mensah &middot; 10 mins ago</p>
+                      <p>3 workers clocked in on site &middot; 1 hour ago</p>
+                      <p>New staffing request submitted &middot; 3 hours ago</p>
                     </div>
                   </div>
                 </div>
@@ -347,7 +348,7 @@ export default function ReachConnectPage() {
             <div>
               <span className="font-display text-3xl font-extrabold text-orange">&ldquo;</span>
               <p className="mt-1 max-w-xl text-base font-medium text-white sm:text-lg">
-                Reach Connect makes the whole process so much easier. It&rsquo;s quick, clear and keeps everything in one place.
+                Reach Connect makes managing our workforce so much easier. We can see who&rsquo;s on site and what we&rsquo;re spending without having to chase anyone.
               </p>
               <p className="mt-3 text-xs font-semibold text-orange">Operations Manager, National Logistics Company</p>
             </div>
@@ -394,7 +395,7 @@ export default function ReachConnectPage() {
               </span>
               <div>
                 <p className="font-display text-sm font-bold text-white">Ready to connect?</p>
-                <p className="mt-0.5 text-xs text-white/60">Request access to Reach Connect today and experience smarter, faster recruitment.</p>
+                <p className="mt-0.5 text-xs text-white/60">Request access to Reach Connect today and get live visibility of your workforce.</p>
               </div>
             </div>
             <Link href="/book-a-demo" className="flex shrink-0 items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark">

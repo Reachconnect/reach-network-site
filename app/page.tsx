@@ -116,7 +116,7 @@ const APP_SCREENS = [
 ] as const;
 
 const STATS = [
-  { value: "20+", label: "Years of industry experience" },
+  { value: "15+", label: "Years of industry experience" },
   { value: "1000s", label: "People placed every year" },
   { value: "Dedicated", label: "Account managers who care" },
   { value: "Trusted by", label: "Businesses across the UK" },
@@ -725,9 +725,12 @@ export default function Home() {
               Register today and let us help you find the right role.
             </h2>
 
-            <button className="mt-7 flex items-center gap-1.5 rounded-full bg-orange px-7 py-3.5 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+            <Link
+              href="/looking-for-work"
+              className="mt-7 flex w-fit items-center gap-1.5 rounded-full bg-orange px-7 py-3.5 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
               Register as a candidate <span aria-hidden="true">&rarr;</span>
-            </button>
+            </Link>
 
             <ul className="mt-8 space-y-3">
               {[

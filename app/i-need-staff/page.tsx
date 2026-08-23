@@ -6,7 +6,7 @@ import Image from "next/image";
 import Footer from "../components/Footer";
 
 const HERO_STATS = [
-  { value: "20+", label: "Years of industry experience" },
+  { value: "15+", label: "Years of industry experience" },
   { value: "1000+", label: "People placed each year" },
   { value: "100%", label: "Dedicated to finding the right fit" },
   { value: "Trusted by", label: "Businesses across the UK" },

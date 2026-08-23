@@ -155,8 +155,13 @@ export default function EngineeringPage() {
       </header>
 
       {/* HERO */}
-      <section className="relative overflow-hidden bg-navy">
-        <div className="mx-auto max-w-7xl px-6 pb-24 pt-8 lg:px-8 lg:pb-32 lg:pt-10">
+      <section className="relative isolate min-h-[480px] overflow-hidden bg-navy">
+        <div className="absolute inset-0">
+          <Image src="/industries/engineeringpeople.png" alt="Engineers reviewing plans" fill sizes="100vw" className="object-cover object-center" priority />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/20" />
+
+        <div className="relative mx-auto max-w-7xl px-6 pb-24 pt-8 lg:px-8 lg:pb-32 lg:pt-10">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-white/50">
             <Link href="/" className="hover:text-white">Home</Link>
             <span>&#8250;</span>
@@ -165,27 +170,21 @@ export default function EngineeringPage() {
             <span>Engineering</span>
           </p>
 
-          <div className="mt-6 grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-8">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Engineering recruitment</p>
-              <h1 className="font-display mt-3 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
-                Engineering talent. <span className="text-orange">Engineered for success.</span>
-              </h1>
-              <p className="mt-4 max-w-md text-sm text-white/70 sm:text-base">
-                From design and development to maintenance and project delivery, we connect skilled engineering professionals with leading organisations.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link href="/book-a-call" className="flex items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark">
-                  Find engineering staff <span aria-hidden="true">&rarr;</span>
-                </Link>
-                <Link href="/looking-for-work" className="flex items-center gap-1.5 rounded-full border border-white/25 px-6 py-3 text-sm font-bold text-white transition hover:border-white/50">
-                  Find engineering jobs <span aria-hidden="true">&rarr;</span>
-                </Link>
-              </div>
-            </div>
-
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
-              <Image src="/industries/engineeringpeople.png" alt="Engineers reviewing plans" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
+          <div className="mt-6 max-w-lg">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Engineering recruitment</p>
+            <h1 className="font-display mt-3 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
+              Engineering talent. <span className="text-orange">Engineered for success.</span>
+            </h1>
+            <p className="mt-4 max-w-md text-sm text-white/70 sm:text-base">
+              From design and development to maintenance and project delivery, we connect skilled engineering professionals with leading organisations.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/book-a-call" className="flex items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark">
+                Find engineering staff <span aria-hidden="true">&rarr;</span>
+              </Link>
+              <Link href="/looking-for-work" className="flex items-center gap-1.5 rounded-full border border-white/25 px-6 py-3 text-sm font-bold text-white transition hover:border-white/50">
+                Find engineering jobs <span aria-hidden="true">&rarr;</span>
+              </Link>
             </div>
           </div>
         </div>
