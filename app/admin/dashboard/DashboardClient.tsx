@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import VideoCreatorTab from './VideoCreatorTab'
+import CampaignsTab from './CampaignsTab'
+import DocumentsTab from './DocumentsTab'
 
 type Job = {
   id: string
@@ -70,7 +73,7 @@ export default function DashboardClient({
   const [applications, setApplications] = useState(initialApplications)
   const [alerts, setAlerts] = useState(initialAlerts)
   const [posts, setPosts] = useState(initialPosts)
-  const [tab, setTab] = useState<'jobs' | 'applications' | 'alerts' | 'blog'>('jobs')
+  const [tab, setTab] = useState<'jobs' | 'applications' | 'alerts' | 'blog' | 'video' | 'campaigns' | 'documents'>('jobs')
   const [showForm, setShowForm] = useState(false)
   const [editingJob, setEditingJob] = useState<Job | null>(null)
   const router = useRouter()
@@ -328,6 +331,30 @@ export default function DashboardClient({
           >
             Blog ({posts.length})
           </button>
+          <button
+            onClick={() => setTab('video')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              tab === 'video' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 border border-slate-200'
+            }`}
+          >
+            Video
+          </button>
+          <button
+            onClick={() => setTab('campaigns')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              tab === 'campaigns' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 border border-slate-200'
+            }`}
+          >
+            Campaigns
+          </button>
+          <button
+            onClick={() => setTab('documents')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              tab === 'documents' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 border border-slate-200'
+            }`}
+          >
+            Documents
+          </button>
         </div>
 
         {tab === 'jobs' && (
@@ -485,6 +512,12 @@ export default function DashboardClient({
             </div>
           </div>
         )}
+
+        {tab === 'video' && <VideoCreatorTab />}
+
+        {tab === 'campaigns' && <CampaignsTab />}
+
+        {tab === 'documents' && <DocumentsTab />}
       </div>
 
       {showForm && (

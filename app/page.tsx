@@ -380,20 +380,32 @@ export default function Home() {
 
       {/* HERO */}
       <section className="relative isolate overflow-hidden bg-navy">
-        {/* Full-bleed background image strip */}
-        <div className="absolute inset-0 min-h-[480px] grid grid-cols-2 sm:grid-cols-4">
-          {HERO_IMAGES.map((img) => (
-            <div key={img.src} className="relative h-full w-full">
-              <Image
-                src={img.src}
-                alt={img.alt}
-                fill
-                sizes="(max-width: 640px) 50vw, 25vw"
-                className="object-cover object-top"
-                priority
-              />
-            </div>
-          ))}
+        {/* Full-bleed background image: single image on mobile, 4-image collage on tablet+ */}
+        <div className="absolute inset-0 min-h-[480px]">
+          <div className="relative h-full w-full sm:hidden">
+            <Image
+              src={HERO_IMAGES[0].src}
+              alt={HERO_IMAGES[0].alt}
+              fill
+              sizes="100vw"
+              className="object-cover object-center"
+              priority
+            />
+          </div>
+          <div className="hidden h-full grid-cols-4 sm:grid">
+            {HERO_IMAGES.map((img) => (
+              <div key={img.src} className="relative h-full w-full">
+                <Image
+                  src={img.src}
+                  alt={img.alt}
+                  fill
+                  sizes="25vw"
+                  className="object-cover object-top"
+                  priority
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Dark gradient overlay so text stays readable */}
@@ -433,7 +445,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="relative mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-10 gap-y-4 border-t border-white/10 px-6 pb-8 pt-8 lg:px-8">
+        <div className="relative mx-auto grid max-w-6xl grid-cols-2 items-center justify-items-start gap-x-6 gap-y-4 border-t border-white/10 px-6 pb-8 pt-8 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-10 lg:px-8">
           {TRUST_POINTS.map((point) => (
             <div key={point.label} className="flex items-center gap-2.5">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
@@ -479,9 +491,9 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[220px] overflow-hidden py-6 sm:max-w-[300px] sm:overflow-visible">
-            {/* Floating shadow beneath the phone */}
-            <div className="absolute inset-x-6 bottom-2 h-8 rounded-full bg-black/30 blur-2xl" />
+          <div className="relative mx-auto hidden w-full max-w-[300px] overflow-visible py-6 lg:block">
+            {/* Floating shadow beneath the phone (desktop only — clips awkwardly on mobile) */}
+            <div className="absolute inset-x-6 bottom-2 hidden h-8 rounded-full bg-black/30 blur-2xl sm:block" />
 
             <div className="relative sm:-rotate-6 transition-transform duration-500 sm:hover:rotate-0">
               <div className="relative aspect-[9/19.5] rounded-[3rem] border-[8px] border-navy bg-navy shadow-2xl drop-shadow-2xl">
@@ -614,7 +626,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
             {INDUSTRIES.map((industry) => (
               <div
                 key={industry.title}
@@ -683,11 +695,11 @@ export default function Home() {
             </a>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <div className="mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
             {TESTIMONIALS.map((t) => (
               <div
                 key={t.name}
-                className="rounded-2xl border border-slate-200 bg-white p-6"
+                className="min-w-[82%] shrink-0 snap-center rounded-2xl border border-slate-200 bg-white p-6 sm:min-w-0 sm:shrink"
               >
                 <StarRow />
                 <p className="mt-4 text-sm text-slate-700">
@@ -704,7 +716,7 @@ export default function Home() {
       </section>
 
       {/* CANDIDATE CTA */}
-      <section className="relative isolate overflow-hidden bg-navy py-24 lg:py-32">
+      <section className="relative isolate overflow-hidden bg-navy py-14 sm:py-20 lg:py-32">
         <div className="absolute inset-0">
           <Image
             src="/PlaceholderPanel/coverphoto.png"
@@ -714,7 +726,7 @@ export default function Home() {
             className="object-cover object-center"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/80 to-navy/20 sm:bg-gradient-to-r sm:from-navy sm:via-navy/85 sm:to-navy/20" />
 
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
           <div className="max-w-lg">
