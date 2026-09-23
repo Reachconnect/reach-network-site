@@ -237,7 +237,7 @@ export default function DocumentsTab() {
         }
 
         const mergedBytes = await mergedPdf.save()
-        finalBlob = new Blob([mergedBytes], { type: 'application/pdf' })
+        finalBlob = new Blob([mergedBytes as unknown as BlobPart], { type: 'application/pdf' })
         finalName = fileArray.map((f) => f.name.replace(/\.pdf$/i, '')).join(' + ')
       } else {
         finalBlob = fileArray[0]
