@@ -488,8 +488,40 @@ export default function CampaignsTab() {
   async function handleDeleteCampaign(id: string) {
     if (!confirm('Delete this campaign? This does not un-send emails already sent.')) return
     const supabase = createClient()
+    // Cancel any queued-but-not-yet-sent emails first, so nothing
+    // slips out after the campaign itself is gone
+    await supabase.from('email_sends').update({ status: 'cancelled' }).eq('campaign_id', id).eq('status', 'pending')
     const { error } = await supabase.from('email_campaigns').delete().eq('id', id)
     if (!error) setCampaigns(campaigns.filter((c) => c.id !== id))
+  }
+
+  async function handleStopSending(campaign: Campaign) {
+    if (
+      !confirm(
+        `Stop "${campaign.name}"? Anyone who hasn't been emailed yet will be skipped. Emails already sent can't be recalled.`
+      )
+    )
+      return
+
+    const supabase = createClient()
+    await supabase
+      .from('email_sends')
+      .update({ status: 'cancelled' })
+      .eq('campaign_id', campaign.id)
+      .eq('status', 'pending')
+
+    const { data, error } = await supabase
+      .from('email_campaigns')
+      .update({ status: 'cancelled' })
+      .eq('id', campaign.id)
+      .select()
+      .single()
+
+    if (!error && data) {
+      setCampaigns(campaigns.map((c) => (c.id === campaign.id ? data : c)))
+    } else if (error) {
+      alert(error.message)
+    }
   }
 
   async function handleSendCampaign(campaign: Campaign) {
@@ -620,12 +652,14 @@ export default function CampaignsTab() {
       scheduled: 'bg-purple-100 text-purple-700',
       sending: 'bg-orange-100 text-orange-700',
       sent: 'bg-green-100 text-green-700',
+      cancelled: 'bg-red-100 text-red-600',
     }
     const labels: Record<string, string> = {
       draft: 'draft',
       scheduled: `scheduled for ${formatDateTime(campaign.scheduled_at)}`,
       sending: 'sending…',
       sent: 'sent',
+      cancelled: 'stopped',
     }
     return (
       <span className={`text-xs px-2 py-0.5 rounded-full ${styles[campaign.status] || styles.draft}`}>
@@ -727,6 +761,14 @@ export default function CampaignsTab() {
                           Cancel schedule
                         </button>
                       )}
+                      {campaign.status === 'sending' && (
+                        <button
+                          onClick={() => handleStopSending(campaign)}
+                          className="text-sm bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-lg"
+                        >
+                          Stop Sending
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDeleteCampaign(campaign.id)}
                         className="text-sm text-red-600 hover:text-red-800 px-3 py-1"
@@ -736,7 +778,7 @@ export default function CampaignsTab() {
                     </div>
                   </div>
 
-                  {(campaign.status === 'sending' || campaign.status === 'sent') && (
+                  {(campaign.status === 'sending' || campaign.status === 'sent' || campaign.status === 'cancelled') && (
                     <div className="mt-3 border-t border-slate-100 pt-3">
                       <div className="grid grid-cols-4 gap-3">
                         <div>

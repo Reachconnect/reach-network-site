@@ -6,6 +6,10 @@ import { createClient } from '@/lib/supabase/client'
 import VideoCreatorTab from './VideoCreatorTab'
 import CampaignsTab from './CampaignsTab'
 import DocumentsTab from './DocumentsTab'
+import CandidatesTab from './CandidatesTab'
+import ClientsTab from './ClientsTab'
+import DashboardHome from './DashboardHome'
+import LeadsTab from './LeadsTab'
 
 type Job = {
   id: string
@@ -73,7 +77,7 @@ export default function DashboardClient({
   const [applications, setApplications] = useState(initialApplications)
   const [alerts, setAlerts] = useState(initialAlerts)
   const [posts, setPosts] = useState(initialPosts)
-  const [tab, setTab] = useState<'jobs' | 'applications' | 'alerts' | 'blog' | 'video' | 'campaigns' | 'documents'>('jobs')
+  const [tab, setTab] = useState<'dashboard' | 'leads' | 'jobs' | 'applications' | 'alerts' | 'blog' | 'video' | 'campaigns' | 'documents' | 'candidates' | 'clients'>('dashboard')
   const [showForm, setShowForm] = useState(false)
   const [editingJob, setEditingJob] = useState<Job | null>(null)
   const router = useRouter()
@@ -285,79 +289,69 @@ export default function DashboardClient({
     router.refresh()
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Reach Network Admin</h1>
-        <button
-          onClick={handleSignOut}
-          className="text-sm bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition"
-        >
-          Sign Out
-        </button>
-      </header>
+  const NAV_ITEMS: { key: typeof tab; label: string; icon: string; badge?: number }[] = [
+    { key: 'dashboard', label: 'Dashboard', icon: '▦' },
+    { key: 'leads', label: 'Sales Pipeline', icon: '⬡' },
+    { key: 'jobs', label: 'Jobs', icon: '▤', badge: jobs.length },
+    { key: 'applications', label: 'Applications', icon: '✉', badge: applications.length },
+    { key: 'alerts', label: 'Alerts', icon: '⚠', badge: alerts.length },
+    { key: 'blog', label: 'Blog', icon: '¶', badge: posts.length },
+    { key: 'video', label: 'Video', icon: '▶' },
+    { key: 'campaigns', label: 'Campaigns', icon: '⚑' },
+    { key: 'documents', label: 'Documents', icon: '✎' },
+    { key: 'candidates', label: 'Candidates', icon: '◍' },
+    { key: 'clients', label: 'Clients', icon: '▣' },
+  ]
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="flex gap-2 mb-6 flex-wrap">
-          <button
-            onClick={() => setTab('jobs')}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              tab === 'jobs' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Jobs ({jobs.length})
-          </button>
-          <button
-            onClick={() => setTab('applications')}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              tab === 'applications' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Applications ({applications.length})
-          </button>
-          <button
-            onClick={() => setTab('alerts')}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              tab === 'alerts' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Alerts ({alerts.length})
-          </button>
-          <button
-            onClick={() => setTab('blog')}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              tab === 'blog' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Blog ({posts.length})
-          </button>
-          <button
-            onClick={() => setTab('video')}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              tab === 'video' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Video
-          </button>
-          <button
-            onClick={() => setTab('campaigns')}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              tab === 'campaigns' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Campaigns
-          </button>
-          <button
-            onClick={() => setTab('documents')}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              tab === 'documents' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Documents
-          </button>
+  return (
+    <div className="min-h-screen bg-slate-50 flex">
+      <aside className="w-60 shrink-0 bg-slate-900 text-white flex flex-col h-screen sticky top-0">
+        <div className="px-5 py-5 border-b border-white/10">
+          <h1 className="text-lg font-bold leading-tight">Reach Network</h1>
+          <p className="text-xs text-slate-400">Admin</p>
         </div>
 
-        {tab === 'jobs' && (
+        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setTab(item.key)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition ${
+                tab === item.key ? 'bg-orange-500 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <span className="text-base w-5 text-center shrink-0">{item.icon}</span>
+              <span className="flex-1 text-left">{item.label}</span>
+              {item.badge !== undefined && (
+                <span
+                  className={`text-xs rounded-full px-1.5 py-0.5 ${
+                    tab === item.key ? 'bg-white/20' : 'bg-white/10 text-slate-400'
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+
+        <div className="px-3 py-3 border-t border-white/10">
+          <button
+            onClick={handleSignOut}
+            className="w-full text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg py-2.5 font-semibold transition"
+          >
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      <main className="flex-1 min-w-0">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          {tab === 'dashboard' && <DashboardHome onNavigate={(t) => setTab(t as typeof tab)} />}
+
+          {tab === 'leads' && <LeadsTab />}
+
+          {tab === 'jobs' && (
           <div>
             <button
               onClick={openNewForm}
@@ -518,7 +512,12 @@ export default function DashboardClient({
         {tab === 'campaigns' && <CampaignsTab />}
 
         {tab === 'documents' && <DocumentsTab />}
-      </div>
+
+        {tab === 'candidates' && <CandidatesTab />}
+
+          {tab === 'clients' && <ClientsTab />}
+        </div>
+      </main>
 
       {showForm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">

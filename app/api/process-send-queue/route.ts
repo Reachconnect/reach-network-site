@@ -105,6 +105,102 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Check for sales leads due a follow-up call — set from the Sales
+  // Pipeline (e.g. "call back in 2 months")
+  const { data: dueLeadCalls } = await supabase
+    .from('leads')
+    .select('*')
+    .not('next_call_at', 'is', null)
+    .lte('next_call_at', now)
+
+  for (const lead of dueLeadCalls || []) {
+    try {
+      await resend.emails.send({
+        from: 'Reach Network Recruitment <hello@reachnetworkrec.com>',
+        to: ALERT_EMAIL,
+        subject: `Call back: ${lead.company_name}`,
+        html: `
+          <p>Time to call <b>${lead.company_name}</b>${lead.contact_name ? ` (${lead.contact_name}${lead.contact_role ? `, ${lead.contact_role}` : ''})` : ''}.</p>
+          ${lead.contact_phone ? `<p>Phone: ${lead.contact_phone}</p>` : ''}
+          ${lead.next_call_note ? `<p>Note: ${lead.next_call_note}</p>` : ''}
+        `,
+      })
+    } catch (err) {
+      console.error('Could not send lead call-back reminder:', err)
+    }
+
+    await supabase.from('leads').update({ next_call_at: null, next_call_note: null }).eq('id', lead.id)
+  }
+
+  // Check for candidate reminders that have come due — these are
+  // the "snooze" reminders set from the Awaiting Feedback list
+  const { data: dueReminders } = await supabase
+    .from('vacancy_assignments')
+    .select('*, candidates(*), vacancies(*, clients(*))')
+    .not('reminder_at', 'is', null)
+    .lte('reminder_at', now)
+
+  for (const assignment of dueReminders || []) {
+    const candidate = assignment.candidates
+    const vacancy = assignment.vacancies
+    const client = vacancy?.clients
+
+    try {
+      await resend.emails.send({
+        from: 'Reach Network Recruitment <hello@reachnetworkrec.com>',
+        to: ALERT_EMAIL,
+        subject: `Reminder: follow up with ${candidate?.first_name || ''} ${candidate?.last_name || ''}`,
+        html: `
+          <p>Your reminder for <b>${candidate?.first_name || ''} ${candidate?.last_name || ''}</b>
+          (${candidate?.email || 'no email on file'}) — <b>${vacancy?.title || 'a role'}</b>${client ? ` at ${client.company_name}` : ''}
+          — is due.</p>
+          ${assignment.reminder_note ? `<p>Note: ${assignment.reminder_note}</p>` : ''}
+        `,
+      })
+    } catch (err) {
+      console.error('Could not send candidate reminder:', err)
+    }
+
+    await supabase
+      .from('vacancy_assignments')
+      .update({ reminder_at: null, reminder_note: null })
+      .eq('id', assignment.id)
+  }
+
+  // Check for interviews that have passed without a follow-up
+  // reminder being sent yet — this reuses the same cron trigger
+  // that already runs the email queue, so no separate scheduler
+  // needs setting up for this feature.
+  const { data: pastInterviews } = await supabase
+    .from('vacancy_assignments')
+    .select('*, candidates(*), vacancies(*, clients(*))')
+    .eq('stage', 'interview')
+    .eq('follow_up_sent', false)
+    .lt('interview_datetime', now)
+
+  for (const assignment of pastInterviews || []) {
+    const candidate = assignment.candidates
+    const vacancy = assignment.vacancies
+    const client = vacancy?.clients
+
+    try {
+      await resend.emails.send({
+        from: 'Reach Network Recruitment <hello@reachnetworkrec.com>',
+        to: ALERT_EMAIL,
+        subject: `Follow up: ${candidate?.first_name || ''} ${candidate?.last_name || ''} — ${vacancy?.title || 'interview'}`,
+        html: `
+          <p>The interview for <b>${candidate?.first_name || ''} ${candidate?.last_name || ''}</b>
+          (${candidate?.email || 'no email on file'}) for <b>${vacancy?.title || 'a role'}</b>${client ? ` at ${client.company_name}` : ''}
+          has passed. Time to follow up and move them to the next stage.</p>
+        `,
+      })
+    } catch (err) {
+      console.error('Could not send interview follow-up reminder:', err)
+    }
+
+    await supabase.from('vacancy_assignments').update({ follow_up_sent: true }).eq('id', assignment.id)
+  }
+
   // Step 1: promote any scheduled campaigns whose time has arrived
   // into "sending", and create their pending send rows.
   const { data: dueScheduled } = await supabase

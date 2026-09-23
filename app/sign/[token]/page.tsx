@@ -21,9 +21,19 @@ async function getSigningData(token: string) {
 
   const { data: envelope } = await supabase
     .from('esign_envelopes')
-    .select('*, esign_documents(*)')
+    .select('*')
     .eq('id', signer.envelope_id)
     .single()
+
+  // An envelope can now include several documents, in order — fetch
+  // them all rather than assuming there's exactly one
+  const { data: envelopeDocs } = await supabase
+    .from('envelope_documents')
+    .select('document_id, order_index, esign_documents(*)')
+    .eq('envelope_id', signer.envelope_id)
+    .order('order_index', { ascending: true })
+
+  const documents = (envelopeDocs || []).map((row: any) => row.esign_documents).filter(Boolean)
 
   const { data: fields } = await supabase
     .from('esign_fields')
@@ -35,7 +45,7 @@ async function getSigningData(token: string) {
     await supabase.from('esign_signers').update({ status: 'viewed' }).eq('id', signer.id)
   }
 
-  return { signer, envelope, fields: fields || [] }
+  return { signer, envelope, documents, fields: fields || [] }
 }
 
 export default async function SignPage({ params }: { params: Promise<{ token: string }> }) {
@@ -69,7 +79,7 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
       token={token}
       signer={data.signer}
       envelope={data.envelope}
-      document={data.envelope.esign_documents}
+      documents={data.documents}
       fields={data.fields}
     />
   )

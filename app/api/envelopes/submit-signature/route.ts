@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { PDFDocument, StandardFonts, rgb, PDFFont } from 'pdf-lib'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -15,6 +15,54 @@ function getServiceClient() {
 function dataUrlToBuffer(dataUrl: string): Buffer {
   const base64 = dataUrl.split(',')[1]
   return Buffer.from(base64, 'base64')
+}
+
+function wrapTextToWidth(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean)
+  const lines: string[] = []
+  let currentLine = ''
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word
+    if (font.widthOfTextAtSize(testLine, fontSize) > maxWidth && currentLine) {
+      lines.push(currentLine)
+      currentLine = word
+    } else {
+      currentLine = testLine
+    }
+  }
+  if (currentLine) lines.push(currentLine)
+  return lines
+}
+
+// Finds the largest font size (down to a sensible floor) at which
+// the text, once wrapped, actually fits inside the box — this is
+// what stops longer field values from overflowing straight past
+// the box and colliding with whatever's next to it on the page.
+function fitTextToBox(
+  text: string,
+  font: PDFFont,
+  boxWidth: number,
+  boxHeight: number,
+  maxSize = 11,
+  minSize = 6
+) {
+  const padding = 4
+  const usableWidth = Math.max(boxWidth - padding * 2, 10)
+
+  for (let size = maxSize; size >= minSize; size -= 0.5) {
+    const lineHeight = size * 1.25
+    const lines = wrapTextToWidth(text, font, size, usableWidth)
+    if (lines.length * lineHeight <= boxHeight) {
+      return { size, lines, lineHeight }
+    }
+  }
+
+  // Even at the smallest readable size it doesn't fully fit —
+  // still return the smallest size so the text stays legible,
+  // rather than shrinking indefinitely into illegibility.
+  const lineHeight = minSize * 1.25
+  return { size: minSize, lines: wrapTextToWidth(text, font, minSize, usableWidth), lineHeight }
 }
 
 export async function POST(request: NextRequest) {
@@ -117,11 +165,34 @@ export async function POST(request: NextRequest) {
 async function finalizeEnvelope(supabase: ReturnType<typeof getServiceClient>, envelopeId: string) {
   const { data: envelope } = await supabase
     .from('esign_envelopes')
-    .select('*, esign_documents(*)')
+    .select('*')
     .eq('id', envelopeId)
     .single()
 
   if (!envelope) return
+
+  // An envelope can include several documents, in order — fetch
+  // them all via the join table rather than assuming there's
+  // exactly one.
+  const { data: envelopeDocs } = await supabase
+    .from('envelope_documents')
+    .select('document_id, order_index, esign_documents(*)')
+    .eq('envelope_id', envelopeId)
+    .order('order_index', { ascending: true })
+
+  let documents = (envelopeDocs || []).map((row: any) => row.esign_documents).filter(Boolean)
+
+  // Fallback for envelopes created before multi-document support
+  // existed — they only ever set document_id directly on the
+  // envelope itself, with no envelope_documents rows.
+  if (documents.length === 0 && envelope.document_id) {
+    const { data: legacyDoc } = await supabase
+      .from('esign_documents')
+      .select('*')
+      .eq('id', envelope.document_id)
+      .single()
+    if (legacyDoc) documents = [legacyDoc]
+  }
 
   const { data: allSigners } = await supabase.from('esign_signers').select('*').eq('envelope_id', envelopeId)
   const { data: allFields } = await supabase.from('esign_fields').select('*').eq('envelope_id', envelopeId)
@@ -129,25 +200,52 @@ async function finalizeEnvelope(supabase: ReturnType<typeof getServiceClient>, e
   const signersById: Record<string, any> = {}
   for (const s of allSigners || []) signersById[s.id] = s
 
-  // Load the original PDF
-  const originalPdfBytes = await fetch(envelope.esign_documents.original_pdf_url).then((r) => r.arrayBuffer())
-  const pdfDoc = await PDFDocument.load(originalPdfBytes)
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  // Merge every source document into one combined output PDF, and
+  // build a lookup so each field — which references a page number
+  // local to its OWN document — can be stamped onto the correct
+  // page of the final merged document.
+  const mergedDoc = await PDFDocument.create()
+  const font = await mergedDoc.embedFont(StandardFonts.Helvetica)
+
+  const pageIndexLookup: Record<string, number> = {}
+
+  for (const doc of documents) {
+    const srcBytes = await fetch(doc.original_pdf_url).then((r) => r.arrayBuffer())
+    const srcDoc = await PDFDocument.load(srcBytes)
+    const pageIndices = srcDoc.getPageIndices()
+    const copiedPages = await mergedDoc.copyPages(srcDoc, pageIndices)
+
+    for (let i = 0; i < copiedPages.length; i++) {
+      mergedDoc.addPage(copiedPages[i])
+      const mergedPageIndex = mergedDoc.getPageCount() - 1
+      pageIndexLookup[`${doc.id}-${i + 1}`] = mergedPageIndex
+    }
+  }
 
   const imageCache: Record<string, any> = {}
   async function getEmbeddedImage(url: string) {
     if (imageCache[url]) return imageCache[url]
     const bytes = await fetch(url).then((r) => r.arrayBuffer())
-    const image = await pdfDoc.embedPng(bytes)
+    const image = await mergedDoc.embedPng(bytes)
     imageCache[url] = image
     return image
   }
 
   for (const field of allFields || []) {
-    const signer = signersById[field.signer_id]
-    if (!signer) continue
+    // Admin-authored text has no signer at all — it was baked in
+    // with its value already set at the time the envelope was
+    // built, so it just needs stamping directly.
+    const signer = field.field_type === 'admin_text' ? null : signersById[field.signer_id]
+    if (field.field_type !== 'admin_text' && !signer) continue
 
-    const page = pdfDoc.getPage(field.page_number - 1)
+    // Legacy fields (from before multi-document support) never had
+    // a document_id set — fall back to the envelope's single
+    // document in that case.
+    const docIdForField = field.document_id || documents[0]?.id
+    const mergedPageIndex = pageIndexLookup[`${docIdForField}-${field.page_number}`]
+    if (mergedPageIndex === undefined) continue
+
+    const page = mergedDoc.getPage(mergedPageIndex)
     const pageWidth = page.getWidth()
     const pageHeight = page.getHeight()
 
@@ -157,7 +255,7 @@ async function finalizeEnvelope(supabase: ReturnType<typeof getServiceClient>, e
     const yFromTop = (field.y_pct / 100) * pageHeight
     const yPoints = pageHeight - yFromTop - heightPoints
 
-    if (field.field_type === 'signature' && signer.signature_image_url) {
+    if (field.field_type === 'signature' && signer?.signature_image_url) {
       const image = await getEmbeddedImage(signer.signature_image_url)
       const scale = Math.min(widthPoints / image.width, heightPoints / image.height)
       page.drawImage(image, {
@@ -166,7 +264,7 @@ async function finalizeEnvelope(supabase: ReturnType<typeof getServiceClient>, e
         width: image.width * scale,
         height: image.height * scale,
       })
-    } else if (field.field_type === 'initials' && signer.initials_image_url) {
+    } else if (field.field_type === 'initials' && signer?.initials_image_url) {
       const image = await getEmbeddedImage(signer.initials_image_url)
       const scale = Math.min(widthPoints / image.width, heightPoints / image.height)
       page.drawImage(image, {
@@ -176,25 +274,42 @@ async function finalizeEnvelope(supabase: ReturnType<typeof getServiceClient>, e
         height: image.height * scale,
       })
     } else if (field.value) {
-      page.drawText(field.value, {
-        x: xPoints + 2,
-        y: yPoints + heightPoints / 4,
-        size: 11,
-        font,
-        color: rgb(0.06, 0.14, 0.22),
-      })
+      const { size, lines, lineHeight } = fitTextToBox(field.value, font, widthPoints, heightPoints)
+      // Vertically center the block of wrapped lines within the box
+      const blockHeight = lines.length * lineHeight
+      let lineY = yPoints + (heightPoints + blockHeight) / 2 - size
+      for (const line of lines) {
+        page.drawText(line, {
+          x: xPoints + 2,
+          y: lineY,
+          size,
+          font,
+          color: rgb(0.06, 0.14, 0.22),
+        })
+        lineY -= lineHeight
+      }
     }
   }
 
   // Append a certificate of completion page — this is the audit
   // trail that gives the signed document real legal weight
-  const certPage = pdfDoc.addPage()
+  const certPage = mergedDoc.addPage()
   const { width, height } = certPage.getSize()
   let y = height - 60
 
   certPage.drawText('Certificate of Completion', { x: 50, y, size: 18, font, color: rgb(0.06, 0.14, 0.22) })
   y -= 30
   certPage.drawText(envelope.name, { x: 50, y, size: 12, font, color: rgb(0.3, 0.3, 0.3) })
+  if (documents.length > 1) {
+    y -= 18
+    certPage.drawText(`Documents: ${documents.map((d: any) => d.name).join(', ')}`, {
+      x: 50,
+      y,
+      size: 10,
+      font,
+      color: rgb(0.4, 0.4, 0.4),
+    })
+  }
   y -= 40
 
   for (const signer of allSigners || []) {
@@ -214,7 +329,7 @@ async function finalizeEnvelope(supabase: ReturnType<typeof getServiceClient>, e
     y -= 30
   }
 
-  const finalPdfBytes = await pdfDoc.save()
+  const finalPdfBytes = await mergedDoc.save()
 
   const path = `signed/${envelopeId}.pdf`
   await supabase.storage.from('esign-documents').upload(path, Buffer.from(finalPdfBytes), {

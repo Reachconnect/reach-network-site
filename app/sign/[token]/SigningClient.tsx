@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 type Field = {
   id: string
   signer_id: string
+  document_id: string | null
   field_type: 'signature' | 'initials' | 'date' | 'text'
   label: string | null
   page_number: number
@@ -146,16 +147,16 @@ export default function SigningClient({
   token,
   signer,
   envelope,
-  document: pdfDoc,
+  documents,
   fields,
 }: {
   token: string
   signer: Signer
   envelope: Envelope
-  document: PdfDoc
+  documents: PdfDoc[]
   fields: Field[]
 }) {
-  const [pageImages, setPageImages] = useState<string[]>([])
+  const [docPages, setDocPages] = useState<{ documentId: string; documentName: string; pages: string[] }[]>([])
   const [rendering, setRendering] = useState(true)
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null)
@@ -172,33 +173,38 @@ export default function SigningClient({
   const today = new Date().toLocaleDateString('en-GB')
 
   useEffect(() => {
-    renderPdf()
+    renderAllDocuments()
   }, [])
 
-  async function renderPdf() {
+  async function renderAllDocuments() {
     setRendering(true)
     try {
       const pdfjsLib = await import('pdfjs-dist')
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
 
-      if (!pdfDoc.original_pdf_url) {
-        throw new Error('This document has no file URL.')
-      }
-      const pdf = await pdfjsLib.getDocument({ url: pdfDoc.original_pdf_url }).promise
-      const images: string[] = []
+      const groups: { documentId: string; documentName: string; pages: string[] }[] = []
 
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum)
-        const viewport = page.getViewport({ scale: 1.5 })
-        const canvas = document.createElement('canvas')
-        canvas.width = viewport.width
-        canvas.height = viewport.height
-        const ctx = canvas.getContext('2d')!
-        await page.render({ canvasContext: ctx, canvas, viewport }).promise
-        images.push(canvas.toDataURL('image/png'))
+      for (const doc of documents) {
+        if (!doc.original_pdf_url) continue
+
+        const pdf = await pdfjsLib.getDocument({ url: doc.original_pdf_url }).promise
+        const images: string[] = []
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum)
+          const viewport = page.getViewport({ scale: 1.5 })
+          const canvas = document.createElement('canvas')
+          canvas.width = viewport.width
+          canvas.height = viewport.height
+          const ctx = canvas.getContext('2d')!
+          await page.render({ canvasContext: ctx, canvas, viewport }).promise
+          images.push(canvas.toDataURL('image/png'))
+        }
+
+        groups.push({ documentId: doc.id, documentName: doc.name, pages: images })
       }
 
-      setPageImages(images)
+      setDocPages(groups)
     } catch (err) {
       console.error('PDF render error:', err)
     } finally {
@@ -269,57 +275,70 @@ export default function SigningClient({
       </header>
 
       <div className="max-w-3xl mx-auto px-4 py-6">
-        {rendering && <p className="text-center text-slate-500 py-10">Loading document…</p>}
+        {rendering && <p className="text-center text-slate-500 py-10">Loading documents…</p>}
 
-        {pageImages.map((src, i) => (
-          <div key={i} className="relative mb-4 bg-white shadow-sm rounded-lg overflow-hidden">
-            <img src={src} alt={`Page ${i + 1}`} className="w-full block" />
+        {docPages.map((group, groupIndex) => (
+          <div key={group.documentId}>
+            {docPages.length > 1 && (
+              <div className="flex items-center gap-2 mb-3 mt-1">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-white text-xs font-bold">
+                  {groupIndex + 1}
+                </span>
+                <p className="text-sm font-bold text-slate-700">{group.documentName}</p>
+              </div>
+            )}
 
-            {otherCompletedFields
-              .filter((f) => f.page_number === i + 1)
-              .map((f) => (
-                <div
-                  key={f.id}
-                  className="absolute border border-slate-300 bg-slate-50/90 rounded flex items-center justify-center text-[10px] text-slate-400 font-semibold px-1 overflow-hidden"
-                  style={{
-                    left: `${f.x_pct}%`,
-                    top: `${f.y_pct}%`,
-                    width: `${f.width_pct}%`,
-                    height: `${f.height_pct}%`,
-                  }}
-                >
-                  {f.field_type === 'signature' || f.field_type === 'initials' ? (
-                    <span className="italic">Signed</span>
-                  ) : (
-                    f.value
-                  )}
-                </div>
-              ))}
+            {group.pages.map((src, i) => (
+              <div key={i} className="relative mb-4 bg-white shadow-sm rounded-lg overflow-hidden">
+                <img src={src} alt={`Page ${i + 1}`} className="w-full block" />
 
-            {myFields
-              .filter((f) => f.page_number === i + 1)
-              .map((f) => (
-                <div
-                  key={f.id}
-                  className="absolute border-2 border-orange-400 bg-orange-50/70 rounded flex items-center justify-center text-[10px] font-bold text-orange-700 px-1"
-                  style={{
-                    left: `${f.x_pct}%`,
-                    top: `${f.y_pct}%`,
-                    width: `${f.width_pct}%`,
-                    height: `${f.height_pct}%`,
-                  }}
-                >
-                  {f.field_type === 'date'
-                    ? today
-                    : f.field_type === 'text'
-                    ? fieldValues[f.id] || f.label
-                    : f.field_type === 'signature'
-                    ? (signatureDataUrl ? '✓ Signed below' : '↓ Sign below')
-                    : initialsDataUrl
-                    ? '✓ Initialed below'
-                    : '↓ Initial below'}
-                </div>
-              ))}
+                {otherCompletedFields
+                  .filter((f) => f.document_id === group.documentId && f.page_number === i + 1)
+                  .map((f) => (
+                    <div
+                      key={f.id}
+                      className="absolute border border-slate-300 bg-slate-50/90 rounded flex items-center justify-center text-[10px] text-slate-400 font-semibold px-1 overflow-hidden"
+                      style={{
+                        left: `${f.x_pct}%`,
+                        top: `${f.y_pct}%`,
+                        width: `${f.width_pct}%`,
+                        height: `${f.height_pct}%`,
+                      }}
+                    >
+                      {f.field_type === 'signature' || f.field_type === 'initials' ? (
+                        <span className="italic">Signed</span>
+                      ) : (
+                        f.value
+                      )}
+                    </div>
+                  ))}
+
+                {myFields
+                  .filter((f) => f.document_id === group.documentId && f.page_number === i + 1)
+                  .map((f) => (
+                    <div
+                      key={f.id}
+                      className="absolute border-2 border-orange-400 bg-orange-50/70 rounded flex items-center justify-center text-[10px] font-bold text-orange-700 px-1"
+                      style={{
+                        left: `${f.x_pct}%`,
+                        top: `${f.y_pct}%`,
+                        width: `${f.width_pct}%`,
+                        height: `${f.height_pct}%`,
+                      }}
+                    >
+                      {f.field_type === 'date'
+                        ? today
+                        : f.field_type === 'text'
+                        ? fieldValues[f.id] || f.label
+                        : f.field_type === 'signature'
+                        ? (signatureDataUrl ? '✓ Signed below' : '↓ Sign below')
+                        : initialsDataUrl
+                        ? '✓ Initialed below'
+                        : '↓ Initial below'}
+                    </div>
+                  ))}
+              </div>
+            ))}
           </div>
         ))}
 
