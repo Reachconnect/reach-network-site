@@ -36,7 +36,7 @@ const DOCUMENT_TYPE_LABELS: Record<string, string> = {
 
 export default function DocumentRequestsTab() {
   const [requests, setRequests] = useState<DocRequest[]>([])
-  constequest, setUploadsByRequest] = useState<Record<string, Upload[]>>({})
+  const [uploadsByRequest, setUploadsByRequest] = useState<Record<string, Upload[]>>({})
   const [loading, setLoading] = useState(true)
 
   const [showSendForm, setShowSendForm] = useState(false)
