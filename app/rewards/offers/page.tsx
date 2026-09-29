@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useRewardsUser } from "@/lib/useRewardsUser";
 import RewardsHeader, { Loading } from "@/app/components/rewards/RewardsHeader";
@@ -317,7 +318,7 @@ function OfferDetail({ offer, onClose }: { offer: Offer; onClose: () => void }) 
         )}
 
         {offer.link_url && (
-          
+          <Link
             href={offer.link_url}
             target="_blank"
             rel="noopener noreferrer"
@@ -325,7 +326,7 @@ function OfferDetail({ offer, onClose }: { offer: Offer; onClose: () => void }) 
             className="mt-4 block rounded-xl bg-[#0F2438] py-3.5 text-center font-semibold text-white hover:bg-[#1a3552]"
           >
             Go to {offer.retailer}
-          </a>
+          </Link>
         )}
 
         {offer.terms && <p className="mt-5 text-xs leading-relaxed text-slate-500">{offer.terms}</p>}
