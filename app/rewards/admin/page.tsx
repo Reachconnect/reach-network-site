@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRewardsUser, rewardsApi } from "@/lib/useRewardsUser";
 import RewardsHeader, { Loading } from "@/app/components/rewards/RewardsHeader";
 import OffersAdmin from "@/app/components/rewards/OffersAdmin";
+import ImportAwinButton from "@/app/components/rewards/ImportAwinButton";
 
 type CompanyRow = {
   company_id: string;
@@ -21,6 +22,7 @@ type CompanyRow = {
 export default function RewardsAdminPage() {
   const { me, loading, signOut } = useRewardsUser("agency");
   const [tab, setTab] = useState<"companies" | "offers">("companies");
+  const [offersKey, setOffersKey] = useState(0);
 
   if (loading || !me) return <Loading />;
 
@@ -44,7 +46,14 @@ export default function RewardsAdminPage() {
           ))}
         </div>
 
-        {tab === "companies" ? <Companies /> : <OffersAdmin />}
+        {tab === "companies" ? (
+          <Companies />
+        ) : (
+          <>
+            <ImportAwinButton onDone={() => setOffersKey((k) => k + 1)} />
+            <OffersAdmin key={offersKey} />
+          </>
+        )}
       </main>
     </div>
   );

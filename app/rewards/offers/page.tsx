@@ -24,6 +24,17 @@ type Offer = {
   expires_at: string | null;
 };
 
+type Company = {
+  key: string;
+  name: string;
+  logo: string | null;
+  category: string;
+  location: string | null;
+  isLocal: boolean;
+  featured: boolean;
+  offers: Offer[];
+};
+
 const isLive = (o: Offer) => {
   const now = Date.now();
   return (
@@ -41,6 +52,46 @@ const endsText = (iso: string | null) => {
   return `Ends ${new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Europe/London" })}`;
 };
 
+const companyKey = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const hasCode = (o: Offer) => o.offer_type === "code" && !!o.discount_code;
+
+function groupByCompany(offers: Offer[]): Company[] {
+  const map = new Map<string, Company>();
+  for (const o of offers) {
+    const key = companyKey(o.retailer) || o.id;
+    let c = map.get(key);
+    if (!c) {
+      c = {
+        key,
+        name: o.retailer,
+        logo: null,
+        category: o.category,
+        location: o.location,
+        isLocal: o.source === "local",
+        featured: false,
+        offers: [],
+      };
+      map.set(key, c);
+    }
+    c.offers.push(o);
+    if (!c.logo && o.image_url) c.logo = o.image_url;
+    if (o.is_featured) c.featured = true;
+  }
+  // Codes first inside each company, then deals
+  for (const c of map.values()) c.offers.sort((a, b) => Number(hasCode(b)) - Number(hasCode(a)));
+  return [...map.values()].sort((a, b) => Number(b.featured) - Number(a.featured) || a.name.localeCompare(b.name));
+}
+
+function summary(c: Company) {
+  const codes = c.offers.filter(hasCode).length;
+  const deals = c.offers.length - codes;
+  const parts = [];
+  if (codes) parts.push(`${codes} ${codes === 1 ? "code" : "codes"}`);
+  if (deals) parts.push(`${deals} ${deals === 1 ? "deal" : "deals"}`);
+  return parts.join(" · ");
+}
+
 export default function OffersPage() {
   const { me, loading, signOut } = useRewardsUser("member");
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -48,7 +99,7 @@ export default function OffersPage() {
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
-  const [open, setOpen] = useState<Offer | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (!me) return;
@@ -64,6 +115,8 @@ export default function OffersPage() {
     })();
   }, [me]);
 
+  const companies = useMemo(() => groupByCompany(offers), [offers]);
+
   const categories = useMemo(
     () => ["All", ...Array.from(new Set(offers.map((o) => o.category))).sort()],
     [offers]
@@ -71,16 +124,17 @@ export default function OffersPage() {
 
   if (loading || !me) return <Loading />;
 
-  const featured = offers.filter((o) => o.is_featured);
   const q = search.trim().toLowerCase();
-  const filtered = offers.filter(
-    (o) =>
-      (category === "All" || o.category === category) &&
+  const filtered = companies.filter(
+    (c) =>
+      (category === "All" || c.offers.some((o) => o.category === category)) &&
       (!q ||
-        o.retailer.toLowerCase().includes(q) ||
-        o.title.toLowerCase().includes(q) ||
-        (o.location || "").toLowerCase().includes(q))
+        c.name.toLowerCase().includes(q) ||
+        (c.location || "").toLowerCase().includes(q) ||
+        c.offers.some((o) => o.title.toLowerCase().includes(q)))
   );
+  const featured = companies.filter((c) => c.featured);
+  const openCompany = companies.find((c) => c.key === openKey) || null;
   const firstName = me.name.split(" ")[0];
 
   return (
@@ -91,8 +145,9 @@ export default function OffersPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <h1 className="text-3xl font-bold">Hi {firstName}</h1>
           <p className="mt-1 text-white/75">
-            {offers.length} {offers.length === 1 ? "offer" : "offers"} available
-            {me.member?.companyName ? ` through ${me.member.companyName}` : ""}.
+            {offers.length} {offers.length === 1 ? "offer" : "offers"} from {companies.length}{" "}
+            {companies.length === 1 ? "company" : "companies"}
+            {me.member?.companyName ? `, through ${me.member.companyName}` : ""}.
           </p>
           <input
             type="search"
@@ -109,7 +164,7 @@ export default function OffersPage() {
 
         {loadingOffers ? (
           <p className="py-12 text-center text-sm text-slate-500">Loading offers…</p>
-        ) : offers.length === 0 ? (
+        ) : companies.length === 0 ? (
           <div className="rounded-xl bg-white py-16 text-center ring-1 ring-slate-200">
             <p className="font-semibold text-[#0F2438]">New offers are on their way</p>
             <p className="mt-1 text-sm text-slate-600">Check back soon.</p>
@@ -120,19 +175,17 @@ export default function OffersPage() {
               <section className="mb-10">
                 <h2 className="mb-4 text-lg font-bold text-[#0F2438]">Featured</h2>
                 <div className="grid gap-4 md:grid-cols-2">
-                  {featured.slice(0, 4).map((o) => (
+                  {featured.slice(0, 4).map((c) => (
                     <button
-                      key={o.id}
-                      onClick={() => setOpen(o)}
+                      key={c.key}
+                      onClick={() => setOpenKey(c.key)}
                       className="flex items-center gap-4 rounded-2xl bg-white p-5 text-left ring-2 ring-[#F7931E]/40 hover:ring-[#F7931E]"
                     >
-                      <Logo offer={o} size="lg" />
+                      <Logo name={c.name} logo={c.logo} size="lg" />
                       <div className="min-w-0">
-                        <p className="text-sm text-slate-500">{o.retailer}</p>
-                        <p className="text-lg font-bold leading-snug text-[#0F2438]">{o.title}</p>
-                        {endsText(o.expires_at) && (
-                          <p className="mt-1 text-xs font-medium text-[#b8660b]">{endsText(o.expires_at)}</p>
-                        )}
+                        <p className="text-lg font-bold text-[#0F2438]">{c.name}</p>
+                        <p className="truncate text-sm text-slate-600">{c.offers[0].title}</p>
+                        <p className="mt-1 text-xs font-semibold text-[#b8660b]">{summary(c)}</p>
                       </div>
                     </button>
                   ))}
@@ -141,48 +194,48 @@ export default function OffersPage() {
             )}
 
             <div className="mb-5 flex gap-2 overflow-x-auto pb-1">
-              {categories.map((c) => (
+              {categories.map((cat) => (
                 <button
-                  key={c}
-                  onClick={() => setCategory(c)}
+                  key={cat}
+                  onClick={() => setCategory(cat)}
                   className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
-                    category === c
+                    category === cat
                       ? "bg-[#0F2438] text-white"
                       : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
                   }`}
                 >
-                  {c}
+                  {cat}
                 </button>
               ))}
             </div>
 
             {filtered.length === 0 ? (
               <p className="py-12 text-center text-sm text-slate-600">
-                No offers match that. Try another search or category.
+                No companies match that. Try another search or category.
               </p>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map((o) => (
+                {filtered.map((c) => (
                   <button
-                    key={o.id}
-                    onClick={() => setOpen(o)}
+                    key={c.key}
+                    onClick={() => setOpenKey(c.key)}
                     className="flex flex-col rounded-2xl bg-white p-5 text-left ring-1 ring-slate-200 hover:ring-[#0F2438]/40"
                   >
-                    <div className="flex items-center gap-3">
-                      <Logo offer={o} />
+                    <div className="flex items-center gap-4">
+                      <Logo name={c.name} logo={c.logo} size="lg" />
                       <div className="min-w-0">
-                        <p className="truncate font-semibold text-[#0F2438]">{o.retailer}</p>
+                        <p className="truncate text-lg font-bold text-[#0F2438]">{c.name}</p>
                         <p className="text-xs text-slate-500">
-                          {o.source === "local" && o.location ? `Local · ${o.location}` : o.category}
+                          {c.isLocal && c.location ? `Local · ${c.location}` : c.category}
                         </p>
                       </div>
                     </div>
-                    <p className="mt-4 text-lg font-bold leading-snug text-[#0F2438]">{o.title}</p>
+                    <p className="mt-4 line-clamp-2 font-semibold leading-snug text-[#0F2438]">{c.offers[0].title}</p>
                     <div className="mt-auto flex items-center justify-between pt-4 text-xs">
-                      <span className="font-medium text-slate-500">{endsText(o.expires_at) ?? "Ongoing"}</span>
-                      <span className="font-semibold text-[#F7931E]">
-                        {o.offer_type === "code" ? "Get code" : o.offer_type === "in_store" ? "How to use" : "Go to offer"}
+                      <span className="rounded-full bg-[#FFF6EE] px-2.5 py-1 font-semibold text-[#b8660b]">
+                        {summary(c)}
                       </span>
+                      <span className="font-semibold text-[#F7931E]">View offers</span>
                     </div>
                   </button>
                 ))}
@@ -192,73 +245,71 @@ export default function OffersPage() {
         )}
       </main>
 
-      {open && <OfferDetail offer={open} onClose={() => setOpen(null)} />}
+      {openCompany && <CompanyProfile company={openCompany} onClose={() => setOpenKey(null)} />}
     </div>
   );
 }
 
-function Logo({ offer, size = "md" }: { offer: Offer; size?: "md" | "lg" }) {
-  const cls = size === "lg" ? "h-16 w-16 text-2xl" : "h-11 w-11 text-lg";
+function Logo({ name, logo, size = "md" }: { name: string; logo: string | null; size?: "md" | "lg" }) {
+  const box = size === "lg" ? "h-16 w-16" : "h-12 w-12";
+  if (logo) {
+    return (
+      <div
+        className={`${box} flex flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 ring-1 ring-slate-200`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logo} alt={`${name} logo`} className="h-full w-full object-contain" />
+      </div>
+    );
+  }
   return (
     <div
-      className={`${cls} flex flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#0F2438] font-bold text-white`}
+      className={`${box} flex flex-shrink-0 items-center justify-center rounded-xl bg-[#0F2438] text-xl font-bold text-white`}
     >
-      {offer.image_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={offer.image_url} alt="" className="h-full w-full object-cover" />
-      ) : (
-        offer.retailer.charAt(0).toUpperCase()
-      )}
+      {name.charAt(0).toUpperCase()}
     </div>
   );
 }
 
-function OfferDetail({ offer, onClose }: { offer: Offer; onClose: () => void }) {
-  const [copied, setCopied] = useState(false);
-  const [vote, setVote] = useState<boolean | null>(null);
-  const [clicked, setClicked] = useState(false);
+function CompanyProfile({ company, onClose }: { company: Company; onClose: () => void }) {
+  const [votes, setVotes] = useState<Record<string, boolean>>({});
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+
     supabase.auth.getUser().then(({ data: u }) => {
       if (!u.user) return;
+      setUserId(u.user.id);
       supabase
         .from("reward_feedback")
-        .select("worked")
-        .eq("offer_id", offer.id)
+        .select("offer_id, worked")
         .eq("user_id", u.user.id)
-        .maybeSingle()
-        .then(({ data }) => data && setVote(data.worked));
+        .in(
+          "offer_id",
+          company.offers.map((o) => o.id)
+        )
+        .then(({ data }) => {
+          const map: Record<string, boolean> = {};
+          (data ?? []).forEach((r: { offer_id: string; worked: boolean }) => (map[r.offer_id] = r.worked));
+          setVotes(map);
+        });
     });
-    return () => window.removeEventListener("keydown", onKey);
-  }, [offer.id, onClose]);
 
-  async function recordClick() {
-    if (clicked) return;
-    setClicked(true);
-    await supabase.from("reward_clicks").insert({ offer_id: offer.id });
-  }
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [company, onClose]);
 
-  async function copyCode() {
-    if (!offer.discount_code) return;
-    try {
-      await navigator.clipboard.writeText(offer.discount_code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      // Clipboard blocked; the code is still on screen to copy by hand
-    }
-    recordClick();
-  }
-
-  async function sendVote(worked: boolean) {
-    setVote(worked);
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) return;
+  async function vote(offerId: string, worked: boolean) {
+    setVotes((v) => ({ ...v, [offerId]: worked }));
+    if (!userId) return;
     await supabase
       .from("reward_feedback")
-      .upsert({ offer_id: offer.id, user_id: data.user.id, worked }, { onConflict: "offer_id,user_id" });
+      .upsert({ offer_id: offerId, user_id: userId, worked }, { onConflict: "offer_id,user_id" });
   }
 
   return (
@@ -269,95 +320,163 @@ function OfferDetail({ offer, onClose }: { offer: Offer; onClose: () => void }) 
       <div
         role="dialog"
         aria-modal="true"
+        aria-label={`${company.name} offers`}
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-6 sm:max-w-lg sm:rounded-2xl"
+        className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white sm:max-w-xl sm:rounded-2xl"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Logo offer={offer} />
-            <div>
-              <p className="font-semibold text-[#0F2438]">{offer.retailer}</p>
-              <p className="text-xs text-slate-500">
-                {offer.source === "local" && offer.location ? `Local · ${offer.location}` : offer.category}
-              </p>
-            </div>
+        <div className="sticky top-0 z-10 flex items-center gap-4 border-b border-slate-100 bg-white p-5">
+          <Logo name={company.name} logo={company.logo} size="lg" />
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-xl font-bold text-[#0F2438]">{company.name}</h2>
+            <p className="text-sm text-slate-500">
+              {company.isLocal && company.location ? `Local · ${company.location}` : company.category} ·{" "}
+              {summary(company)}
+            </p>
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="rounded-md p-1 text-2xl leading-none text-slate-400 hover:text-slate-700"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-2xl text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
             ×
           </button>
         </div>
 
-        <h2 className="mt-5 text-2xl font-bold leading-snug text-[#0F2438]">{offer.title}</h2>
-        {offer.description && <p className="mt-2 leading-relaxed text-slate-600">{offer.description}</p>}
-
-        {offer.offer_type === "code" && offer.discount_code && (
-          <div className="mt-6">
-            <p className="mb-2 text-sm font-medium text-slate-700">Your code</p>
-            <div className="flex items-stretch overflow-hidden rounded-xl border-2 border-dashed border-[#F7931E]">
-              <span className="flex-1 px-4 py-3 text-xl font-bold tracking-wider text-[#0F2438]">
-                {offer.discount_code}
-              </span>
-              <button onClick={copyCode} className="bg-[#F7931E] px-5 font-semibold text-white hover:bg-[#e2841a]">
-                {copied ? "Copied" : "Copy"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {offer.offer_type === "in_store" && (
-          <div className="mt-6 rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
-            Show this screen at the till to get the discount.
-            {offer.discount_code && (
-              <span className="mt-2 block text-lg font-bold tracking-wider text-[#0F2438]">{offer.discount_code}</span>
-            )}
-          </div>
-        )}
-
-        {offer.link_url && (
-          <Link
-            href={offer.link_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={recordClick}
-            className="mt-4 block rounded-xl bg-[#0F2438] py-3.5 text-center font-semibold text-white hover:bg-[#1a3552]"
-          >
-            Go to {offer.retailer}
-          </Link>
-        )}
-
-        {offer.terms && <p className="mt-5 text-xs leading-relaxed text-slate-500">{offer.terms}</p>}
-        {endsText(offer.expires_at) && (
-          <p className="mt-2 text-xs font-medium text-slate-500">{endsText(offer.expires_at)}</p>
-        )}
-
-        <div className="mt-6 border-t border-slate-100 pt-5">
-          <p className="text-sm font-medium text-slate-700">
-            {vote === null ? "Did this offer work for you?" : "Thanks, that helps other members."}
-          </p>
-          <div className="mt-3 flex gap-2">
-            <button
-              onClick={() => sendVote(true)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium ring-1 ${
-                vote === true ? "bg-green-600 text-white ring-green-600" : "text-slate-700 ring-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              Yes, it worked
-            </button>
-            <button
-              onClick={() => sendVote(false)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium ring-1 ${
-                vote === false ? "bg-red-600 text-white ring-red-600" : "text-slate-700 ring-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              No, it didn&apos;t
-            </button>
-          </div>
-        </div>
+        <ul className="divide-y divide-slate-100">
+          {company.offers.map((o) => (
+            <OfferRow
+              key={o.id}
+              offer={o}
+              companyName={company.name}
+              vote={votes[o.id]}
+              onVote={(worked) => vote(o.id, worked)}
+            />
+          ))}
+        </ul>
       </div>
     </div>
+  );
+}
+
+function OfferRow({
+  offer,
+  companyName,
+  vote,
+  onVote,
+}: {
+  offer: Offer;
+  companyName: string;
+  vote: boolean | undefined;
+  onVote: (worked: boolean) => void;
+}) {
+  const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [clicked, setClicked] = useState(false);
+
+  async function recordClick() {
+    if (clicked) return;
+    setClicked(true);
+    await supabase.from("reward_clicks").insert({ offer_id: offer.id });
+  }
+
+  function reveal() {
+    setRevealed(true);
+    recordClick();
+  }
+
+  async function copy() {
+    if (!offer.discount_code) return;
+    try {
+      await navigator.clipboard.writeText(offer.discount_code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Clipboard blocked; the code is on screen to copy by hand
+    }
+  }
+
+  const ends = endsText(offer.expires_at);
+  const isCode = hasCode(offer);
+  const isInStore = offer.offer_type === "in_store";
+  const tag = isCode ? "Code" : isInStore ? "In store" : "Deal";
+
+  return (
+    <li className="p-5">
+      <span
+        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+          isCode ? "bg-[#F7931E]/15 text-[#b8660b]" : "bg-slate-100 text-slate-600"
+        }`}
+      >
+        {tag}
+      </span>
+      <p className="mt-2 text-lg font-bold leading-snug text-[#0F2438]">{offer.title}</p>
+      {offer.description && <p className="mt-1 text-sm leading-relaxed text-slate-600">{offer.description}</p>}
+      {ends && <p className="mt-2 text-xs font-medium text-[#b8660b]">{ends}</p>}
+
+      {isCode && !revealed && (
+        <button
+          onClick={reveal}
+          className="mt-4 w-full rounded-xl bg-[#F7931E] py-3 font-semibold text-white hover:bg-[#e2841a]"
+        >
+          Reveal code
+        </button>
+      )}
+
+      {isCode && revealed && (
+        <div className="mt-4 flex items-stretch overflow-hidden rounded-xl border-2 border-dashed border-[#F7931E]">
+          <span className="flex-1 px-4 py-3 text-xl font-bold tracking-wider text-[#0F2438]">{offer.discount_code}</span>
+          <button onClick={copy} className="bg-[#F7931E] px-5 font-semibold text-white hover:bg-[#e2841a]">
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+      )}
+
+      {isInStore && (
+        <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
+          Show this screen at the till to get the discount.
+          {offer.discount_code && (
+            <span className="mt-2 block text-lg font-bold tracking-wider text-[#0F2438]">{offer.discount_code}</span>
+          )}
+        </div>
+      )}
+
+      {offer.link_url && (!isCode || revealed) && (
+        <Link
+          href={offer.link_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={recordClick}
+          className={`mt-3 block rounded-xl py-3 text-center font-semibold text-white ${
+            isCode || isInStore ? "bg-[#0F2438] hover:bg-[#1a3552]" : "bg-[#F7931E] hover:bg-[#e2841a]"
+          }`}
+        >
+          {isCode || isInStore ? `Go to ${companyName}` : "Get deal"}
+        </Link>
+      )}
+
+      {offer.terms && <p className="mt-3 text-xs leading-relaxed text-slate-500">{offer.terms}</p>}
+
+      {(revealed || !isCode) && (
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-slate-600">{vote === undefined ? "Did it work?" : "Thanks for letting us know."}</span>
+          <button
+            onClick={() => onVote(true)}
+            className={`rounded-lg px-3 py-1.5 font-medium ring-1 ${
+              vote === true ? "bg-green-600 text-white ring-green-600" : "text-slate-700 ring-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => onVote(false)}
+            className={`rounded-lg px-3 py-1.5 font-medium ring-1 ${
+              vote === false ? "bg-red-600 text-white ring-red-600" : "text-slate-700 ring-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            No
+          </button>
+        </div>
+      )}
+    </li>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Inter } from "next/font/google";
+import WebChat from "./components/WebChat";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -29,6 +30,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${manrope.variable} ${inter.variable} antialiased`}>
         {children}
+        <WebChat />
       </body>
     </html>
   );
