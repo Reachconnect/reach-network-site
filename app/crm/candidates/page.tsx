@@ -607,4 +607,13 @@ function AddCandidate({
             Save
           </button>
           <button
-            onClick={() => save(true)}
+            onClick={() => save(true)}            disabled={busy || reading}
+            className="rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50"
+          >
+            {busy ? "Saving…" : "Save and open"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
