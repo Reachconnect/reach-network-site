@@ -232,7 +232,6 @@ function Candidates() {
                           <span className="ml-auto">{timeAgo(c.last_contacted_at || c.created_at)}</span>
                         </div>
                       </Link>
-                      {/* For phones, where dragging doesn't work */}
                       <select
                         value={c.stage}
                         onChange={(e) => moveTo(c.id, e.target.value as StageKey)}
@@ -315,8 +314,39 @@ function Candidates() {
 }
 
 // =====================================================================
-// Add a candidate
+// Add a candidate (fills itself in from their CV)
 // =====================================================================
+
+type Form = {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string;
+  location: string;
+  postcode: string;
+  job_title: string;
+  current_employer: string;
+  salary_expectation: string;
+  notice_period: string;
+  job_type: string;
+  specialism_id: string;
+  source: string;
+  whatsapp_consent: boolean;
+  note: string;
+};
+
+const TEXT_FIELDS: (keyof Form)[] = [
+  "first_name",
+  "last_name",
+  "phone",
+  "email",
+  "location",
+  "postcode",
+  "job_title",
+  "current_employer",
+  "salary_expectation",
+  "notice_period",
+];
 
 function AddCandidate({
   specialisms,
@@ -329,7 +359,7 @@ function AddCandidate({
   onClose: () => void;
   onSaved: (id: string, open: boolean) => void;
 }) {
-  const [f, setF] = useState({
+  const [f, setF] = useState<Form>({
     first_name: "",
     last_name: "",
     phone: "",
@@ -347,18 +377,85 @@ function AddCandidate({
     note: "",
   });
   const [cv, setCv] = useState<File | null>(null);
+  const [reading, setReading] = useState(false);
+  const [readResult, setReadResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const [filled, setFilled] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setF((prev) => ({ ...prev, [k]: e.target.type === "checkbox" ? (e.target as HTMLInputElement).checked : e.target.value }));
+  const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const value = e.target.type === "checkbox" ? (e.target as HTMLInputElement).checked : e.target.value;
+    setF((prev) => ({ ...prev, [k]: value }));
+    setFilled((prev) => {
+      const next = new Set(prev);
+      next.delete(k);
+      return next;
+    });
+  };
+
+  async function readCv(file: File) {
+    setCv(file);
+    setReadResult(null);
+    setReading(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const body = new FormData();
+      body.append("file", file);
+      body.append("specialisms", JSON.stringify(specialisms.map((s) => s.name)));
+      const res = await fetch("/api/crm/parse-cv", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${data.session?.access_token ?? ""}` },
+        body,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "The CV couldn't be read.");
+      const got = (json.fields ?? {}) as Record<string, string>;
+
+      const newlyFilled = new Set<string>();
+      setF((prev) => {
+        const next = { ...prev };
+        // Only fill boxes that are still empty
+        for (const k of TEXT_FIELDS) {
+          if (!String(next[k] || "").trim() && got[k]) {
+            (next as Record<string, unknown>)[k] = k === "postcode" ? got[k].toUpperCase() : got[k];
+            newlyFilled.add(k);
+          }
+        }
+        if (!next.specialism_id && got.specialism) {
+          const match = specialisms.find((s) => s.name.toLowerCase() === got.specialism.toLowerCase());
+          if (match) {
+            next.specialism_id = match.id;
+            newlyFilled.add("specialism_id");
+          }
+        }
+        if (got.job_type && ["perm", "temp", "either"].includes(got.job_type)) {
+          next.job_type = got.job_type;
+          newlyFilled.add("job_type");
+        }
+        if (!next.note.trim() && got.summary) {
+          next.note = got.summary;
+          newlyFilled.add("note");
+        }
+        return next;
+      });
+      setFilled(newlyFilled);
+      setReadResult({
+        ok: true,
+        text: newlyFilled.size
+          ? `Filled in ${newlyFilled.size} ${newlyFilled.size === 1 ? "detail" : "details"} from the CV. Check them over and fill in anything missing.`
+          : "Read the CV, but couldn't find anything new to fill in.",
+      });
+    } catch (e) {
+      setReadResult({ ok: false, text: `${(e as Error).message} You can still fill the form in yourself.` });
+    }
+    setReading(false);
+  }
 
   async function save(open: boolean) {
     if (!f.first_name.trim()) return setError("Add at least a first name.");
     setBusy(true);
     setError(null);
 
-    // Check they're not already on file
     const digits = f.phone.replace(/\D/g, "").slice(-9);
     const checks: string[] = [];
     if (digits.length === 9) checks.push(`phone.ilike.%${digits}%`);
@@ -410,6 +507,8 @@ function AddCandidate({
   }
 
   const input = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#F7931E] focus:outline-none focus:ring-2 focus:ring-[#F7931E]/30";
+  // Light orange background on anything the CV filled in
+  const cls = (k: keyof Form, extra = "") => `${input} ${filled.has(k) ? "bg-orange-50" : ""} ${extra}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={onClose}>
@@ -427,18 +526,51 @@ function AddCandidate({
           </button>
         </div>
 
+        {/* CV first */}
+        <label
+          className={`mt-5 flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed p-4 transition ${
+            reading ? "border-[#F7931E] bg-orange-50" : "border-slate-300 hover:border-[#F7931E] hover:bg-orange-50/50"
+          }`}
+        >
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[#F7931E]/15 text-[#F7931E]">
+            {reading ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#F7931E]/30 border-t-[#F7931E]" /> : <Icon name="file" className="h-5 w-5" />}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-[#1F3447]">
+              {reading ? "Reading the CV…" : cv ? cv.name : "Start with their CV"}
+            </span>
+            <span className="block text-xs text-slate-500">
+              {cv && !reading ? "Click to choose a different CV" : "PDF or Word. We'll fill in everything we can find."}
+            </span>
+          </span>
+          <input
+            type="file"
+            accept=".pdf,.docx,.doc"
+            className="hidden"
+            disabled={reading}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) readCv(file);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {readResult && (
+          <p className={`mt-2 rounded-lg px-3 py-2 text-sm ${readResult.ok ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-800"}`}>{readResult.text}</p>
+        )}
+
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <input className={input} placeholder="First name" value={f.first_name} onChange={set("first_name")} autoFocus />
-          <input className={input} placeholder="Last name" value={f.last_name} onChange={set("last_name")} />
-          <input className={input} placeholder="Mobile" inputMode="tel" value={f.phone} onChange={set("phone")} />
-          <input className={input} placeholder="Email" type="email" value={f.email} onChange={set("email")} />
-          <input className={input} placeholder="Town or city" value={f.location} onChange={set("location")} />
-          <input className={input} placeholder="Postcode" value={f.postcode} onChange={set("postcode")} />
-          <input className={input} placeholder="Job title, e.g. Fire Alarm Engineer" value={f.job_title} onChange={set("job_title")} />
-          <input className={input} placeholder="Current employer" value={f.current_employer} onChange={set("current_employer")} />
-          <input className={input} placeholder="Salary expectation, e.g. £38k" value={f.salary_expectation} onChange={set("salary_expectation")} />
-          <input className={input} placeholder="Notice period, e.g. 1 month" value={f.notice_period} onChange={set("notice_period")} />
-          <select className={input} value={f.specialism_id} onChange={set("specialism_id")} aria-label="Specialism">
+          <input className={cls("first_name")} placeholder="First name" value={f.first_name} onChange={set("first_name")} />
+          <input className={cls("last_name")} placeholder="Last name" value={f.last_name} onChange={set("last_name")} />
+          <input className={cls("phone")} placeholder="Mobile" inputMode="tel" value={f.phone} onChange={set("phone")} />
+          <input className={cls("email")} placeholder="Email" type="email" value={f.email} onChange={set("email")} />
+          <input className={cls("location")} placeholder="Town or city" value={f.location} onChange={set("location")} />
+          <input className={cls("postcode")} placeholder="Postcode" value={f.postcode} onChange={set("postcode")} />
+          <input className={cls("job_title")} placeholder="Job title, e.g. Fire Alarm Engineer" value={f.job_title} onChange={set("job_title")} />
+          <input className={cls("current_employer")} placeholder="Current employer" value={f.current_employer} onChange={set("current_employer")} />
+          <input className={cls("salary_expectation")} placeholder="Salary expectation, e.g. £38k" value={f.salary_expectation} onChange={set("salary_expectation")} />
+          <input className={cls("notice_period")} placeholder="Notice period, e.g. 1 month" value={f.notice_period} onChange={set("notice_period")} />
+          <select className={cls("specialism_id")} value={f.specialism_id} onChange={set("specialism_id")} aria-label="Specialism">
             <option value="">Choose specialism…</option>
             {specialisms.map((s) => (
               <option key={s.id} value={s.id}>
@@ -446,19 +578,15 @@ function AddCandidate({
               </option>
             ))}
           </select>
-          <select className={input} value={f.job_type} onChange={set("job_type")} aria-label="Looking for">
+          <select className={cls("job_type")} value={f.job_type} onChange={set("job_type")} aria-label="Looking for">
             {JOB_TYPES.map(([v, label]) => (
               <option key={v} value={v}>
                 {label}
               </option>
             ))}
           </select>
-          <input className={`${input} sm:col-span-2`} placeholder="Where they came from, e.g. LinkedIn, referral, Indeed" value={f.source} onChange={set("source")} />
-          <textarea className={`${input} sm:col-span-2`} rows={3} placeholder="First note (optional)" value={f.note} onChange={set("note")} />
-          <label className="sm:col-span-2">
-            <span className="mb-1 block text-xs font-semibold text-slate-500">CV (optional)</span>
-            <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setCv(e.target.files?.[0] ?? null)} className="text-sm" />
-          </label>
+          <input className={cls("source", "sm:col-span-2")} placeholder="Where they came from, e.g. LinkedIn, referral, Indeed" value={f.source} onChange={set("source")} />
+          <textarea className={cls("note", "sm:col-span-2")} rows={4} placeholder="First note (optional)" value={f.note} onChange={set("note")} />
           <label className="flex items-start gap-2 text-sm text-slate-700 sm:col-span-2">
             <input type="checkbox" checked={f.whatsapp_consent} onChange={set("whatsapp_consent")} className="mt-0.5 h-4 w-4 accent-[#F7931E]" />
             They&apos;re happy to hear about jobs on WhatsApp
@@ -471,14 +599,12 @@ function AddCandidate({
           <button onClick={onClose} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">
             Cancel
           </button>
-          <button onClick={() => save(false)} disabled={busy} className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-[#1F3447] hover:bg-slate-50 disabled:opacity-50">
+          <button
+            onClick={() => save(false)}
+            disabled={busy || reading}
+            className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-[#1F3447] hover:bg-slate-50 disabled:opacity-50"
+          >
             Save
           </button>
-          <button onClick={() => save(true)} disabled={busy} className="rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50">
-            {busy ? "Saving…" : "Save and open"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+          <button
+            onClick={() => save(true)}
