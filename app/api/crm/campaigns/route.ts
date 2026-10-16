@@ -12,6 +12,7 @@ export async function POST(request: Request) {
   const templateName = String(body.templateName || "");
   const language = String(body.language || "en_GB");
   const templateBody = String(body.templateBody || "");
+  const jobId = body.jobId ? String(body.jobId) : null;
   const variables = Array.isArray(body.variables) ? body.variables.map((v: unknown) => String(v ?? "")) : [];
   const candidateIds: string[] = Array.isArray(body.candidateIds) ? body.candidateIds.map(String) : [];
 
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
 
   const { data: campaign, error: cErr } = await admin()
     .from("crm_campaigns")
-    .insert({ name, template_name: templateName, template_language: language, template_body: templateBody, variables, total: recipients.length })
+    .insert({ name, template_name: templateName, template_language: language, template_body: templateBody, variables, total: recipients.length, job_id: jobId })
     .select("id")
     .single();
   if (cErr || !campaign) return NextResponse.json({ error: cErr?.message || "Couldn't create the campaign." }, { status: 500 });

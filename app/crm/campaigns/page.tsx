@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Icon, JOB_TYPES, STAGES, candidateName, ukDate, type Specialism } from "../crm";
+import { salaryText } from "../jobs/jobsShared";
 
 type Person = {
   id: string;
@@ -19,7 +21,28 @@ type Person = {
   whatsapp_consent: boolean;
 };
 type Template = { name: string; language: string; category: string; body: string; variables: number };
-type Campaign = { id: string; name: string; template_name: string; status: string; total: number; sent_count: number; failed_count: number; replied_count: number; created_at: string };
+type Campaign = {
+  id: string;
+  name: string;
+  template_name: string;
+  status: string;
+  total: number;
+  sent_count: number;
+  failed_count: number;
+  replied_count: number;
+  created_at: string;
+  crm_jobs: { title: string } | null;
+};
+type JobOption = {
+  id: string;
+  title: string;
+  location: string | null;
+  salary_from: number | null;
+  salary_to: number | null;
+  salary_notes: string | null;
+  specialism_id: string | null;
+  crm_companies: { name: string } | null;
+};
 
 async function api(path: string, init?: RequestInit) {
   const { data } = await supabase.auth.getSession();
@@ -33,12 +56,21 @@ async function api(path: string, init?: RequestInit) {
 }
 
 export default function CampaignsPage() {
-  const [mode, setMode] = useState<"list" | "new">("list");
+  return (
+    <Suspense fallback={<p className="p-8 text-slate-500">Loading…</p>}>
+      <Campaigns />
+    </Suspense>
+  );
+}
+
+function Campaigns() {
+  const jobParam = useSearchParams().get("job");
+  const [mode, setMode] = useState<"list" | "new">(jobParam ? "new" : "list");
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadCampaigns = useCallback(async () => {
-    const { data } = await supabase.from("crm_campaigns").select("*").order("created_at", { ascending: false }).limit(100);
+    const { data } = await supabase.from("crm_campaigns").select("*, crm_jobs(title)").order("created_at", { ascending: false }).limit(100);
     setCampaigns((data ?? []) as Campaign[]);
     setLoading(false);
   }, []);
@@ -67,6 +99,7 @@ export default function CampaignsPage() {
 
       {mode === "new" ? (
         <Builder
+          initialJobId={jobParam}
           onDone={() => {
             setMode("list");
             loadCampaigns();
@@ -102,7 +135,10 @@ export default function CampaignsPage() {
                       <Link href={`/crm/campaigns/view?id=${c.id}`} className="font-semibold text-[#1F3447] hover:underline">
                         {c.name}
                       </Link>
-                      <p className="text-xs text-slate-500">{c.template_name}</p>
+                      <p className="text-xs text-slate-500">
+                        {c.template_name}
+                        {c.crm_jobs ? ` · for ${c.crm_jobs.title}` : ""}
+                      </p>
                     </td>
                     <td className="p-3 text-slate-600">{ukDate(c.created_at)}</td>
                     <td className="p-3 text-slate-700">{c.total}</td>
@@ -133,12 +169,14 @@ export default function CampaignsPage() {
 // New campaign
 // =====================================================================
 
-function Builder({ onDone }: { onDone: () => void }) {
+function Builder({ initialJobId, onDone }: { initialJobId: string | null; onDone: () => void }) {
   const [specialisms, setSpecialisms] = useState<Specialism[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
+  const [jobs, setJobs] = useState<JobOption[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templateError, setTemplateError] = useState<string | null>(null);
 
+  const [jobId, setJobId] = useState(initialJobId || "");
   const [specialismId, setSpecialismId] = useState("");
   const [stage, setStage] = useState("active");
   const [jobType, setJobType] = useState("all");
@@ -155,20 +193,55 @@ function Builder({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     (async () => {
-      const [s, p] = await Promise.all([
+      const [s, p, j] = await Promise.all([
         supabase.from("crm_specialisms").select("*").order("sort_order").order("name"),
         supabase
           .from("crm_candidates")
           .select("id, first_name, last_name, phone, location, postcode, job_title, stage, job_type, specialism_id, whatsapp_consent")
           .limit(10000),
+        supabase
+          .from("crm_jobs")
+          .select("id, title, location, salary_from, salary_to, salary_notes, specialism_id, crm_companies(name)")
+          .eq("status", "open")
+          .order("created_at", { ascending: false }),
       ]);
       setSpecialisms((s.data ?? []) as Specialism[]);
       setPeople((p.data ?? []) as Person[]);
+      const jobList = (j.data ?? []) as unknown as JobOption[];
+      setJobs(jobList);
+      // Coming from a job's Campaign button
+      const start = jobList.find((x) => x.id === initialJobId);
+      if (start) applyJob(start, "");
     })();
     api("/api/crm/templates")
       .then((j) => setTemplates(j.templates as Template[]))
       .catch((e) => setTemplateError((e as Error).message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const job = jobs.find((j) => j.id === jobId) || null;
+
+  function jobGaps(j: JobOption | null, count: number) {
+    return Array.from({ length: count }, (_, i) => {
+      if (i === 0) return "{first_name}";
+      if (!j) return "";
+      if (i === 1) return j.title;
+      if (i === 2) return [j.location, salaryText(j)].filter(Boolean).join(", ");
+      return "";
+    });
+  }
+
+  function applyJob(j: JobOption | null, tName: string) {
+    if (j?.specialism_id) setSpecialismId(j.specialism_id);
+    if (j) setName(`${j.title}${j.crm_companies ? ` at ${j.crm_companies.name}` : ""}`);
+    const t = templates.find((x) => x.name === tName);
+    if (t) setVars(jobGaps(j, t.variables));
+  }
+
+  function pickJob(id: string) {
+    setJobId(id);
+    applyJob(jobs.find((x) => x.id === id) || null, templateName);
+  }
 
   const matches = useMemo(() => {
     const loc = location.trim().toLowerCase();
@@ -191,10 +264,10 @@ function Builder({ onDone }: { onDone: () => void }) {
   function pickTemplate(n: string) {
     setTemplateName(n);
     const t = templates.find((x) => x.name === n);
-    setVars(Array.from({ length: t?.variables ?? 0 }, (_, i) => (i === 0 ? "{first_name}" : "")));
+    setVars(jobGaps(job, t?.variables ?? 0));
     if (!name) {
       const sp = specialisms.find((s) => s.id === specialismId);
-      setName(`${sp ? `${sp.name}: ` : ""}${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`);
+      setName(job ? `${job.title}${job.crm_companies ? ` at ${job.crm_companies.name}` : ""}` : `${sp ? `${sp.name}: ` : ""}${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`);
     }
   }
 
@@ -224,6 +297,7 @@ function Builder({ onDone }: { onDone: () => void }) {
           language: template.language,
           templateBody: template.body,
           variables: vars,
+          jobId: jobId || null,
           candidateIds: chosen.map((p) => p.id),
         }),
       });
@@ -259,6 +333,7 @@ function Builder({ onDone }: { onDone: () => void }) {
         <p className="mt-3 text-sm text-slate-600">
           {progress.sent} sent{progress.failed ? `, ${progress.failed} failed` : ""} of {progress.total}
         </p>
+        {job && finished && <p className="mt-2 text-sm text-slate-500">Anyone who replies with interest is added to the {job.title} shortlist automatically.</p>}
         {progress.limit && (
           <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
             WhatsApp&apos;s daily limit has been reached. Open the campaign tomorrow and click Continue sending.
@@ -277,6 +352,22 @@ function Builder({ onDone }: { onDone: () => void }) {
   return (
     <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_24rem]">
       <div className="space-y-6">
+        {/* 0. Job */}
+        <section className="rounded-2xl bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-[#1F3447]">Which job is this for?</h2>
+          <select className={`mt-3 ${input}`} value={jobId} onChange={(e) => pickJob(e.target.value)} aria-label="Job">
+            <option value="">Not for a specific job</option>
+            {jobs.map((j) => (
+              <option key={j.id} value={j.id}>
+                {j.title}
+                {j.crm_companies ? ` at ${j.crm_companies.name}` : ""}
+                {j.location ? `, ${j.location}` : ""}
+              </option>
+            ))}
+          </select>
+          {job && <p className="mt-2 text-xs text-slate-500">Anyone who replies with interest is added to this job&apos;s shortlist automatically.</p>}
+        </section>
+
         {/* 1. Who */}
         <section className="rounded-2xl bg-white p-5 shadow-sm">
           <h2 className="text-lg font-bold text-[#1F3447]">1. Who to send to</h2>

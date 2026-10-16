@@ -4,12 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { Icon, candidateName, slugify, stageOf, timeAgo, ukDateTime, type Candidate, type Reminder, type Specialism } from "./crm";
+import { TERMS_FIELDS, isoDate, money, potentialFee, type Job } from "./jobs/jobsShared";
+
+type Money = { monthFees: number; monthCount: number; jobsValue: number; openJobs: number; toInvoice: number; awaiting: number; overdue: number };
 
 export default function CrmHome() {
   const [specialisms, setSpecialisms] = useState<Specialism[]>([]);
   const [stats, setStats] = useState<Record<string, { total: number; active: number; placed: number }>>({});
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [recent, setRecent] = useState<Candidate[]>([]);
+  const [cash, setCash] = useState<Money | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,19 +26,25 @@ export default function CrmHome() {
   const load = useCallback(async () => {
     const weekAhead = new Date();
     weekAhead.setDate(weekAhead.getDate() + 7);
-    const [s, c, r, rec] = await Promise.all([
+    const today = isoDate(new Date());
+    const monthStart = today.slice(0, 8) + "01";
+
+    const [s, c, r, rec, p, j] = await Promise.all([
       supabase.from("crm_specialisms").select("*").order("sort_order").order("name"),
       supabase.from("crm_candidates").select("specialism_id, stage").limit(20000),
       supabase
         .from("crm_reminders")
-        .select("id, title, due_at, done, candidate_id, company_id, crm_candidates(first_name, last_name)")
+        .select("id, title, due_at, done, candidate_id, company_id, crm_candidates(first_name, last_name), crm_companies(name)")
         .eq("done", false)
         .lte("due_at", weekAhead.toISOString())
         .order("due_at"),
       supabase.from("crm_candidates").select("*").order("created_at", { ascending: false }).limit(6),
+      supabase.from("crm_placements").select("status, start_date, fee_amount, total_amount, invoice_due_date").neq("status", "fell_through").limit(5000),
+      supabase.from("crm_jobs").select(`*, crm_companies(${TERMS_FIELDS})`).eq("status", "open").limit(1000),
     ]);
     if (s.error) setError(s.error.message);
     setSpecialisms((s.data ?? []) as Specialism[]);
+
     const next: Record<string, { total: number; active: number; placed: number }> = {};
     for (const row of (c.data ?? []) as { specialism_id: string | null; stage: string }[]) {
       const key = row.specialism_id || "none";
@@ -46,6 +56,19 @@ export default function CrmHome() {
     setStats(next);
     setReminders((r.data ?? []) as unknown as Reminder[]);
     setRecent((rec.data ?? []) as Candidate[]);
+
+    const placements = (p.data ?? []) as { status: string; start_date: string; fee_amount: number; total_amount: number; invoice_due_date: string }[];
+    const thisMonth = placements.filter((x) => x.start_date >= monthStart);
+    const openJobs = (j.data ?? []) as Job[];
+    setCash({
+      monthFees: thisMonth.reduce((sum, x) => sum + Number(x.fee_amount), 0),
+      monthCount: thisMonth.length,
+      jobsValue: openJobs.reduce((sum, x) => sum + potentialFee(x), 0),
+      openJobs: openJobs.length,
+      toInvoice: placements.filter((x) => x.status === "placed").reduce((sum, x) => sum + Number(x.total_amount), 0),
+      awaiting: placements.filter((x) => x.status === "invoiced").reduce((sum, x) => sum + Number(x.total_amount), 0),
+      overdue: placements.filter((x) => x.status === "invoiced" && x.invoice_due_date < today).reduce((sum, x) => sum + Number(x.total_amount), 0),
+    });
     setLoading(false);
   }, []);
 
@@ -72,9 +95,7 @@ export default function CrmHome() {
   async function addSpecialism() {
     const name = newName.trim();
     if (!name) return;
-    const { error: err } = await supabase
-      .from("crm_specialisms")
-      .insert({ name, slug: slugify(name), emoji: newEmoji.trim() || "💼", sort_order: specialisms.length + 1 });
+    const { error: err } = await supabase.from("crm_specialisms").insert({ name, slug: slugify(name), emoji: newEmoji.trim() || "💼", sort_order: specialisms.length + 1 });
     if (err) return setError(err.message);
     setNewName("");
     load();
@@ -114,12 +135,49 @@ export default function CrmHome() {
           <h1 className="text-3xl font-bold text-[#1F3447]">{greeting}</h1>
           <p className="mt-1 text-slate-500">{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</p>
         </div>
-        <Link href="/crm/candidates?new=1" className="flex items-center gap-2 rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95">
-          <Icon name="plus" className="h-4 w-4" /> Add candidate
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/crm/jobs" className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-[#1F3447] hover:bg-slate-50">
+            <Icon name="board" className="h-4 w-4" /> Jobs
+          </Link>
+          <Link href="/crm/candidates?new=1" className="flex items-center gap-2 rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95">
+            <Icon name="plus" className="h-4 w-4" /> Add candidate
+          </Link>
+        </div>
       </div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+
+      {/* Money */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MoneyTile
+          href="/crm/placements"
+          label="Fees this month"
+          value={cash ? money(cash.monthFees) : "…"}
+          note={cash ? `${cash.monthCount} ${cash.monthCount === 1 ? "placement" : "placements"} starting this month` : ""}
+          tone="green"
+        />
+        <MoneyTile
+          href="/crm/jobs"
+          label="Open jobs value"
+          value={cash ? money(cash.jobsValue) : "…"}
+          note={cash ? `Across ${cash.openJobs} open ${cash.openJobs === 1 ? "job" : "jobs"}, if filled` : ""}
+          tone="navy"
+        />
+        <MoneyTile
+          href="/crm/placements"
+          label="To invoice"
+          value={cash ? money(cash.toInvoice) : "…"}
+          note={cash?.toInvoice ? "Placements not invoiced yet" : "Nothing waiting"}
+          tone={cash?.toInvoice ? "amber" : "navy"}
+        />
+        <MoneyTile
+          href="/crm/placements"
+          label="Awaiting payment"
+          value={cash ? money(cash.awaiting) : "…"}
+          note={cash?.overdue ? `${money(cash.overdue)} overdue` : "Nothing overdue"}
+          tone={cash?.overdue ? "red" : "navy"}
+        />
+      </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_24rem]">
         <div className="space-y-6">
@@ -168,12 +226,7 @@ export default function CrmHome() {
 
             {managing && (
               <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-                <input
-                  value={newEmoji}
-                  onChange={(e) => setNewEmoji(e.target.value)}
-                  className="w-14 rounded-lg border border-slate-300 px-2 py-2 text-center"
-                  aria-label="Emoji"
-                />
+                <input value={newEmoji} onChange={(e) => setNewEmoji(e.target.value)} className="w-14 rounded-lg border border-slate-300 px-2 py-2 text-center" aria-label="Emoji" />
                 <input
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
@@ -232,20 +285,9 @@ export default function CrmHome() {
           </h2>
 
           <form onSubmit={addReminder} className="mt-3 space-y-2 rounded-xl bg-slate-50 p-3">
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Call Sarah at Antalis about the engineer role"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Call Sarah at Antalis about the engineer role" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
             <div className="flex gap-2">
-              <input
-                type="datetime-local"
-                value={dueAt}
-                onChange={(e) => setDueAt(e.target.value)}
-                className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                aria-label="When"
-              />
+              <input type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" aria-label="When" />
               <button type="submit" className="rounded-lg bg-[#F7931E] px-4 py-2 text-sm font-semibold text-white">
                 Add
               </button>
@@ -269,17 +311,19 @@ export default function CrmHome() {
   );
 }
 
-function ReminderGroup({
-  title,
-  tone,
-  items,
-  onDone,
-}: {
-  title: string;
-  tone: "red" | "orange" | "slate";
-  items: Reminder[];
-  onDone: (id: string) => void;
-}) {
+function MoneyTile({ href, label, value, note, tone }: { href: string; label: string; value: string; note: string; tone: "green" | "navy" | "amber" | "red" }) {
+  const cls = tone === "green" ? "text-green-700" : tone === "amber" ? "text-amber-600" : tone === "red" ? "text-red-600" : "text-[#1F3447]";
+  const noteCls = tone === "red" ? "font-semibold text-red-600" : "text-slate-500";
+  return (
+    <Link href={href} className="rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md">
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className={`mt-1 text-3xl font-bold ${cls}`}>{value}</p>
+      <p className={`mt-1 text-xs ${noteCls}`}>{note}</p>
+    </Link>
+  );
+}
+
+function ReminderGroup({ title, tone, items, onDone }: { title: string; tone: "red" | "orange" | "slate"; items: Reminder[]; onDone: (id: string) => void }) {
   if (!items.length) return null;
   const colour = tone === "red" ? "text-red-600" : tone === "orange" ? "text-[#F7931E]" : "text-slate-500";
   return (
@@ -307,6 +351,14 @@ function ReminderGroup({
                     {" · "}
                     <Link href={`/crm/candidates/view?id=${r.candidate_id}`} className="font-semibold text-[#F7931E] hover:underline">
                       {candidateName(r.crm_candidates)}
+                    </Link>
+                  </>
+                )}
+                {r.company_id && r.crm_companies && (
+                  <>
+                    {" · "}
+                    <Link href={`/crm/sales/view?id=${r.company_id}`} className="font-semibold text-[#F7931E] hover:underline">
+                      {r.crm_companies.name}
                     </Link>
                   </>
                 )}

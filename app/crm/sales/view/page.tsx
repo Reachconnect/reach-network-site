@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import TermsCard from "../../TermsCard";
+import CompanyJobs from "../CompanyJobs";
 import { COMPANY_STAGES, Icon, NOTE_KINDS, timeAgo, ukDate, ukDateTime, waLink, type Company, type CompanyStageKey, type Contact, type Specialism } from "../../crm";
 
 type Note = { id: string; kind: string; body: string; created_at: string };
@@ -153,7 +154,7 @@ function CompanyView() {
   }
 
   async function deleteCompany() {
-    if (!c || !window.confirm(`Delete ${c.name}? Their contacts, notes and reminders will be deleted too. If they're in ReachConnect, they stay there.`)) return;
+    if (!c || !window.confirm(`Delete ${c.name}? Their contacts, notes, jobs and reminders will be deleted too. If they're in ReachConnect, they stay there.`)) return;
     const { error: e } = await supabase.from("crm_companies").delete().eq("id", c.id);
     if (e) return setError(e.message);
     router.push("/crm/sales");
@@ -315,6 +316,9 @@ function CompanyView() {
             )}
           </section>
 
+          {/* Jobs */}
+          <CompanyJobs companyId={c.id} />
+
           {/* Notes and activity */}
           <section className="rounded-2xl bg-white p-5 shadow-sm">
             <h2 className="text-lg font-bold text-[#1F3447]">Notes and activity</h2>
@@ -365,7 +369,6 @@ function CompanyView() {
         </div>
 
         <div className="space-y-6">
-          {/* Agreed terms */}
           <TermsCard companyId={c.id} companyName={c.name} />
 
           {/* Reminders */}

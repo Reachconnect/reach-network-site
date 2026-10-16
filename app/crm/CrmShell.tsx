@@ -24,7 +24,22 @@ const THEMES = {
 };
 
 type Theme = keyof typeof THEMES;
-type Counts = { bySpecialism: Record<string, number>; due: number; openDeals: number; unsigned: number; waiting: number };
+type Counts = {
+  bySpecialism: Record<string, number>;
+  due: number;
+  openDeals: number;
+  unsigned: number;
+  waiting: number;
+  openJobs: number;
+  money: number;
+};
+
+const EMPTY: Counts = { bySpecialism: {}, due: 0, openDeals: 0, unsigned: 0, waiting: 0, openJobs: 0, money: 0 };
+
+function todayIso() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 export default function CrmShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "";
@@ -32,7 +47,7 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("navy");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [specialisms, setSpecialisms] = useState<Specialism[]>([]);
-  const [counts, setCounts] = useState<Counts>({ bySpecialism: {}, due: 0, openDeals: 0, unsigned: 0, waiting: 0 });
+  const [counts, setCounts] = useState<Counts>(EMPTY);
 
   useEffect(() => {
     try {
@@ -50,13 +65,17 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
   const load = useCallback(async () => {
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
-    const [s, c, r, d, u, w] = await Promise.all([
+    const today = todayIso();
+    const [s, c, r, d, u, w, j, toInvoice, overdue] = await Promise.all([
       supabase.from("crm_specialisms").select("*").order("sort_order").order("name"),
       supabase.from("crm_candidates").select("specialism_id").limit(20000),
       supabase.from("crm_reminders").select("id", { count: "exact", head: true }).eq("done", false).lte("due_at", endOfToday.toISOString()),
       supabase.from("crm_companies").select("id", { count: "exact", head: true }).not("stage", "in", "(client,lost)"),
       supabase.from("crm_companies").select("id", { count: "exact", head: true }).eq("stage", "client").is("terms_signed_at", null),
       supabase.from("crm_campaigns").select("id", { count: "exact", head: true }).eq("status", "sending"),
+      supabase.from("crm_jobs").select("id", { count: "exact", head: true }).eq("status", "open"),
+      supabase.from("crm_placements").select("id", { count: "exact", head: true }).eq("status", "placed").lte("invoice_date", today),
+      supabase.from("crm_placements").select("id", { count: "exact", head: true }).eq("status", "invoiced").lt("invoice_due_date", today),
     ]);
     setSpecialisms((s.data ?? []) as Specialism[]);
     const by: Record<string, number> = {};
@@ -64,7 +83,15 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
       const key = row.specialism_id || "none";
       by[key] = (by[key] || 0) + 1;
     }
-    setCounts({ bySpecialism: by, due: r.count ?? 0, openDeals: d.count ?? 0, unsigned: u.count ?? 0, waiting: w.count ?? 0 });
+    setCounts({
+      bySpecialism: by,
+      due: r.count ?? 0,
+      openDeals: d.count ?? 0,
+      unsigned: u.count ?? 0,
+      waiting: w.count ?? 0,
+      openJobs: j.count ?? 0,
+      money: (toInvoice.count ?? 0) + (overdue.count ?? 0),
+    });
   }, []);
 
   useEffect(() => {
@@ -119,10 +146,14 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
           <MenuLinks theme={theme} pathname={pathname} specialisms={specialisms} counts={counts} />
         </Suspense>
 
+        <p className={`mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider ${t.label}`}>Perm recruitment</p>
+        {navLink("/crm/jobs", "Jobs", "board", counts.openJobs)}
+        {navLink("/crm/placements", "Placements", "check", counts.money, true, "Invoices to send or overdue")}
+        {navLink("/crm/campaigns", "Campaigns", "send", counts.waiting, true, "Campaigns waiting to finish sending")}
+
         <p className={`mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider ${t.label}`}>Sales</p>
         {navLink("/crm/sales", "Sales pipeline", "funnel", counts.openDeals)}
         {navLink("/crm/clients", "Clients and terms", "handshake", counts.unsigned, true, "Clients without signed terms")}
-        {navLink("/crm/campaigns", "Campaigns", "send", counts.waiting, true, "Campaigns waiting to finish sending")}
 
         <p className={`mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider ${t.label}`}>Company</p>
         {navLink("/crm/links", "Links and documents", "globe")}
