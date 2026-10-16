@@ -26,7 +26,7 @@ const THEMES = {
 };
 
 type Theme = keyof typeof THEMES;
-type Counts = { bySpecialism: Record<string, number>; due: number; openDeals: number };
+type Counts = { bySpecialism: Record<string, number>; due: number; openDeals: number; unsigned: number };
 
 export default function CrmShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "";
@@ -34,7 +34,7 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("navy");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [specialisms, setSpecialisms] = useState<Specialism[]>([]);
-  const [counts, setCounts] = useState<Counts>({ bySpecialism: {}, due: 0, openDeals: 0 });
+  const [counts, setCounts] = useState<Counts>({ bySpecialism: {}, due: 0, openDeals: 0, unsigned: 0 });
 
   useEffect(() => {
     try {
@@ -52,11 +52,12 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
   const load = useCallback(async () => {
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
-    const [s, c, r, d] = await Promise.all([
+    const [s, c, r, d, u] = await Promise.all([
       supabase.from("crm_specialisms").select("*").order("sort_order").order("name"),
       supabase.from("crm_candidates").select("specialism_id").limit(20000),
       supabase.from("crm_reminders").select("id", { count: "exact", head: true }).eq("done", false).lte("due_at", endOfToday.toISOString()),
       supabase.from("crm_companies").select("id", { count: "exact", head: true }).not("stage", "in", "(client,lost)"),
+      supabase.from("crm_companies").select("id", { count: "exact", head: true }).eq("stage", "client").is("terms_signed_at", null),
     ]);
     setSpecialisms((s.data ?? []) as Specialism[]);
     const by: Record<string, number> = {};
@@ -64,7 +65,7 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
       const key = row.specialism_id || "none";
       by[key] = (by[key] || 0) + 1;
     }
-    setCounts({ bySpecialism: by, due: r.count ?? 0, openDeals: d.count ?? 0 });
+    setCounts({ bySpecialism: by, due: r.count ?? 0, openDeals: d.count ?? 0, unsigned: u.count ?? 0 });
   }, []);
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
 
   const t = THEMES[theme];
   const onSales = pathname.startsWith("/crm/sales");
+  const onClients = pathname.startsWith("/crm/clients");
 
   const menu = (
     <div className={`flex h-full flex-col ${t.aside}`}>
@@ -106,28 +108,27 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
         </Suspense>
 
         <p className={`mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider ${t.label}`}>Sales</p>
-        <Link
-          href="/crm/sales"
-          className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${onSales ? t.active : t.item}`}
-        >
+        <Link href="/crm/sales" className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${onSales ? t.active : t.item}`}>
           <Icon name="funnel" />
           <span className="flex-1">Sales pipeline</span>
           {!!counts.openDeals && (
-            <span className={`min-w-[1.4rem] rounded-full px-1.5 py-0.5 text-center text-[11px] font-bold ${onSales ? "bg-white/25" : "opacity-60"}`}>
-              {counts.openDeals}
+            <span className={`min-w-[1.4rem] rounded-full px-1.5 py-0.5 text-center text-[11px] font-bold ${onSales ? "bg-white/25" : "opacity-60"}`}>{counts.openDeals}</span>
+          )}
+        </Link>
+        <Link href="/crm/clients" className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${onClients ? t.active : t.item}`}>
+          <Icon name="handshake" />
+          <span className="flex-1">Clients and terms</span>
+          {!!counts.unsigned && (
+            <span className="min-w-[1.4rem] rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[11px] font-bold text-white" title="Clients without signed terms">
+              {counts.unsigned}
             </span>
           )}
         </Link>
-        {[
-          ["Clients and terms", "handshake"],
-          ["Campaigns", "send"],
-        ].map(([label, icon]) => (
-          <div key={label} className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${t.soon}`}>
-            <Icon name={icon} />
-            <span className="flex-1">{label}</span>
-            <span className="rounded-full border border-current px-1.5 text-[10px] font-semibold">Soon</span>
-          </div>
-        ))}
+        <div className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${t.soon}`}>
+          <Icon name="send" />
+          <span className="flex-1">Campaigns</span>
+          <span className="rounded-full border border-current px-1.5 text-[10px] font-semibold">Soon</span>
+        </div>
       </nav>
 
       <div className={`flex items-center gap-1 border-t px-3 py-3 ${t.divider}`}>

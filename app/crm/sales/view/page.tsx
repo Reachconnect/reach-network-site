@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import TermsCard from "../../TermsCard";
 import { COMPANY_STAGES, Icon, NOTE_KINDS, timeAgo, ukDate, ukDateTime, waLink, type Company, type CompanyStageKey, type Contact, type Specialism } from "../../crm";
 
 type Note = { id: string; kind: string; body: string; created_at: string };
@@ -179,8 +180,8 @@ function CompanyView() {
 
   return (
     <div className="mx-auto max-w-6xl p-5 lg:p-8">
-      <Link href="/crm/sales" className="text-sm font-medium text-slate-500 hover:text-[#1F3447]">
-        ‹ Sales pipeline
+      <Link href={c.stage === "client" ? "/crm/clients" : "/crm/sales"} className="text-sm font-medium text-slate-500 hover:text-[#1F3447]">
+        ‹ {c.stage === "client" ? "Clients and terms" : "Sales pipeline"}
       </Link>
 
       <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
@@ -364,6 +365,9 @@ function CompanyView() {
         </div>
 
         <div className="space-y-6">
+          {/* Agreed terms */}
+          <TermsCard companyId={c.id} companyName={c.name} />
+
           {/* Reminders */}
           <section className="rounded-2xl bg-white p-5 shadow-sm">
             <h2 className="flex items-center gap-2 text-lg font-bold text-[#1F3447]">
