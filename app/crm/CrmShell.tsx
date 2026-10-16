@@ -90,7 +90,7 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
 
   const t = THEMES[theme];
 
-  const navLink = (href: string, label: string, icon: string, badge: number, red: boolean, title?: string) => {
+  const navLink = (href: string, label: string, icon: string, badge = 0, red = false, title?: string) => {
     const active = pathname.startsWith(href);
     return (
       <Link href={href} title={title} className={`mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${active ? t.active : t.item}`}>
@@ -120,9 +120,12 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
         </Suspense>
 
         <p className={`mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider ${t.label}`}>Sales</p>
-        {navLink("/crm/sales", "Sales pipeline", "funnel", counts.openDeals, false)}
+        {navLink("/crm/sales", "Sales pipeline", "funnel", counts.openDeals)}
         {navLink("/crm/clients", "Clients and terms", "handshake", counts.unsigned, true, "Clients without signed terms")}
         {navLink("/crm/campaigns", "Campaigns", "send", counts.waiting, true, "Campaigns waiting to finish sending")}
+
+        <p className={`mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider ${t.label}`}>Company</p>
+        {navLink("/crm/links", "Links and documents", "globe")}
       </nav>
 
       <div className={`flex items-center gap-1 border-t px-3 py-3 ${t.divider}`}>
