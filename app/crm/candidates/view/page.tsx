@@ -4,18 +4,11 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Icon, JOB_TYPES, STAGES, candidateName, timeAgo, ukDate, ukDateTime, type Candidate, type Specialism, type StageKey } from "../../crm";
+import BrandedCv from "../BrandedCv";
+import { Icon, JOB_TYPES, NOTE_KINDS, STAGES, candidateName, timeAgo, ukDate, ukDateTime, waLink, type Candidate, type Specialism, type StageKey } from "../../crm";
 
 type Note = { id: string; kind: string; body: string; created_at: string };
 type Rem = { id: string; title: string; due_at: string; done: boolean };
-
-const NOTE_KINDS: [string, string][] = [
-  ["note", "Note"],
-  ["call", "Call"],
-  ["email", "Email"],
-  ["meeting", "Meeting"],
-  ["whatsapp", "WhatsApp"],
-];
 
 export default function CandidateViewPage() {
   return (
@@ -23,13 +16,6 @@ export default function CandidateViewPage() {
       <CandidateView />
     </Suspense>
   );
-}
-
-function waLink(phone: string | null) {
-  const d = String(phone || "").replace(/\D/g, "");
-  if (!d) return null;
-  const intl = d.startsWith("0") ? `44${d.slice(1)}` : d;
-  return `https://wa.me/${intl}`;
 }
 
 function CandidateView() {
@@ -73,7 +59,7 @@ function CandidateView() {
     load();
   }, [load]);
 
-  async function update(patch: Partial<Candidate>) {
+  async function update(patch: Partial<Candidate> & Record<string, unknown>) {
     if (!c) return;
     setC({ ...c, ...patch });
     const { error: e } = await supabase.from("crm_candidates").update(patch).eq("id", c.id);
@@ -134,7 +120,8 @@ function CandidateView() {
       return setError(`CV didn't upload: ${e.message}`);
     }
     if (c.cv_path) await supabase.storage.from("crm-cvs").remove([c.cv_path]);
-    await update({ cv_path: path, cv_filename: file.name });
+    // A new CV means the branded version needs reading again
+    await update({ cv_path: path, cv_filename: file.name, cv_data: null });
     setUploading(false);
   }
 
@@ -330,11 +317,7 @@ function CandidateView() {
               ))}
               <label className="block">
                 <span className="text-xs font-semibold text-slate-500">Specialism</span>
-                <select
-                  value={c.specialism_id ?? ""}
-                  onChange={(e) => update({ specialism_id: e.target.value || null })}
-                  className={`mt-1 ${input}`}
-                >
+                <select value={c.specialism_id ?? ""} onChange={(e) => update({ specialism_id: e.target.value || null })} className={`mt-1 ${input}`}>
                   <option value="">None</option>
                   {specialisms.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -425,6 +408,8 @@ function CandidateView() {
               {uploading ? "Uploading…" : c.cv_path ? "Replace CV" : "Upload CV"}
               <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCv(e.target.files[0])} />
             </label>
+
+            <BrandedCv key={c.cv_path ?? "none"} candidateId={c.id} hasCv={!!c.cv_path} />
           </section>
 
           <button onClick={deleteCandidate} className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50">
