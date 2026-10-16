@@ -28,6 +28,37 @@ export type Candidate = {
   updated_at: string;
 };
 
+export type Company = {
+  id: string;
+  name: string;
+  website: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  postcode: string | null;
+  specialism_id: string | null;
+  stage: CompanyStageKey;
+  source: string | null;
+  estimated_value: string | null;
+  lost_reason: string | null;
+  reachconnect_client_id: string | null;
+  last_contacted_at: string | null;
+  won_at: string | null;
+  created_at: string;
+  updated_at: string;
+  crm_contacts?: Contact[];
+};
+
+export type Contact = {
+  id: string;
+  company_id: string;
+  name: string;
+  job_title: string | null;
+  phone: string | null;
+  email: string | null;
+  is_primary: boolean;
+};
+
 export type Reminder = {
   id: string;
   title: string;
@@ -36,9 +67,11 @@ export type Reminder = {
   candidate_id: string | null;
   company_id: string | null;
   crm_candidates?: { first_name: string; last_name: string | null } | null;
+  crm_companies?: { name: string } | null;
 };
 
 export type StageKey = "new" | "screened" | "sent" | "interview" | "offer" | "placed" | "not_suitable";
+export type CompanyStageKey = "lead" | "contacted" | "meeting" | "terms_sent" | "client" | "lost";
 
 export const STAGES: { key: StageKey; label: string; colour: string }[] = [
   { key: "new", label: "New", colour: "#64748B" },
@@ -50,18 +83,44 @@ export const STAGES: { key: StageKey; label: string; colour: string }[] = [
   { key: "not_suitable", label: "Not suitable", colour: "#94A3B8" },
 ];
 
+export const COMPANY_STAGES: { key: CompanyStageKey; label: string; colour: string }[] = [
+  { key: "lead", label: "Lead", colour: "#64748B" },
+  { key: "contacted", label: "Contacted", colour: "#2563EB" },
+  { key: "meeting", label: "Meeting booked", colour: "#7C3AED" },
+  { key: "terms_sent", label: "Terms sent", colour: "#F7931E" },
+  { key: "client", label: "Client", colour: "#16A34A" },
+  { key: "lost", label: "Lost", colour: "#94A3B8" },
+];
+
 export const JOB_TYPES: [Candidate["job_type"], string][] = [
   ["perm", "Permanent"],
   ["temp", "Temporary"],
   ["either", "Perm or temp"],
 ];
 
+export const NOTE_KINDS: [string, string][] = [
+  ["note", "Note"],
+  ["call", "Call"],
+  ["email", "Email"],
+  ["meeting", "Meeting"],
+  ["whatsapp", "WhatsApp"],
+];
+
 export function stageOf(key: string) {
   return STAGES.find((s) => s.key === key) ?? STAGES[0];
 }
 
+export function companyStageOf(key: string) {
+  return COMPANY_STAGES.find((s) => s.key === key) ?? COMPANY_STAGES[0];
+}
+
 export function candidateName(c: { first_name: string; last_name: string | null }) {
   return [c.first_name, c.last_name].filter(Boolean).join(" ");
+}
+
+export function primaryContact(company: Company) {
+  const list = company.crm_contacts ?? [];
+  return list.find((c) => c.is_primary) ?? list[0] ?? null;
 }
 
 export function slugify(text: string) {
@@ -70,6 +129,12 @@ export function slugify(text: string) {
     .replace(/&/g, " ")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+export function waLink(phone: string | null) {
+  const d = String(phone || "").replace(/\D/g, "");
+  if (!d) return null;
+  return `https://wa.me/${d.startsWith("0") ? `44${d.slice(1)}` : d}`;
 }
 
 export function ukDateTime(iso: string) {
@@ -121,6 +186,18 @@ const PATHS: Record<string, React.ReactNode> = {
       <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.9-3.9a3 3 0 0 0-4.2 0l-.9.9a1 1 0 1 1-3-3l2.8-2.8a5 5 0 0 1 6.4-.5l.6.4a2 2 0 0 0 1.2.4H21v8h-2M3 4h3l2.5 2.5M3 4v8h2l4 4" />
     </>
   ),
+  building: (
+    <>
+      <rect x="4" y="2" width="16" height="20" rx="2" />
+      <path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M8 10h.01M16 10h.01M12 10h.01M8 14h.01M16 14h.01M12 14h.01" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </>
+  ),
   send: (
     <>
       <path d="m22 2-7 20-4-9-9-4Z" />
@@ -129,6 +206,7 @@ const PATHS: Record<string, React.ReactNode> = {
   ),
   plus: <path d="M12 5v14M5 12h14" />,
   check: <path d="M20 6 9 17l-5-5" />,
+  star: <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />,
   sun: (
     <>
       <circle cx="12" cy="12" r="4" />
