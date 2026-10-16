@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Icon, candidateName, type Candidate, type Specialism } from "../../crm";
+import FindMatches from "../FindMatches";
 import {
   CANDIDATE_STAGE_FOR,
   JOB_STATUSES,
@@ -145,9 +146,17 @@ function JobView() {
               </option>
             ))}
           </select>
+          <FindMatches jobId={job.id} jobTitle={job.title} companyName={job.crm_companies?.name ?? "the client"} hasSpecialism={!!job.specialism_id} onAdded={load} />
           <button onClick={() => setAdding(true)} className="flex items-center gap-2 rounded-lg bg-[#F7931E] px-4 py-2 text-sm font-semibold text-white hover:brightness-95">
             <Icon name="plus" className="h-4 w-4" /> Add to shortlist
           </button>
+          <Link
+            href={`/crm/campaigns?job=${job.id}`}
+            title="Send a WhatsApp campaign for this job"
+            className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-[#1F3447] hover:bg-slate-50"
+          >
+            <Icon name="send" className="h-4 w-4" /> Campaign
+          </Link>
           <button onClick={deleteJob} title="Delete job" aria-label="Delete job" className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50">
             <Icon name="trash" className="h-4 w-4" />
           </button>
@@ -167,9 +176,7 @@ function JobView() {
       {entries.length === 0 ? (
         <div className="mt-3 rounded-2xl bg-white p-10 text-center shadow-sm">
           <p className="font-semibold text-[#1F3447]">No one on the shortlist yet</p>
-          <button onClick={() => setAdding(true)} className="mt-2 text-sm font-semibold text-[#F7931E] hover:underline">
-            Add candidates from the CRM
-          </button>
+          <p className="mt-1 text-sm text-slate-500">Use Find matches to see your best candidates, or add people yourself.</p>
         </div>
       ) : (
         <div className="mt-3 flex min-h-0 flex-1 gap-3 overflow-x-auto pb-3">
