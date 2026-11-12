@@ -129,6 +129,12 @@ function Candidates() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link
+            href={slug ? `/crm/candidates/map?s=${slug}` : "/crm/candidates/map"}
+            className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-[#1F3447] hover:bg-slate-50"
+          >
+            <Icon name="globe" className="h-4 w-4" /> View map
+          </Link>
           <button
             onClick={() => setBulk(true)}
             className="flex items-center gap-2 rounded-lg border border-[#F7931E] bg-white px-4 py-2.5 text-sm font-semibold text-[#F7931E] hover:bg-orange-50"
