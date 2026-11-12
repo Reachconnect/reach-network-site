@@ -39,7 +39,26 @@ type Cand = {
   longitude: number | null;
 };
 
-// The AI fills in a fixed form (a "tool"), so its answer is always valid data
+// Reads JSON out of plain text as safely as possible (the backup route)
+function readJson(text: string) {
+  const cleaned = text.replace(/```json|```/g, "");
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  const chunk = cleaned.slice(start, end + 1);
+  try {
+    return JSON.parse(chunk);
+  } catch {
+    // Common slip: stray line breaks or trailing commas
+    try {
+      return JSON.parse(chunk.replace(/,\s*([}\]])/g, "$1").replace(/[\u0000-\u001f]+/g, " "));
+    } catch {
+      return null;
+    }
+  }
+}
+
+// Offers the AI a fixed form (a "tool") to fill in; falls back to reading plain JSON
 async function askForm<T>(system: string, user: string, form: { name: string; description: string; schema: object }, maxTokens: number): Promise<T> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("AI search isn't set up yet.");
@@ -53,9 +72,9 @@ async function askForm<T>(system: string, user: string, form: { name: string; de
         body: JSON.stringify({
           model: MODEL,
           max_tokens: maxTokens,
-          system,
+          system: `${system}\n\nAlways give your answer by calling the ${form.name} tool. Don't write anything else.`,
           tools: [{ name: form.name, description: form.description, input_schema: form.schema }],
-          tool_choice: { type: "tool", name: form.name },
+          tool_choice: { type: "auto" },
           messages: [{ role: "user", content: user }],
         }),
       });
@@ -64,13 +83,16 @@ async function askForm<T>(system: string, user: string, form: { name: string; de
         const reason = data?.error?.message || `status ${res.status}`;
         console.error("AI search failed:", JSON.stringify(data));
         lastError = `The AI turned the request down: ${reason}`;
-        // Only worth trying again if the service was busy
         if (res.status !== 429 && res.status < 500) break;
         continue;
       }
-      const block = ((data?.content ?? []) as { type: string; input?: unknown }[]).find((b) => b.type === "tool_use");
-      if (block?.input) return block.input as T;
-      lastError = "The AI's answer was incomplete. Try again.";
+      const blocks = (data?.content ?? []) as { type: string; input?: unknown; text?: string }[];
+      const tool = blocks.find((b) => b.type === "tool_use");
+      if (tool?.input) return tool.input as T;
+      // Backup: it answered in text instead
+      const fromText = readJson(blocks.filter((b) => b.type === "text").map((b) => b.text || "").join("\n"));
+      if (fromText) return fromText as T;
+      lastError = "The AI's answer couldn't be read. Try again.";
     } catch {
       lastError = "Lost connection to the AI. Try again.";
     }
@@ -108,7 +130,6 @@ function miles(a: { lat: number; lng: number }, b: { lat: number; lng: number })
 const FIELDS =
   "id, first_name, last_name, phone, email, job_title, current_employer, location, postcode, salary_expectation, notice_period, job_type, rating, specialism_id, whatsapp_consent, latitude, longitude";
 
-// Kept deliberately simple: plain strings and numbers only
 const BRIEF_FORM = {
   name: "search_criteria",
   description: "The search criteria worked out from the recruiter's notes.",
