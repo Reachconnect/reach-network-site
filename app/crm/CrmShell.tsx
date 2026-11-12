@@ -147,6 +147,7 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
         </Suspense>
 
         <p className={`mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider ${t.label}`}>Perm recruitment</p>
+        {navLink("/crm/search", "AI search", "search")}
         {navLink("/crm/jobs", "Jobs", "board", counts.openJobs)}
         {navLink("/crm/placements", "Placements", "check", counts.money, true, "Invoices to send or overdue")}
         {navLink("/crm/campaigns", "Campaigns", "send", counts.waiting, true, "Campaigns waiting to finish sending")}
