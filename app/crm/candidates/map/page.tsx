@@ -24,6 +24,13 @@ type Row = {
   geo_label: string | null;
 };
 
+type Group = {
+  lat: number;
+  lng: number;
+  labels: Map<string, number>;
+  people: Area["people"];
+};
+
 export default function CandidateMapPage() {
   return (
     <Suspense fallback={<p className="p-8 text-slate-500">Loading…</p>}>
@@ -97,17 +104,19 @@ function CandidateMap() {
   }, [geocode, load]);
 
   const shown = useMemo(() => rows.filter((r) => stage === "all" || r.stage === stage), [rows, stage]);
-  const placed = shown.filter((r) => r.latitude !== null && r.longitude !== null);
+  const placed = useMemo(() => shown.filter((r) => r.latitude !== null && r.longitude !== null), [shown]);
   const unknown = shown.length - placed.length;
 
   // Group into areas roughly 5 miles across
-  const areas = useMemo(() => {
-    const groups = new Map<string, { lat: number; lng: number; labels: Map<string, number>; people: Area["people"] }>();
+  const areas = useMemo<Area[]>(() => {
+    const groups = new Map<string, Group>();
     for (const r of placed) {
-      const key = `${Math.round((r.latitude as number) * 12)}:${Math.round((r.longitude as number) * 8)}`;
-      const g = groups.get(key) ?? { lat: 0, lng: 0, labels: new Map(), people: [] };
-      g.lat += r.latitude as number;
-      g.lng += r.longitude as number;
+      const lat = r.latitude as number;
+      const lng = r.longitude as number;
+      const key = `${Math.round(lat * 12)}:${Math.round(lng * 8)}`;
+      const g: Group = groups.get(key) ?? { lat: 0, lng: 0, labels: new Map<string, number>(), people: [] };
+      g.lat += lat;
+      g.lng += lng;
       if (r.geo_label) g.labels.set(r.geo_label, (g.labels.get(r.geo_label) ?? 0) + 1);
       g.people.push({ id: r.id, name: candidateName(r), job_title: r.job_title, stage: r.stage });
       groups.set(key, g);
