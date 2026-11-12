@@ -61,8 +61,11 @@ async function askForm<T>(system: string, user: string, form: { name: string; de
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        console.error("AI search failed:", data);
-        lastError = "The AI didn't respond just now. Try again in a moment.";
+        const reason = data?.error?.message || `status ${res.status}`;
+        console.error("AI search failed:", JSON.stringify(data));
+        lastError = `The AI turned the request down: ${reason}`;
+        // Only worth trying again if the service was busy
+        if (res.status !== 429 && res.status < 500) break;
         continue;
       }
       const block = ((data?.content ?? []) as { type: string; input?: unknown }[]).find((b) => b.type === "tool_use");
@@ -105,6 +108,7 @@ function miles(a: { lat: number; lng: number }, b: { lat: number; lng: number })
 const FIELDS =
   "id, first_name, last_name, phone, email, job_title, current_employer, location, postcode, salary_expectation, notice_period, job_type, rating, specialism_id, whatsapp_consent, latitude, longitude";
 
+// Kept deliberately simple: plain strings and numbers only
 const BRIEF_FORM = {
   name: "search_criteria",
   description: "The search criteria worked out from the recruiter's notes.",
@@ -113,12 +117,12 @@ const BRIEF_FORM = {
     properties: {
       role: { type: "string", description: "Short job title, e.g. Tipper Driver" },
       keywords: { type: "array", items: { type: "string" }, description: "4 to 10 lowercase words or phrases likely in matching job titles" },
-      location: { type: "string", description: "Town, city or postcode, or empty" },
-      radius_miles: { type: "number", description: "Distance mentioned, 20 if a location without a distance, 0 if no location" },
-      min_years: { type: ["number", "null"], description: "Minimum years of experience, or null" },
+      location: { type: "string", description: "Town, city or postcode, or an empty string" },
+      radius_miles: { type: "number", description: "Distance mentioned, 20 if a location is given without one, 0 if no location" },
+      min_years: { type: "number", description: "Minimum years of experience, or 0 if not mentioned" },
       must_haves: { type: "array", items: { type: "string" } },
-      job_type: { type: "string", enum: ["perm", "temp", ""] },
-      specialism: { type: "string" },
+      job_type: { type: "string", description: "perm, temp, or an empty string" },
+      specialism: { type: "string", description: "Best matching specialism from the list, or an empty string" },
     },
     required: ["role", "keywords", "location", "radius_miles", "min_years", "must_haves", "job_type", "specialism"],
   },
@@ -163,19 +167,20 @@ export async function POST(request: Request) {
     // 1. Understand the request
     const brief = await askForm<Brief>(
       `You turn a recruiter's notes from a client call into search criteria for a UK candidate database.
-- role: a short job title, e.g. "Tipper Driver".
+- role: a short job title, e.g. Tipper Driver.
 - keywords: 4 to 10 lowercase words or short phrases likely to appear in matching candidates' job titles, including common UK alternatives (for a tipper driver: tipper, hgv, class 2, class 1, lgv, driver). Letters, numbers and spaces only.
-- location: the town, city or postcode mentioned, or empty.
+- location: the town, city or postcode mentioned, or an empty string.
 - radius_miles: the distance mentioned, or 20 if a location is given without one, or 0 if no location.
-- min_years: minimum years of experience if mentioned, otherwise null.
+- min_years: minimum years of experience if mentioned, otherwise 0.
 - must_haves: licences, tickets, skills or conditions the client insists on.
-- job_type: perm, temp, or empty if not mentioned.
-- specialism: the best match from this list, written exactly, or empty: ${specialisms.map((s) => s.name).join(", ")}.`,
+- job_type: perm, temp, or an empty string if not mentioned.
+- specialism: the best match from this list, written exactly, or an empty string: ${specialisms.map((s) => s.name).join(", ")}.`,
       query,
       BRIEF_FORM,
       800
     );
 
+    if (!brief.min_years) brief.min_years = null;
     if (body.radius) brief.radius_miles = Math.max(1, Math.min(200, Number(body.radius)));
     const keywords = (Array.isArray(brief.keywords) ? brief.keywords : [])
       .map((k) => String(k).toLowerCase().replace(/[^a-z0-9 ]/g, "").trim())
@@ -243,7 +248,7 @@ export async function POST(request: Request) {
 Weigh: matching role and experience; must-haves (licences, tickets, conditions); years of experience (work it out from the CV summary where you can); distance; perm or temp preference; salary; the recruiter's rating as a tie-breaker.
 - Return up to 25 candidates scoring 40 or more, best first. Fewer, or none, is fine.
 - reason: under 20 words, British English, specific (years, licence, distance). Don't use quotation marks.
-- concern: under 12 words if something's missing or unclear (e.g. Years of experience not stated), otherwise empty.
+- concern: under 12 words if something's missing or unclear (e.g. Years of experience not stated), otherwise an empty string.
 - Use only the information given. Never invent experience.`,
       `Client's request: ${query}\n\nCandidates (${profiles.length}):\n${JSON.stringify(profiles)}`,
       RANK_FORM,
