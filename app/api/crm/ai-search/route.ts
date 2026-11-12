@@ -39,25 +39,40 @@ type Cand = {
   longitude: number | null;
 };
 
-async function claude(system: string, user: string, maxTokens: number) {
+// The AI fills in a fixed form (a "tool"), so its answer is always valid data
+async function askForm<T>(system: string, user: string, form: { name: string; description: string; schema: object }, maxTokens: number): Promise<T> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("AI search isn't set up yet.");
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
-  });
-  const data = await res.json().catch(() => null);
-  if (!res.ok) {
-    console.error("AI search failed:", data);
-    throw new Error("The AI didn't respond just now. Try again in a moment.");
+
+  let lastError = "The AI didn't respond just now. Try again in a moment.";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: maxTokens,
+          system,
+          tools: [{ name: form.name, description: form.description, input_schema: form.schema }],
+          tool_choice: { type: "tool", name: form.name },
+          messages: [{ role: "user", content: user }],
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        console.error("AI search failed:", data);
+        lastError = "The AI didn't respond just now. Try again in a moment.";
+        continue;
+      }
+      const block = ((data?.content ?? []) as { type: string; input?: unknown }[]).find((b) => b.type === "tool_use");
+      if (block?.input) return block.input as T;
+      lastError = "The AI's answer was incomplete. Try again.";
+    } catch {
+      lastError = "Lost connection to the AI. Try again.";
+    }
   }
-  const text = ((data?.content ?? []) as { type: string; text?: string }[])
-    .filter((b) => b.type === "text")
-    .map((b) => b.text || "")
-    .join("\n")
-    .replace(/```json|```/g, "");
-  return JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+  throw new Error(lastError);
 }
 
 async function locate(place: string) {
@@ -90,6 +105,49 @@ function miles(a: { lat: number; lng: number }, b: { lat: number; lng: number })
 const FIELDS =
   "id, first_name, last_name, phone, email, job_title, current_employer, location, postcode, salary_expectation, notice_period, job_type, rating, specialism_id, whatsapp_consent, latitude, longitude";
 
+const BRIEF_FORM = {
+  name: "search_criteria",
+  description: "The search criteria worked out from the recruiter's notes.",
+  schema: {
+    type: "object",
+    properties: {
+      role: { type: "string", description: "Short job title, e.g. Tipper Driver" },
+      keywords: { type: "array", items: { type: "string" }, description: "4 to 10 lowercase words or phrases likely in matching job titles" },
+      location: { type: "string", description: "Town, city or postcode, or empty" },
+      radius_miles: { type: "number", description: "Distance mentioned, 20 if a location without a distance, 0 if no location" },
+      min_years: { type: ["number", "null"], description: "Minimum years of experience, or null" },
+      must_haves: { type: "array", items: { type: "string" } },
+      job_type: { type: "string", enum: ["perm", "temp", ""] },
+      specialism: { type: "string" },
+    },
+    required: ["role", "keywords", "location", "radius_miles", "min_years", "must_haves", "job_type", "specialism"],
+  },
+};
+
+const RANK_FORM = {
+  name: "ranked_candidates",
+  description: "The best-matching candidates, best first.",
+  schema: {
+    type: "object",
+    properties: {
+      matches: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            score: { type: "number" },
+            reason: { type: "string" },
+            concern: { type: "string" },
+          },
+          required: ["id", "score", "reason", "concern"],
+        },
+      },
+    },
+    required: ["matches"],
+  },
+};
+
 export async function POST(request: Request) {
   if (!(await requireAgency(request))) return NextResponse.json({ error: "Please log in again." }, { status: 401 });
 
@@ -103,21 +161,20 @@ export async function POST(request: Request) {
     const specialisms = (specs ?? []) as { id: string; name: string }[];
 
     // 1. Understand the request
-    const brief = (await claude(
+    const brief = await askForm<Brief>(
       `You turn a recruiter's notes from a client call into search criteria for a UK candidate database.
-Reply with JSON only:
-{"role": "", "keywords": [], "location": "", "radius_miles": 0, "min_years": null, "must_haves": [], "job_type": "", "specialism": ""}
 - role: a short job title, e.g. "Tipper Driver".
-- keywords: 4 to 10 lowercase words or short phrases likely to appear in matching candidates' job titles, including common UK alternatives (for a tipper driver: "tipper", "hgv", "class 2", "class 1", "lgv", "driver"). Letters, numbers and spaces only.
-- location: the town, city or postcode mentioned, or "".
+- keywords: 4 to 10 lowercase words or short phrases likely to appear in matching candidates' job titles, including common UK alternatives (for a tipper driver: tipper, hgv, class 2, class 1, lgv, driver). Letters, numbers and spaces only.
+- location: the town, city or postcode mentioned, or empty.
 - radius_miles: the distance mentioned, or 20 if a location is given without one, or 0 if no location.
 - min_years: minimum years of experience if mentioned, otherwise null.
-- must_haves: licences, tickets, skills or conditions the client insists on (e.g. "Class 2 licence", "CPC", "days only").
-- job_type: "perm", "temp" or "" if not mentioned.
-- specialism: the best match from this list, written exactly, or "": ${specialisms.map((s) => s.name).join(", ")}.`,
+- must_haves: licences, tickets, skills or conditions the client insists on.
+- job_type: perm, temp, or empty if not mentioned.
+- specialism: the best match from this list, written exactly, or empty: ${specialisms.map((s) => s.name).join(", ")}.`,
       query,
-      600
-    )) as Brief;
+      BRIEF_FORM,
+      800
+    );
 
     if (body.radius) brief.radius_miles = Math.max(1, Math.min(200, Number(body.radius)));
     const keywords = (Array.isArray(brief.keywords) ? brief.keywords : [])
@@ -130,7 +187,7 @@ Reply with JSON only:
     // 2. Find possible candidates
     const ors = keywords.map((k) => `job_title.ilike.%${k}%`);
     if (spec) ors.push(`specialism_id.eq.${spec.id}`);
-    let q = db.from("crm_candidates").select(FIELDS).not("stage", "in", "(placed,not_suitable)").limit(4000);
+    let q = db.from("crm_candidates").select(FIELDS).not("stage", "in", "(placed,not_suitable)").limit(5000);
     if (ors.length) q = q.or(ors.join(","));
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
@@ -146,7 +203,7 @@ Reply with JSON only:
       pool = pool.filter((p) => (p.distance !== null ? p.distance <= radius : !!place && (p.c.location || "").toLowerCase().includes(place)));
     }
     pool.sort((a, b) => b.hits - a.hits || (a.distance ?? 999) - (b.distance ?? 999));
-    pool = pool.slice(0, 150);
+    pool = pool.slice(0, 120);
     if (!pool.length) return NextResponse.json({ brief: { ...brief, radius_miles: radius }, matches: [], considered: 0 });
 
     // 3. Extra detail from their CVs
@@ -155,10 +212,12 @@ Reply with JSON only:
       db.from("crm_candidates").select("id, cv_data").in("id", ids),
       db.from("crm_notes").select("candidate_id, body").in("candidate_id", ids).eq("kind", "note").order("created_at", { ascending: true }).limit(ids.length * 3),
     ]);
-    const cvById = new Map(((cvs ?? []) as { id: string; cv_data: { headline?: string; skills?: string[]; qualifications?: string[]; summary?: string } | null }[]).map((r) => [r.id, r.cv_data]));
+    const cvById = new Map(
+      ((cvs ?? []) as { id: string; cv_data: { summary?: string; qualifications?: string[] } | null }[]).map((r) => [r.id, r.cv_data])
+    );
     const firstNote = new Map<string, string>();
     for (const n of (notes ?? []) as { candidate_id: string; body: string }[]) {
-      if (!firstNote.has(n.candidate_id)) firstNote.set(n.candidate_id, n.body.slice(0, 500));
+      if (!firstNote.has(n.candidate_id)) firstNote.set(n.candidate_id, n.body.slice(0, 450));
     }
 
     // 4. Rank them (work details only, no names or contact details)
@@ -174,22 +233,22 @@ Reply with JSON only:
         notice: c.notice_period || undefined,
         wants: c.job_type,
         rating: c.rating || undefined,
-        cv_summary: cv?.summary?.slice(0, 500) || firstNote.get(c.id) || undefined,
-        tickets: cv?.qualifications?.join(", ").slice(0, 300) || undefined,
+        cv_summary: cv?.summary?.slice(0, 450) || firstNote.get(c.id) || undefined,
+        tickets: cv?.qualifications?.join(", ").slice(0, 250) || undefined,
       };
     });
 
-    const ranked = (await claude(
+    const ranked = await askForm<{ matches?: { id: string; score: number; reason?: string; concern?: string }[] }>(
       `You help a UK recruiter find candidates for a client. Score each candidate's fit from 0 to 100 against the client's request.
 Weigh: matching role and experience; must-haves (licences, tickets, conditions); years of experience (work it out from the CV summary where you can); distance; perm or temp preference; salary; the recruiter's rating as a tie-breaker.
-Reply with JSON only: {"matches": [{"id": "", "score": 0, "reason": "", "concern": ""}]}
-- Up to 25 candidates scoring 40 or more, best first. Fewer, or none, is fine.
-- reason: under 20 words, British English, specific (years, licence, distance).
-- concern: under 12 words if something's missing or unclear (e.g. "Years of experience not stated"), otherwise "".
+- Return up to 25 candidates scoring 40 or more, best first. Fewer, or none, is fine.
+- reason: under 20 words, British English, specific (years, licence, distance). Don't use quotation marks.
+- concern: under 12 words if something's missing or unclear (e.g. Years of experience not stated), otherwise empty.
 - Use only the information given. Never invent experience.`,
       `Client's request: ${query}\n\nCandidates (${profiles.length}):\n${JSON.stringify(profiles)}`,
-      3000
-    )) as { matches?: { id: string; score: number; reason?: string; concern?: string }[] };
+      RANK_FORM,
+      4000
+    );
 
     const byId = new Map(pool.map((p) => [p.c.id, p]));
     const matches = (ranked.matches ?? [])
