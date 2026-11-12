@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -29,6 +29,7 @@ function Candidates() {
   const [stage, setStage] = useState("all");
   const [jobType, setJobType] = useState("all");
   const [adding, setAdding] = useState(false);
+  const [bulk, setBulk] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropStage, setDropStage] = useState<string | null>(null);
 
@@ -127,12 +128,20 @@ function Candidates() {
             {current ? "" : " across every specialism"}
           </p>
         </div>
-        <button
-          onClick={() => setAdding(true)}
-          className="flex items-center gap-2 rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95"
-        >
-          <Icon name="plus" className="h-4 w-4" /> Add candidate
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setBulk(true)}
+            className="flex items-center gap-2 rounded-lg border border-[#F7931E] bg-white px-4 py-2.5 text-sm font-semibold text-[#F7931E] hover:bg-orange-50"
+          >
+            <Icon name="file" className="h-4 w-4" /> Bulk upload CVs
+          </button>
+          <button
+            onClick={() => setAdding(true)}
+            className="flex items-center gap-2 rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95"
+          >
+            <Icon name="plus" className="h-4 w-4" /> Add candidate
+          </button>
+        </div>
       </div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
@@ -306,6 +315,17 @@ function Candidates() {
             closeAdd();
             if (open) router.push(`/crm/candidates/view?id=${id}`);
             else load();
+          }}
+        />
+      )}
+
+      {bulk && (
+        <BulkUpload
+          specialisms={specialisms}
+          defaultSpecialismId={current?.id ?? ""}
+          onClose={(changed) => {
+            setBulk(false);
+            if (changed) load();
           }}
         />
       )}
@@ -607,11 +627,613 @@ function AddCandidate({
             Save
           </button>
           <button
-            onClick={() => save(true)}            disabled={busy || reading}
+            onClick={() => save(true)}
+            disabled={busy || reading}
             className="rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50"
           >
             {busy ? "Saving…" : "Save and open"}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================================
+// Bulk upload: read lots of CVs at once, check them, then add them all
+// =====================================================================
+
+// How many CVs are read or saved at the same time
+const BULK_AT_ONCE = 3;
+
+type BulkStatus = "waiting" | "reading" | "ready" | "failed" | "saving" | "saved" | "save_failed";
+
+type BulkRow = Omit<Form, "source" | "note"> & {
+  key: string;
+  file: File;
+  status: BulkStatus;
+  message: string;
+  include: boolean;
+  summary: string;
+  dupe: string | null; // name of an existing candidate with the same phone or email
+  batchDupe: boolean; // same phone or email as an earlier CV in this upload
+};
+
+type BulkPhase = "pick" | "reading" | "review" | "saving" | "done";
+
+async function runPool<T>(items: T[], limit: number, fn: (item: T) => Promise<void>, stopped: () => boolean) {
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length && !stopped()) {
+      const item = items[next++];
+      await fn(item);
+    }
+  });
+  await Promise.all(workers);
+}
+
+function contactKeys(r: { phone: string; email: string }) {
+  const keys: string[] = [];
+  const digits = r.phone.replace(/\D/g, "").slice(-9);
+  if (digits.length === 9) keys.push(`p:${digits}`);
+  if (r.email.trim()) keys.push(`e:${r.email.trim().toLowerCase()}`);
+  return keys;
+}
+
+// Flags any CV in this upload with the same phone or email as one earlier in the list
+function markBatchDupes(rows: BulkRow[]): BulkRow[] {
+  const seen = new Set<string>();
+  return rows.map((r) => {
+    if (r.status !== "ready") return r;
+    const keys = contactKeys(r);
+    const isDupe = keys.some((k) => seen.has(k));
+    keys.forEach((k) => seen.add(k));
+    if (isDupe && !r.batchDupe) return { ...r, batchDupe: true, include: false };
+    if (!isDupe && r.batchDupe) return { ...r, batchDupe: false };
+    return r;
+  });
+}
+
+function BulkUpload({
+  specialisms,
+  defaultSpecialismId,
+  onClose,
+}: {
+  specialisms: Specialism[];
+  defaultSpecialismId: string;
+  onClose: (changed: boolean) => void;
+}) {
+  const [phase, setPhase] = useState<BulkPhase>("pick");
+  const [files, setFiles] = useState<File[]>([]);
+  const [rows, setRows] = useState<BulkRow[]>([]);
+  const [source, setSource] = useState("");
+  const [fallbackSpecialism, setFallbackSpecialism] = useState(defaultSpecialismId);
+  const [whatsappAll, setWhatsappAll] = useState(true);
+  const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const stopRef = useRef(false);
+
+  const busy = phase === "reading" || phase === "saving";
+  const savedCount = rows.filter((r) => r.status === "saved").length;
+
+  const update = (key: string, patch: Partial<BulkRow>) => setRows((list) => list.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+
+  function addFiles(list: FileList | File[]) {
+    const ok = Array.from(list).filter((f) => /\.(pdf|docx?)$/i.test(f.name));
+    const skipped = Array.from(list).length - ok.length;
+    setFiles((prev) => {
+      const seen = new Set(prev.map((f) => `${f.name}-${f.size}`));
+      return [...prev, ...ok.filter((f) => !seen.has(`${f.name}-${f.size}`))];
+    });
+    setError(skipped ? `${skipped} ${skipped === 1 ? "file was" : "files were"} skipped because only PDF and Word CVs can be read.` : null);
+  }
+
+  function close() {
+    if (busy && !window.confirm("CVs are still being processed. Stop now? Anyone already added will stay in the CRM.")) return;
+    if (phase === "review" && !window.confirm("Close without adding these candidates? You'd need to upload the CVs again.")) return;
+    stopRef.current = true;
+    onClose(savedCount > 0);
+  }
+
+  async function parseCv(file: File): Promise<Record<string, string>> {
+    let lastError = "The CV couldn't be read.";
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt) await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const { data } = await supabase.auth.getSession();
+        const body = new FormData();
+        body.append("file", file);
+        body.append("specialisms", JSON.stringify(specialisms.map((s) => s.name)));
+        const res = await fetch("/api/crm/parse-cv", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${data.session?.access_token ?? ""}` },
+          body,
+        });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) return (json.fields ?? {}) as Record<string, string>;
+        lastError = json.error || lastError;
+        // Only try again for busy or server errors
+        if (res.status < 500 && res.status !== 429) break;
+      } catch {
+        lastError = "Lost connection while reading the CV.";
+      }
+    }
+    throw new Error(lastError);
+  }
+
+  async function findDupe(phone: string, email: string) {
+    const digits = phone.replace(/\D/g, "").slice(-9);
+    const checks: string[] = [];
+    if (digits.length === 9) checks.push(`phone.ilike.%${digits}%`);
+    if (email.trim()) checks.push(`email.ilike.${email.trim()}`);
+    if (!checks.length) return null;
+    const { data } = await supabase.from("crm_candidates").select("id, first_name, last_name").or(checks.join(",")).limit(1);
+    return data?.length ? candidateName(data[0]) : null;
+  }
+
+  async function readOne(row: BulkRow) {
+    update(row.key, { status: "reading", message: "" });
+    try {
+      const got = await parseCv(row.file);
+      const patch: Partial<BulkRow> = {};
+      for (const k of TEXT_FIELDS) {
+        const v = got[k];
+        if (v) (patch as Record<string, unknown>)[k] = k === "postcode" ? String(v).toUpperCase() : String(v);
+      }
+      if (got.specialism) {
+        const match = specialisms.find((s) => s.name.toLowerCase() === String(got.specialism).toLowerCase());
+        if (match) patch.specialism_id = match.id;
+      }
+      if (got.job_type && ["perm", "temp", "either"].includes(got.job_type)) patch.job_type = got.job_type;
+      if (got.summary) patch.summary = String(got.summary);
+
+      const dupe = await findDupe(String(patch.phone ?? ""), String(patch.email ?? ""));
+      update(row.key, {
+        ...patch,
+        status: "ready",
+        dupe,
+        include: !dupe,
+        message: patch.first_name ? "" : "No name found, type it in",
+      });
+    } catch (e) {
+      update(row.key, { status: "failed", include: false, message: (e as Error).message });
+    }
+  }
+
+  async function startReading() {
+    stopRef.current = false;
+    const fresh: BulkRow[] = files.map((file, i) => ({
+      key: `${i}-${file.name}-${file.size}`,
+      file,
+      status: "waiting",
+      message: "",
+      include: false,
+      summary: "",
+      dupe: null,
+      batchDupe: false,
+      first_name: "",
+      last_name: "",
+      phone: "",
+      email: "",
+      location: "",
+      postcode: "",
+      job_title: "",
+      current_employer: "",
+      salary_expectation: "",
+      notice_period: "",
+      job_type: "perm",
+      specialism_id: fallbackSpecialism,
+      whatsapp_consent: whatsappAll,
+    }));
+    setRows(fresh);
+    setPhase("reading");
+    await runPool(fresh, BULK_AT_ONCE, readOne, () => stopRef.current);
+    setRows((list) => markBatchDupes(list));
+    setPhase("review");
+  }
+
+  async function retryFailed() {
+    const failed = rows.filter((r) => r.status === "failed");
+    if (!failed.length) return;
+    stopRef.current = false;
+    setPhase("reading");
+    await runPool(failed, BULK_AT_ONCE, readOne, () => stopRef.current);
+    setRows((list) => markBatchDupes(list));
+    setPhase("review");
+  }
+
+  async function saveOne(row: BulkRow, today: string) {
+    if (!row.first_name.trim()) {
+      update(row.key, { status: "save_failed", message: "Needs a first name" });
+      return;
+    }
+    update(row.key, { status: "saving", message: "" });
+
+    const { data, error: e } = await supabase
+      .from("crm_candidates")
+      .insert({
+        first_name: row.first_name.trim(),
+        last_name: row.last_name.trim() || null,
+        phone: row.phone.trim() || null,
+        email: row.email.trim() || null,
+        location: row.location.trim() || null,
+        postcode: row.postcode.trim().toUpperCase() || null,
+        job_title: row.job_title.trim() || null,
+        current_employer: row.current_employer.trim() || null,
+        salary_expectation: row.salary_expectation.trim() || null,
+        notice_period: row.notice_period.trim() || null,
+        job_type: row.job_type,
+        specialism_id: row.specialism_id || null,
+        source: source.trim() || null,
+        whatsapp_consent: row.whatsapp_consent,
+      })
+      .select("id")
+      .single();
+    if (e || !data) {
+      update(row.key, { status: "save_failed", message: e?.message || "Couldn't save" });
+      return;
+    }
+
+    const path = `${data.id}/${Date.now()}-${row.file.name.replace(/[^a-zA-Z0-9.]+/g, "-")}`;
+    const up = await supabase.storage.from("crm-cvs").upload(path, row.file);
+    if (!up.error) await supabase.from("crm_candidates").update({ cv_path: path, cv_filename: row.file.name }).eq("id", data.id);
+
+    const notes: { candidate_id: string; kind: string; body: string }[] = [];
+    if (row.summary.trim()) notes.push({ candidate_id: data.id, kind: "note", body: row.summary.trim() });
+    notes.push({
+      candidate_id: data.id,
+      kind: "note",
+      body: `Added by bulk CV upload on ${today}${source.trim() ? ` (source: ${source.trim()})` : ""}. ${
+        row.whatsapp_consent ? "Marked as happy to hear about jobs on WhatsApp at upload." : "Not marked for WhatsApp messages."
+      }`,
+    });
+    await supabase.from("crm_notes").insert(notes);
+
+    update(row.key, { status: "saved", message: up.error ? "Added, but the CV file didn't upload" : "" });
+  }
+
+  async function saveAll() {
+    const toSave = rows.filter((r) => r.include && (r.status === "ready" || r.status === "save_failed"));
+    if (!toSave.length) return setError("Tick at least one candidate to add.");
+    setError(null);
+    stopRef.current = false;
+    setPhase("saving");
+    const today = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    await runPool(toSave, BULK_AT_ONCE, (r) => saveOne(r, today), () => stopRef.current);
+    setPhase("done");
+  }
+
+  // ---- Counts for the review screen
+  const readCount = rows.filter((r) => !["waiting", "reading"].includes(r.status)).length;
+  const ready = rows.filter((r) => r.status === "ready" || r.status === "save_failed");
+  const failedReads = rows.filter((r) => r.status === "failed").length;
+  const dupeCount = rows.filter((r) => r.dupe || r.batchDupe).length;
+  const toAdd = rows.filter((r) => r.include && (r.status === "ready" || r.status === "save_failed")).length;
+  const saveFailed = rows.filter((r) => r.status === "save_failed").length;
+  const editable = (r: BulkRow) => (phase === "review" || phase === "done") && (r.status === "ready" || r.status === "save_failed");
+  const allIncluded = ready.length > 0 && ready.every((r) => r.include);
+  const allWhatsapp = ready.length > 0 && ready.every((r) => r.whatsapp_consent);
+
+  const cell = "w-full min-w-[7rem] rounded-md border border-slate-300 px-2 py-1 text-sm focus:border-[#F7931E] focus:outline-none focus:ring-2 focus:ring-[#F7931E]/30 disabled:bg-slate-50 disabled:text-slate-500";
+  const input = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#F7931E] focus:outline-none focus:ring-2 focus:ring-[#F7931E]/30";
+
+  function statusBadge(r: BulkRow) {
+    const map: Record<BulkStatus, [string, string]> = {
+      waiting: ["Waiting", "bg-slate-100 text-slate-600"],
+      reading: ["Reading…", "bg-orange-100 text-orange-700"],
+      ready: ["Ready", "bg-green-100 text-green-700"],
+      failed: ["Couldn't read", "bg-red-100 text-red-700"],
+      saving: ["Adding…", "bg-orange-100 text-orange-700"],
+      saved: ["Added", "bg-green-600 text-white"],
+      save_failed: ["Not added", "bg-red-100 text-red-700"],
+    };
+    const [label, colour] = map[r.status];
+    return <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ${colour}`}>{label}</span>;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Bulk upload CVs"
+        className={`flex max-h-[94vh] w-full flex-col rounded-t-2xl bg-white sm:rounded-2xl ${phase === "pick" ? "sm:max-w-2xl" : "sm:max-w-7xl"}`}
+      >
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <div>
+            <h2 className="text-xl font-bold text-[#1F3447]">Bulk upload CVs</h2>
+            <p className="text-sm text-slate-500">
+              {phase === "pick" && "Each CV is read the same way as a single upload and sorted into its specialism."}
+              {phase === "reading" && `Reading ${readCount} of ${rows.length} CVs. Keep this window open.`}
+              {phase === "review" && "Check the details, change anything that's wrong, then add them."}
+              {phase === "saving" && `Adding candidates… ${savedCount} done. Keep this window open.`}
+              {phase === "done" && `${savedCount} ${savedCount === 1 ? "candidate" : "candidates"} added.`}
+            </p>
+          </div>
+          <button onClick={close} aria-label="Close" className="rounded-full p-1.5 hover:bg-slate-100">
+            <Icon name="x" className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          {/* Step 1: choose the CVs */}
+          {phase === "pick" && (
+            <div className="space-y-4">
+              <label
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
+                }}
+                className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 py-10 text-center transition ${
+                  dragOver ? "border-[#F7931E] bg-orange-50" : "border-slate-300 hover:border-[#F7931E] hover:bg-orange-50/50"
+                }`}
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F7931E]/15 text-[#F7931E]">
+                  <Icon name="file" className="h-6 w-6" />
+                </span>
+                <span className="text-sm font-semibold text-[#1F3447]">Drop all the CVs here, or click to choose them</span>
+                <span className="text-xs text-slate-500">PDF or Word. Select as many as you like with Cmd+A in the file picker.</span>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.docx,.doc"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files?.length) addFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+
+              {files.length > 0 && (
+                <div className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3 text-sm">
+                  <span className="font-semibold text-[#1F3447]">
+                    {files.length} {files.length === 1 ? "CV" : "CVs"} ready to read
+                  </span>
+                  <button onClick={() => setFiles([])} className="text-sm font-semibold text-slate-500 hover:text-slate-700">
+                    Clear
+                  </button>
+                </div>
+              )}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm font-semibold text-[#1F3447]">Where did they come from?</label>
+                  <input className={input} placeholder="e.g. Indeed, Class 1 Driver advert" value={source} onChange={(e) => setSource(e.target.value)} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm font-semibold text-[#1F3447]">If a CV doesn&apos;t clearly fit a specialism, put them in</label>
+                  <select className={input} value={fallbackSpecialism} onChange={(e) => setFallbackSpecialism(e.target.value)}>
+                    <option value="">Leave it for me to choose</option>
+                    {specialisms.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.emoji} {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <label className="flex items-start gap-2 text-sm text-slate-700 sm:col-span-2">
+                  <input type="checkbox" checked={whatsappAll} onChange={(e) => setWhatsappAll(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#F7931E]" />
+                  <span>
+                    They&apos;re happy to hear about jobs on WhatsApp
+                    <span className="block text-xs text-slate-500">Applies to everyone in this upload. You can untick anyone on the next screen.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Progress bar while reading */}
+          {phase === "reading" && (
+            <div className="mb-5 h-2 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full bg-[#F7931E] transition-all" style={{ width: `${rows.length ? (readCount / rows.length) * 100 : 0}%` }} />
+            </div>
+          )}
+
+          {/* Summary on the review screen */}
+          {(phase === "review" || phase === "done") && (
+            <div className="mb-4 flex flex-wrap gap-2 text-sm">
+              <span className="rounded-full bg-green-50 px-3 py-1 font-semibold text-green-700">{ready.length + savedCount} read</span>
+              {dupeCount > 0 && <span className="rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-800">{dupeCount} possible duplicates, left unticked</span>}
+              {failedReads > 0 && (
+                <span className="flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 font-semibold text-red-700">
+                  {failedReads} couldn&apos;t be read
+                  {phase === "review" && (
+                    <button onClick={retryFailed} className="underline hover:no-underline">
+                      Try again
+                    </button>
+                  )}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* The table of CVs */}
+          {phase !== "pick" && (
+            <div className="overflow-x-auto rounded-xl ring-1 ring-slate-200">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="p-2">
+                      <input
+                        type="checkbox"
+                        aria-label="Add all"
+                        checked={allIncluded}
+                        disabled={phase !== "review"}
+                        onChange={(e) =>
+                          setRows((list) => list.map((r) => (r.status === "ready" || r.status === "save_failed" ? { ...r, include: e.target.checked } : r)))
+                        }
+                        className="h-4 w-4 accent-[#F7931E]"
+                      />
+                    </th>
+                    <th className="p-2">First name</th>
+                    <th className="p-2">Last name</th>
+                    <th className="p-2">Mobile</th>
+                    <th className="p-2">Job title</th>
+                    <th className="p-2">Town</th>
+                    <th className="p-2">Specialism</th>
+                    <th className="p-2">Perm or temp</th>
+                    <th className="p-2">
+                      <label className="flex items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          aria-label="WhatsApp for everyone"
+                          checked={allWhatsapp}
+                          disabled={phase !== "review"}
+                          onChange={(e) =>
+                            setRows((list) =>
+                              list.map((r) => (r.status === "ready" || r.status === "save_failed" ? { ...r, whatsapp_consent: e.target.checked } : r)),
+                            )
+                          }
+                          className="h-4 w-4 accent-[#F7931E]"
+                        />
+                        WhatsApp
+                      </label>
+                    </th>
+                    <th className="p-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {rows.map((r) => {
+                    const can = editable(r) && phase === "review";
+                    const set = (k: keyof BulkRow) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+                      update(r.key, { [k]: e.target.type === "checkbox" ? (e.target as HTMLInputElement).checked : e.target.value } as unknown as Partial<BulkRow>);
+                    const flagged = r.dupe || r.batchDupe;
+                    return (
+                      <tr key={r.key} className={`align-top ${r.status === "saved" ? "bg-green-50/50" : flagged ? "bg-amber-50/50" : ""}`}>
+                        <td className="p-2">
+                          <input type="checkbox" aria-label="Add this candidate" checked={r.include} disabled={!can} onChange={set("include")} className="mt-1.5 h-4 w-4 accent-[#F7931E]" />
+                        </td>
+                        {r.status === "waiting" || r.status === "reading" || r.status === "failed" ? (
+                          <td colSpan={7} className="p-2 pt-2.5 text-slate-500">
+                            <span className="font-semibold text-slate-700">{r.file.name}</span>
+                            {r.message && <span className="block text-xs text-red-700">{r.message}. Add this one with &ldquo;Add candidate&rdquo; instead.</span>}
+                          </td>
+                        ) : (
+                          <>
+                            <td className="p-2">
+                              <input className={`${cell} ${!r.first_name.trim() ? "border-red-400" : ""}`} value={r.first_name} disabled={!can} onChange={set("first_name")} />
+                              <span className="mt-1 block max-w-[12rem] truncate text-[11px] text-slate-400" title={r.file.name}>
+                                {r.file.name}
+                              </span>
+                            </td>
+                            <td className="p-2">
+                              <input className={cell} value={r.last_name} disabled={!can} onChange={set("last_name")} />
+                            </td>
+                            <td className="p-2">
+                              <input className={cell} value={r.phone} disabled={!can} onChange={set("phone")} inputMode="tel" />
+                            </td>
+                            <td className="p-2">
+                              <input className={cell} value={r.job_title} disabled={!can} onChange={set("job_title")} />
+                            </td>
+                            <td className="p-2">
+                              <input className={cell} value={r.location} disabled={!can} onChange={set("location")} />
+                            </td>
+                            <td className="p-2">
+                              <select className={`${cell} ${!r.specialism_id ? "border-amber-400 bg-amber-50" : ""}`} value={r.specialism_id} disabled={!can} onChange={set("specialism_id")}>
+                                <option value="">Choose…</option>
+                                {specialisms.map((s) => (
+                                  <option key={s.id} value={s.id}>
+                                    {s.emoji} {s.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="p-2">
+                              <select className={cell} value={r.job_type} disabled={!can} onChange={set("job_type")}>
+                                {JOB_TYPES.map(([v, label]) => (
+                                  <option key={v} value={v}>
+                                    {label}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                          </>
+                        )}
+                        <td className="p-2">
+                          <input
+                            type="checkbox"
+                            aria-label="Happy to hear about jobs on WhatsApp"
+                            checked={r.whatsapp_consent}
+                            disabled={!can}
+                            onChange={set("whatsapp_consent")}
+                            className="mt-1.5 h-4 w-4 accent-[#F7931E]"
+                          />
+                        </td>
+                        <td className="p-2">
+                          {statusBadge(r)}
+                          {r.dupe && <span className="mt-1 block text-xs text-amber-800">Already in the CRM as {r.dupe}</span>}
+                          {r.batchDupe && <span className="mt-1 block text-xs text-amber-800">Same contact details as another CV in this upload</span>}
+                          {r.message && r.status !== "failed" && <span className="mt-1 block text-xs text-slate-500">{r.message}</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        </div>
+
+        {/* Footer buttons */}
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 px-6 py-4">
+          {phase === "pick" && (
+            <>
+              <button onClick={close} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+                Cancel
+              </button>
+              <button
+                onClick={startReading}
+                disabled={!files.length}
+                className="rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50"
+              >
+                Read {files.length || ""} {files.length === 1 ? "CV" : "CVs"}
+              </button>
+            </>
+          )}
+          {busy && (
+            <span className="flex items-center gap-2 text-sm text-slate-500">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#F7931E]/30 border-t-[#F7931E]" />
+              Working…
+            </span>
+          )}
+          {phase === "review" && (
+            <>
+              <button onClick={close} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+                Cancel
+              </button>
+              <button
+                onClick={saveAll}
+                disabled={!toAdd}
+                className="rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50"
+              >
+                Add {toAdd} {toAdd === 1 ? "candidate" : "candidates"}
+              </button>
+            </>
+          )}
+          {phase === "done" && (
+            <>
+              {saveFailed > 0 && (
+                <button
+                  onClick={() => setPhase("review")}
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-[#1F3447] hover:bg-slate-50"
+                >
+                  Fix the {saveFailed} not added
+                </button>
+              )}
+              <button onClick={() => onClose(savedCount > 0)} className="rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95">
+                Done
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
