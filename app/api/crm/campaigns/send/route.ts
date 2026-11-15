@@ -1,6 +1,7 @@
 // POST /api/crm/campaigns/send: send the next batch of a campaign
 import { NextResponse } from "next/server";
-import { admin, DAILY_LIMIT, fillVariables, GRAPH, renderBody, requireAgency, whatsappConfig } from "@/lib/crmServer";
+import { admin, DAILY_LIMIT, fillVariables, renderBody, requireAgency } from "@/lib/crmServer";
+import { cleanParam, sendTemplate, whatsappConfigured } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -15,8 +16,7 @@ export async function POST(request: Request) {
   const { data: campaign } = await db.from("crm_campaigns").select("*").eq("id", campaignId).maybeSingle();
   if (!campaign) return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
 
-  const { token, phoneNumberId } = whatsappConfig();
-  if (!token || !phoneNumberId) return NextResponse.json({ error: "WhatsApp isn't set up on the website yet." }, { status: 500 });
+  if (!whatsappConfigured()) return NextResponse.json({ error: "WhatsApp isn't set up on the website yet." }, { status: 500 });
 
   // Shared daily limit with ReachConnect: count every template sent today
   const startOfDay = new Date();
@@ -42,23 +42,9 @@ export async function POST(request: Request) {
 
     for (const r of (queue ?? []) as unknown as { id: string; phone: string; candidate_id: string | null; crm_candidates: { first_name: string } | null }[]) {
       const values = fillVariables((campaign.variables as string[]) || [], r.crm_candidates?.first_name ?? null);
-      const res = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          to: r.phone,
-          type: "template",
-          template: {
-            name: campaign.template_name,
-            language: { code: campaign.template_language },
-            components: values.length ? [{ type: "body", parameters: values.map((text) => ({ type: "text", text })) }] : [],
-          },
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      const waId = (data?.messages?.[0]?.id as string) || null;
-      const text = campaign.template_body ? renderBody(campaign.template_body, values) : `Template: ${campaign.template_name}`;
+      const result = await sendTemplate(r.phone, campaign.template_name, values, campaign.template_language);
+      const waId = result.id;
+      const text = campaign.template_body ? renderBody(campaign.template_body, values.map(cleanParam)) : `Template: ${campaign.template_name}`;
 
       // Shows in the ReachConnect inbox like any other message
       await db.from("whatsapp_messages").insert({
@@ -67,10 +53,12 @@ export async function POST(request: Request) {
         message: text,
         template_name: campaign.template_name,
         wa_message_id: waId,
-        status: res.ok ? "sent" : "failed",
+        status: result.ok ? "sent" : "failed",
+        error_code: result.code,
+        error_title: result.error ? result.error.slice(0, 300) : null,
       });
 
-      if (res.ok) {
+      if (result.ok) {
         sent++;
         await db.from("crm_campaign_recipients").update({ status: "sent", sent_at: new Date().toISOString(), wa_message_id: waId }).eq("id", r.id);
         if (r.candidate_id) {
@@ -81,7 +69,7 @@ export async function POST(request: Request) {
         failed++;
         await db
           .from("crm_campaign_recipients")
-          .update({ status: "failed", error: String(data?.error?.message || "WhatsApp didn't accept it").slice(0, 300) })
+          .update({ status: "failed", error: String(result.error || "WhatsApp didn't accept it").slice(0, 300) })
           .eq("id", r.id);
       }
     }
