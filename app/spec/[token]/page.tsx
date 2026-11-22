@@ -1,0 +1,58 @@
+// Public spec page: an anonymised candidate profile sent to a prospective client
+import type { Metadata } from "next";
+import { admin } from "@/lib/crmServer";
+import { cleanContent } from "@/lib/specs";
+import SpecClient from "./SpecClient";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Candidate profile | Reach Network Recruitment",
+  robots: { index: false, follow: false },
+};
+
+export default async function SpecPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams: Promise<{ preview?: string }>;
+}) {
+  const { token } = await params;
+  const { preview } = await searchParams;
+
+  const { data: spec } = await admin()
+    .from("crm_specs")
+    .select("token, company_name, contact_name, role_title, content, created_at, expires_at, withdrawn, response")
+    .eq("token", token)
+    .maybeSingle();
+
+  if (!spec || spec.withdrawn || (spec.expires_at && new Date(spec.expires_at) < new Date())) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+        <div className="max-w-md text-center">
+          <h1 className="text-2xl font-bold text-slate-900">This profile is no longer available</h1>
+          <p className="mt-3 text-slate-600">
+            The candidate may have found a role. Get in touch and we&apos;ll show you who&apos;s available now.
+          </p>
+          <a href="/i-need-staff" className="mt-6 inline-block rounded-lg bg-[#F7931E] px-5 py-3 font-semibold text-white">
+            Talk to Reach Network Recruitment
+          </a>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <SpecClient
+      token={spec.token}
+      preview={preview === "1"}
+      companyName={spec.company_name}
+      contactName={spec.contact_name}
+      roleTitle={spec.role_title}
+      introducedOn={spec.created_at}
+      alreadyResponded={spec.response}
+      content={cleanContent(spec.content)}
+    />
+  );
+}

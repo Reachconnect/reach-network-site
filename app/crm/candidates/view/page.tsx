@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import BrandedCv from "../BrandedCv";
+import SpecCard from "../SpecCard";
 import { Icon, JOB_TYPES, NOTE_KINDS, STAGES, candidateName, timeAgo, ukDate, ukDateTime, waLink, type Candidate, type Specialism, type StageKey } from "../../crm";
 
 type Note = { id: string; kind: string; body: string; created_at: string };
@@ -411,6 +412,8 @@ function CandidateView() {
 
             <BrandedCv key={c.cv_path ?? "none"} candidateId={c.id} hasCv={!!c.cv_path} />
           </section>
+
+          <SpecCard candidateId={c.id} />
 
           <button onClick={deleteCandidate} className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50">
             <Icon name="trash" className="h-4 w-4" /> Delete candidate
