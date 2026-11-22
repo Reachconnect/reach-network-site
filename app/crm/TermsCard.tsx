@@ -233,8 +233,16 @@ export default function TermsCard({ companyId, companyName }: { companyId: strin
           {t.terms_notes && <p className="mt-3 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-sm text-slate-700">{t.terms_notes}</p>}
 
           {!t.terms_signed_at && (
-            <button onClick={markSigned} disabled={busy} className="mt-4 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50">
-              Mark terms as signed today
+            <a
+              href={`/crm/sign/new?company=${companyId}&kind=terms`}
+              className="mt-4 block w-full rounded-lg bg-[#F7931E] px-4 py-2.5 text-center text-sm font-semibold text-white hover:brightness-95"
+            >
+              Send terms to sign online
+            </a>
+          )}
+          {!t.terms_signed_at && (
+            <button onClick={markSigned} disabled={busy} className="mt-2 w-full rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">
+              Signed on paper? Mark as signed today
             </button>
           )}
 

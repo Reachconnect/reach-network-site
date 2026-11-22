@@ -1,0 +1,3 @@
+{
+  "crons": [{ "path": "/api/cron/sign-reminders", "schedule": "0 9 * * *" }]
+}
