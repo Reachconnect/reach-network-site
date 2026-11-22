@@ -166,18 +166,6 @@ export async function currentUserId() {
 // ---------- Icons ----------
 
 const PATHS: Record<string, React.ReactNode> = {
-  mail: (
-    <>
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path d="m3.5 6.5 8.5 6 8.5-6" />
-    </>
-  ),
-  pdf: (
-    <>
-      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-      <path d="M14 3v5h5M9 14l2-2 4 4M9 18h6" />
-    </>
-  ),
   video: (
     <>
       <rect x="2.5" y="6" width="13" height="12" rx="2" />
