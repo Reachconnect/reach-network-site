@@ -47,6 +47,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
+  // CRM email campaigns: a bounce or spam complaint means never email them again
+  if (event.type === 'email.bounced' || event.type === 'email.complained') {
+    const reason = event.type === 'email.bounced' ? 'bounced' : 'complained'
+    await supabase.from('crm_mail_suppressions').upsert({ email: String(emailAddress).toLowerCase(), reason }, { onConflict: 'email' })
+    if (event?.data?.email_id) {
+      await supabase.from('crm_mail_sends').update({ bounced_at: new Date().toISOString() }).eq('resend_id', event.data.email_id)
+    }
+  }
+
   if (event.type === 'email.bounced') {
     await supabase.from('email_contacts').update({ bounced: true }).eq('email', emailAddress)
   }
