@@ -298,7 +298,7 @@ export default function PdfEditorPage() {
                     const isEditing = editing?.page === p.num && editing.idx === it.idx;
                     const pos = { left: `${(it.left / p.width) * 100}%`, top: `${(it.top / p.height) * 100}%`, height: `${((it.height * 1.2) / p.height) * 100}%` };
                     const fontSize = `calc(${(it.height / p.width) * 100}cqw * 0.92)`;
-                    if (isEditing) {
+                    if (isEditing && editing) {
                       return (
                         <input
                           key={it.idx}

@@ -158,7 +158,8 @@ function CampaignView() {
     const value = draft[key];
     const start = el?.selectionStart ?? value.length;
     const end = el?.selectionEnd ?? value.length;
-    set({ [key]: value.slice(0, start) + tag + value.slice(end) } as Partial<Draft>);
+    const next = value.slice(0, start) + tag + value.slice(end);
+    set(key === "subject" ? { subject: next } : { body: next });
     setTimeout(() => {
       el?.focus();
       el?.setSelectionRange(start + tag.length, start + tag.length);

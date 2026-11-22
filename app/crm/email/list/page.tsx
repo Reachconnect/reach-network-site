@@ -72,7 +72,7 @@ function ListView() {
       first = parts.shift() || "";
       last = last || parts.join(" ");
     }
-    const nice = (s: string) => (s && (s === s.toUpperCase() || s === s.toLowerCase()) ? s.toLowerCase().replace(/(^|[\s'-])\p{L}/gu, (m) => m.toUpperCase()) : s);
+    const nice = (s: string) => (s && (s === s.toUpperCase() || s === s.toLowerCase()) ? s.toLowerCase().replace(/(^|[\s'-])([a-z\u00e0-\u00ff])/g, (m) => m.toUpperCase()) : s);
     return { email: get("email").toLowerCase(), first_name: nice(first), last_name: nice(last), company: get("company"), job_title: get("job_title"), phone: get("phone") };
   }
 
