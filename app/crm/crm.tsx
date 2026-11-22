@@ -166,6 +166,12 @@ export async function currentUserId() {
 // ---------- Icons ----------
 
 const PATHS: Record<string, React.ReactNode> = {
+  video: (
+    <>
+      <rect x="2.5" y="6" width="13" height="12" rx="2" />
+      <path d="m15.5 10.5 6-3.5v10l-6-3.5" />
+    </>
+  ),
   home: <path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />,
   bell: (
     <>

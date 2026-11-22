@@ -47,6 +47,7 @@ export default function SpecSender({
   const [consent, setConsent] = useState(false);
 
   const [video, setVideo] = useState<{ path: string; preview: string; name: string } | null>(null);
+  const [library, setLibrary] = useState<{ id: string; title: string; video_path: string; play_url: string | null }[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const [custom, setCustom] = useState<{ subject: string; text: string } | null>(null);
@@ -64,6 +65,13 @@ export default function SpecSender({
       .order("name")
       .limit(3000)
       .then(({ data }) => setCompanies((data ?? []) as { id: string; name: string }[]));
+    // Videos already made in the Video studio
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const res = await fetch("/api/crm/videos", { headers: { Authorization: `Bearer ${data.session?.access_token ?? ""}` } }).catch(() => null);
+      const j = res && res.ok ? await res.json().catch(() => null) : null;
+      if (j?.videos) setLibrary(j.videos);
+    })();
   }, []);
 
   const people = useMemo(() => items.map((i) => i.content), [items]);
@@ -306,8 +314,26 @@ export default function SpecSender({
             </button>
           </div>
         ) : (
+          <>
+          {library.length > 0 && (
+            <select
+              className={`${field} mt-2`}
+              value=""
+              onChange={(e) => {
+                const v = library.find((x) => x.id === e.target.value);
+                if (v) setVideo({ path: v.video_path, preview: v.play_url || "", name: v.title });
+              }}
+            >
+              <option value="">Use one from your Video studio…</option>
+              {library.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.title}
+                </option>
+              ))}
+            </select>
+          )}
           <label className="mt-2 flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-slate-200 px-3 py-4 text-sm font-semibold text-slate-600 hover:border-[#F7931E]">
-            {uploading ? "Uploading…" : "Choose a video"}
+            {uploading ? "Uploading…" : library.length ? "Or upload a video file" : "Choose a video"}
             <input
               type="file"
               accept="video/mp4,video/quicktime,video/webm,video/*"
@@ -320,6 +346,10 @@ export default function SpecSender({
               }}
             />
           </label>
+          <a href="/crm/videos/studio" target="_blank" className="mt-2 block text-center text-xs font-semibold text-[#F7931E] hover:underline">
+            Record one in the Video studio
+          </a>
+          </>
         )}
       </div>
 
