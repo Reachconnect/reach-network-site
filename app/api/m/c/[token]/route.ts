@@ -21,6 +21,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
     destination = f?.signedUrl || SITE_URL;
   } else if (!/^https?:\/\//i.test(target)) {
     destination = SITE_URL;
+  } else {
+    // Our own website: pass who they are, so their visit can show in the CRM (only if they accept cookies)
+    try {
+      const u = new URL(target);
+      if (u.host.replace(/^www\./, "") === new URL(SITE_URL).host.replace(/^www\./, "")) {
+        u.searchParams.set("rnr", token);
+        destination = u.toString();
+      }
+    } catch {
+      // leave it as it is
+    }
   }
 
   try {

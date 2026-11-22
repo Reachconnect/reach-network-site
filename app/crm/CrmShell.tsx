@@ -157,6 +157,7 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
         {navLink("/crm/clients", "Clients and terms", "handshake", counts.unsigned, true, "Clients without signed terms")}
         {navLink("/crm/sign", "E-signatures", "check")}
         {navLink("/crm/email", "Email campaigns", "mail")}
+        {navLink("/crm/visitors", "Website visitors", "users")}
         {navLink("/crm/videos", "Video studio", "video")}
 
         <p className={`mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider ${t.label}`}>Company</p>

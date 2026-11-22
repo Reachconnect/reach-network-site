@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Footer from "../components/Footer";
+import CookieSettingsButton from "../components/CookieSettingsButton";
 
 const NAV_SECTIONS = [
   {
@@ -183,6 +184,18 @@ export default function PrivacyNotice() {
                 [Add detail: e.g. with prospective employers/clients, payroll and compliance providers,
                 regulatory bodies where required.]
               </p>
+            </div>
+
+            <div id="cookies">
+              <h2 className="font-display text-lg font-bold text-navy">Cookies</h2>
+              <p className="mt-2">
+                We only set our own cookie if you choose Accept on the banner. It records which pages of this website you
+                look at and for how long. If you arrived by clicking a link in an email or proposal we sent you, it also
+                links those visits to you, so we can follow up with what&apos;s relevant to you. We don&apos;t use advertising
+                cookies, and nothing is shared with advertisers. If you choose No thanks, no tracking cookie is set. We
+                also remember your choice on your device so we don&apos;t ask every time.
+              </p>
+              <CookieSettingsButton />
             </div>
 
             <div>
