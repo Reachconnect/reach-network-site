@@ -155,12 +155,10 @@ export default function CrmShell({ children }: { children: React.ReactNode }) {
         <p className={`mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider ${t.label}`}>Sales</p>
         {navLink("/crm/sales", "Sales pipeline", "funnel", counts.openDeals)}
         {navLink("/crm/clients", "Clients and terms", "handshake", counts.unsigned, true, "Clients without signed terms")}
-        {navLink("/crm/email", "Email campaigns", "mail")}
         {navLink("/crm/videos", "Video studio", "video")}
 
         <p className={`mb-1 mt-5 px-3 text-[11px] font-semibold uppercase tracking-wider ${t.label}`}>Company</p>
         {navLink("/crm/links", "Links and documents", "globe")}
-        {navLink("/crm/pdf", "PDF editor", "pdf")}
       </nav>
 
       <div className={`flex items-center gap-1 border-t px-3 py-3 ${t.divider}`}>
