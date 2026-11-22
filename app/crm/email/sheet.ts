@@ -66,8 +66,11 @@ async function unzip(buf: ArrayBuffer): Promise<Map<string, string>> {
     const data = bytes.subarray(local + 30 + lNameLen + lExtraLen, local + 30 + lNameLen + lExtraLen + csize);
     if (method === 0) out.set(name, dec.decode(data));
     else if (method === 8) {
-      const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-      out.set(name, await new Response(stream).text());
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const inflate: any = new DecompressionStream("deflate-raw" as CompressionFormat);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const stream: any = (new Blob([data as unknown as BlobPart]).stream() as any).pipeThrough(inflate);
+      out.set(name, await new Response(stream as ReadableStream).text());
     }
   }
   return out;
