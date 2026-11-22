@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { admin } from "@/lib/crmServer";
 import { cleanContent } from "@/lib/specs";
 import SpecClient from "./SpecClient";
+import ShortlistClient from "./ShortlistClient";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function SpecPage({
 
   const { data: spec } = await admin()
     .from("crm_specs")
-    .select("token, company_name, contact_name, role_title, content, created_at, expires_at, withdrawn, response")
+    .select("*")
     .eq("token", token)
     .maybeSingle();
 
@@ -40,6 +41,24 @@ export default async function SpecPage({
           </a>
         </div>
       </main>
+    );
+  }
+
+  // A shortlist of several candidates
+  const items = Array.isArray(spec.items) ? (spec.items as { content: unknown }[]) : [];
+  if (items.length > 1) {
+    return (
+      <ShortlistClient
+        token={spec.token}
+        preview={preview === "1"}
+        companyName={spec.company_name}
+        contactName={spec.contact_name}
+        roleTitle={spec.role_title}
+        intro={spec.intro}
+        introducedOn={spec.created_at}
+        alreadyResponded={spec.response}
+        people={items.map((i) => cleanContent(i.content as Parameters<typeof cleanContent>[0]))}
+      />
     );
   }
 

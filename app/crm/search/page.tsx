@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ShortlistSpec from "../ShortlistSpec";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { Icon, waLink } from "../crm";
@@ -45,6 +46,7 @@ export default function AiSearchPage() {
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [messaging, setMessaging] = useState(false);
+  const [speccing, setSpeccing] = useState(false);
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [jobId, setJobId] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -227,6 +229,14 @@ export default function AiSearchPage() {
                     </>
                   )}
                   <button
+                    onClick={() => setSpeccing(true)}
+                    disabled={picked.size < 2}
+                    title={picked.size < 2 ? "Tick 2 to 5 people to send them as a shortlist" : "Send the ticked people to a prospect as one shortlist page"}
+                    className="rounded-lg border border-[#1F3447] px-3 py-1.5 text-sm font-semibold text-[#1F3447] hover:bg-slate-50 disabled:opacity-40"
+                  >
+                    Send as spec
+                  </button>
+                  <button
                     onClick={() => setMessaging(true)}
                     disabled={!picked.size}
                     className="flex items-center gap-2 rounded-lg bg-[#F7931E] px-4 py-1.5 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-40"
@@ -286,6 +296,10 @@ export default function AiSearchPage() {
             </>
           )}
         </div>
+      )}
+
+      {speccing && (
+        <ShortlistSpec people={chosen.map((m) => ({ id: m.id, name: m.name }))} role={brief?.role || ""} onClose={() => setSpeccing(false)} />
       )}
 
       {messaging && brief && <MessageSelected people={chosen} brief={brief} query={query} onClose={() => setMessaging(false)} onSent={flash} />}

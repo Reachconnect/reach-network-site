@@ -1,7 +1,7 @@
 // /api/crm/specs: spec pages for prospective clients (agency staff only)
 // GET  ?candidateId=...         the specs already sent for a candidate
 // POST action "draft"           the AI writes an anonymised draft for a role
-// POST action "create"          saves it and returns the link to send
+// POST action "create"          saves it (one candidate, or a shortlist of up to 5) and returns the link
 // POST action "withdraw"        switches a link off
 import { NextResponse } from "next/server";
 import { admin, requireAgency } from "@/lib/crmServer";
@@ -66,14 +66,18 @@ const CANDIDATE_FIELDS =
 export async function GET(request: Request) {
   if (!(await requireAgency(request))) return fail("Please log in again.", 401);
   const candidateId = new URL(request.url).searchParams.get("candidateId");
-  if (!candidateId) return fail("Missing candidate.");
-  const { data, error } = await admin()
+  if (!candidateId || !/^[0-9a-f-]{36}$/i.test(candidateId)) return fail("Missing candidate.");
+  let { data, error } = await admin()
     .from("crm_specs")
-    .select("id, token, company_name, contact_name, role_title, created_at, expires_at, first_opened_at, last_opened_at, open_count, view_seconds, response, response_at, withdrawn")
-    .eq("candidate_id", candidateId)
+    .select("*")
+    .or(`candidate_id.eq.${candidateId},candidate_ids.cs.{${candidateId}}`)
     .order("created_at", { ascending: false });
+  // Before the shortlist columns are added, fall back to single specs only
+  if (error) ({ data, error } = await admin().from("crm_specs").select("*").eq("candidate_id", candidateId).order("created_at", { ascending: false }));
   if (error) return fail(error.message, 500);
-  return NextResponse.json({ specs: (data ?? []).map((s) => ({ ...s, url: specUrl(s.token) })) });
+  return NextResponse.json({
+    specs: (data ?? []).map((s) => ({ ...s, url: specUrl(s.token), candidate_count: Array.isArray(s.candidate_ids) ? s.candidate_ids.length : 1 })),
+  });
 }
 
 export async function POST(request: Request) {
@@ -88,12 +92,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const { data: cand } = await db.from("crm_candidates").select(CANDIDATE_FIELDS).eq("id", body.candidateId).maybeSingle();
-  if (!cand) return fail("Candidate not found.", 404);
   const role = String(body.role || "").trim().slice(0, 300);
 
-  // ---------- AI draft ----------
+  // ---------- AI draft (one candidate at a time) ----------
   if (body.action === "draft") {
+    const { data: cand } = await db.from("crm_candidates").select(CANDIDATE_FIELDS).eq("id", body.candidateId).maybeSingle();
+    if (!cand) return fail("Candidate not found.", 404);
     const [{ data: notes }, { data: spec }] = await Promise.all([
       db.from("crm_notes").select("body").eq("candidate_id", cand.id).eq("kind", "note").order("created_at", { ascending: true }).limit(5),
       cand.specialism_id ? db.from("crm_specialisms").select("name").eq("id", cand.specialism_id).maybeSingle() : Promise.resolve({ data: null }),
@@ -148,13 +152,31 @@ export async function POST(request: Request) {
 
   // ---------- Save and get the link ----------
   if (body.action === "create") {
-    if (!body.consent) return fail("Tick to confirm the candidate has agreed to be put forward.");
-    const content = cleanContent(body.content);
-    if (!content.headline) return fail("Add a headline.");
+    if (!body.consent) return fail("Tick to confirm the candidates have agreed to be put forward.");
+
+    // One candidate ({candidateId, content}) or a shortlist ({items: [{candidateId, content}]})
+    const rawItems: { candidateId?: string; content?: unknown }[] = Array.isArray(body.items)
+      ? body.items
+      : [{ candidateId: body.candidateId, content: body.content }];
+    const items = rawItems
+      .filter((i) => typeof i?.candidateId === "string")
+      .slice(0, 5)
+      .map((i) => ({ candidate_id: i.candidateId as string, content: cleanContent(i.content as Partial<SpecContent>) }));
+    if (!items.length) return fail("Choose at least one candidate.");
+    if (items.some((i) => !i.content.headline)) return fail("Every candidate needs a headline.");
+
+    const ids = items.map((i) => i.candidate_id);
+    const { data: cands } = await db.from("crm_candidates").select("id, first_name, last_name, stage").in("id", ids);
+    if ((cands ?? []).length !== new Set(ids).size) return fail("One of the candidates couldn't be found.");
+    const nameOf = (id: string) => {
+      const c = (cands ?? []).find((x) => x.id === id);
+      return c ? `${c.first_name}${c.last_name ? ` ${c.last_name}` : ""}` : "candidate";
+    };
 
     let companyId: string | null = body.companyId || null;
     let companyName = String(body.companyName || "").trim().slice(0, 160);
     const contactName = String(body.contactName || "").trim().slice(0, 120) || null;
+    const intro = String(body.intro || "").trim().slice(0, 300) || null;
 
     if (companyId) {
       const { data: co } = await db.from("crm_companies").select("id, name, stage").eq("id", companyId).maybeSingle();
@@ -180,12 +202,15 @@ export async function POST(request: Request) {
       .from("crm_specs")
       .insert({
         token,
-        candidate_id: cand.id,
+        candidate_id: items[0].candidate_id,
+        candidate_ids: ids,
+        content: items[0].content,
+        items,
+        intro,
         company_id: companyId,
         company_name: companyName,
         contact_name: contactName,
         role_title: role || null,
-        content,
         created_by: userId,
         expires_at: new Date(Date.now() + 90 * 86400000).toISOString(),
       })
@@ -193,11 +218,15 @@ export async function POST(request: Request) {
       .single();
     if (error) return fail(`Couldn't save the spec: ${error.message}`, 500);
 
-    const who = `${cand.first_name}${cand.last_name ? ` ${cand.last_name}` : ""}`;
+    const kind = items.length > 1 ? `Shortlist spec (${items.length} candidates)` : "Spec page";
     await Promise.all([
-      db.from("crm_notes").insert({ candidate_id: cand.id, kind: "note", body: `Spec page created for ${companyName}${role ? ` (${role})` : ""}.` }),
-      db.from("crm_notes").insert({ company_id: companyId, kind: "note", body: `Spec page created: ${who}${role ? ` for ${role}` : ""}.` }),
-      ["new", "screened"].includes(cand.stage) ? db.from("crm_candidates").update({ stage: "sent" }).eq("id", cand.id) : Promise.resolve(),
+      ...ids.map((id) =>
+        db.from("crm_notes").insert({ candidate_id: id, kind: "note", body: `${kind} created for ${companyName}${role ? ` (${role})` : ""}.` })
+      ),
+      db.from("crm_notes").insert({ company_id: companyId, kind: "note", body: `${kind} created: ${ids.map(nameOf).join(", ")}${role ? ` for ${role}` : ""}.` }),
+      ...(cands ?? [])
+        .filter((c) => ["new", "screened"].includes(c.stage))
+        .map((c) => db.from("crm_candidates").update({ stage: "sent" }).eq("id", c.id)),
     ]);
 
     return NextResponse.json({ id: spec.id, url: specUrl(token), companyId });

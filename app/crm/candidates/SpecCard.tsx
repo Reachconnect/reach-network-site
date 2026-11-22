@@ -20,6 +20,7 @@ type Spec = {
   response: string | null;
   withdrawn: boolean;
   expires_at: string | null;
+  candidate_count?: number;
 };
 
 async function api(method: "GET" | "POST", body?: object, query = "") {
@@ -350,7 +351,10 @@ export default function SpecCard({ candidateId }: { candidateId: string }) {
               <li key={s.id} className="py-3 text-sm">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-slate-800">{s.company_name}</p>
+                    <p className="font-semibold text-slate-800">
+                      {s.company_name}
+                      {(s.candidate_count ?? 1) > 1 && <span className="ml-1.5 text-xs font-normal text-slate-500">shortlist of {s.candidate_count}</span>}
+                    </p>
                     <p className={`text-xs ${st.tone}`}>{st.text}</p>
                     <p className="text-xs text-slate-400">Sent {timeAgo(s.created_at)}</p>
                   </div>
