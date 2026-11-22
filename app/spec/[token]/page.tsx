@@ -1,7 +1,7 @@
 // Public spec page: an anonymised candidate profile sent to a prospective client
 import type { Metadata } from "next";
 import { admin } from "@/lib/crmServer";
-import { cleanContent } from "@/lib/specs";
+import { cleanContent, VIDEO_BUCKET } from "@/lib/specs";
 import SpecClient from "./SpecClient";
 import ShortlistClient from "./ShortlistClient";
 
@@ -44,6 +44,13 @@ export default async function SpecPage({
     );
   }
 
+  // The recruiter's intro video, if there is one (a private file, so a link that lasts 12 hours)
+  let videoUrl: string | null = null;
+  if (spec.video_path) {
+    const { data: signed } = await admin().storage.from(VIDEO_BUCKET).createSignedUrl(spec.video_path, 12 * 3600);
+    videoUrl = signed?.signedUrl ?? null;
+  }
+
   // A shortlist of several candidates
   const items = Array.isArray(spec.items) ? (spec.items as { content: unknown }[]) : [];
   if (items.length > 1) {
@@ -57,6 +64,7 @@ export default async function SpecPage({
         intro={spec.intro}
         introducedOn={spec.created_at}
         alreadyResponded={spec.response}
+        videoUrl={videoUrl}
         people={items.map((i) => cleanContent(i.content as Parameters<typeof cleanContent>[0]))}
       />
     );
@@ -71,6 +79,7 @@ export default async function SpecPage({
       roleTitle={spec.role_title}
       introducedOn={spec.created_at}
       alreadyResponded={spec.response}
+      videoUrl={videoUrl}
       content={cleanContent(spec.content)}
     />
   );

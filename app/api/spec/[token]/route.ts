@@ -4,6 +4,7 @@
 // event "view_item"   on a shortlist, they opened one candidate's full profile ({ index })
 // event "interested"  they want a call (on a shortlist, { picks: [index, ...] } says who)
 // event "not_hiring"  not right now, with an optional "try again in" period
+// event "video_play"  they pressed play on the recruiter's video
 import { NextResponse } from "next/server";
 import { admin } from "@/lib/crmServer";
 import { SITE_URL, sendAlert } from "@/lib/specs";
@@ -70,6 +71,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   if (body.event === "ping") {
     const seconds = Math.min((spec.view_seconds || 0) + 15, 6 * 3600);
     await db.from("crm_specs").update({ view_seconds: seconds }).eq("id", spec.id);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.event === "video_play") {
+    const plays = (spec.video_plays || 0) + 1;
+    await db.from("crm_specs").update({ video_plays: plays }).eq("id", spec.id);
+    if (plays === 1 && spec.company_id) {
+      await db.from("crm_notes").insert({ company_id: spec.company_id, kind: "note", body: `Watched your video on the spec page (${who}).` });
+    }
     return NextResponse.json({ ok: true });
   }
 

@@ -80,3 +80,27 @@ export async function sendAlert(subject: string, lines: string[], link?: { label
     console.error("Spec alert failed:", e);
   }
 }
+
+// =====================================================================
+// Sending a spec email to a prospect (the template itself is in lib/specEmail.ts)
+// =====================================================================
+
+export const SENDER = process.env.SPEC_FROM_EMAIL || "Darren Rowell <darrenrowell@reachnetworkrec.com>";
+export const SENDER_ADDRESS = (SENDER.match(/<([^>]+)>/)?.[1] || SENDER).trim();
+export const VIDEO_BUCKET = "spec-videos";
+
+export async function sendSpecEmail(to: string, subject: string, text: string, html: string) {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return { ok: false, error: "Email sending isn't set up (RESEND_API_KEY missing)." };
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: SENDER, to: [to], reply_to: SENDER_ADDRESS, subject, text, html }),
+    });
+    if (!res.ok) return { ok: false, error: (await res.text()).slice(0, 200) };
+    return { ok: true, error: null };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}

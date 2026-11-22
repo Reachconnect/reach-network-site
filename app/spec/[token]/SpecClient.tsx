@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { SpecContent } from "@/lib/specs";
+import IntroVideo from "./IntroVideo";
 
 type Props = {
   token: string;
@@ -11,6 +12,7 @@ type Props = {
   roleTitle: string | null;
   introducedOn: string;
   alreadyResponded: string | null;
+  videoUrl?: string | null;
   content: SpecContent;
 };
 
@@ -133,6 +135,8 @@ export default function SpecClient(p: Props) {
             </div>
           )}
         </section>
+
+        {p.videoUrl && <IntroVideo url={p.videoUrl} token={p.token} preview={p.preview} about={`why we think ${c.display_name.split(" ")[0]} would suit you`} />}
 
         {/* Checklist and why */}
         <section className="mt-4 rounded-2xl bg-white p-6 shadow-sm">

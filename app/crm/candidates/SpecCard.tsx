@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { SpecContent } from "@/lib/specs";
 import { timeAgo } from "../crm";
+import SpecSender from "../SpecSender";
 
 type Spec = {
   id: string;
@@ -21,6 +22,10 @@ type Spec = {
   withdrawn: boolean;
   expires_at: string | null;
   candidate_count?: number;
+  sent_to_email?: string | null;
+  email_sent_at?: string | null;
+  email_error?: string | null;
+  video_plays?: number | null;
 };
 
 async function api(method: "GET" | "POST", body?: object, query = "") {
@@ -37,48 +42,15 @@ async function api(method: "GET" | "POST", body?: object, query = "") {
 
 const lines = (t: string) => t.split("\n").map((x) => x.trim()).filter(Boolean);
 
-function emailText(c: SpecContent, url: string, company: string, contact: string | null, role: string) {
-  const hi = contact ? contact.split(" ")[0] : "there";
-  const first = c.display_name.split(" ")[0];
-  return {
-    subject: `${c.headline}${c.area ? `, ${c.area}` : ""}`,
-    body: [
-      `Hi ${hi},`,
-      "",
-      `I'm Darren from Reach Network Recruitment. I've got a candidate who I think could be a great fit for ${company}${role ? ` (${role})` : ""}.`,
-      "",
-      `${c.display_name}: ${c.headline}`,
-      ...c.checklist.slice(0, 4).map((x) => `✓ ${x}`),
-      "",
-      c.why,
-      "",
-      `You can see ${first}'s full profile here, and ask us to call you in one tap:`,
-      url,
-      "",
-      "Happy to have a quick chat if you'd like to know more.",
-      "",
-      "Kind regards,",
-      "Darren Rowell",
-      "Reach Network Recruitment",
-    ].join("\n"),
-  };
-}
-
 export default function SpecCard({ candidateId }: { candidateId: string }) {
   const [specs, setSpecs] = useState<Spec[]>([]);
-  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
   const [open, setOpen] = useState(false);
-
-  const [companyId, setCompanyId] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [contactName, setContactName] = useState("");
   const [role, setRole] = useState("");
-  const [consent, setConsent] = useState(false);
 
   const [draft, setDraft] = useState<SpecContent | null>(null);
   const [text, setText] = useState({ checklist: "", qualifications: "", highlights: "" });
-  const [stage, setStage] = useState<"idle" | "writing" | "saving">("idle");
-  const [made, setMade] = useState<{ url: string; subject: string; body: string } | null>(null);
+  const [stage, setStage] = useState<"idle" | "writing">("idle");
+  const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,24 +67,10 @@ export default function SpecCard({ candidateId }: { candidateId: string }) {
     load();
   }, [load]);
 
-  useEffect(() => {
-    if (!open || companies.length) return;
-    supabase
-      .from("crm_companies")
-      .select("id, name")
-      .order("name")
-      .limit(3000)
-      .then(({ data }) => setCompanies((data ?? []) as { id: string; name: string }[]));
-  }, [open, companies.length]);
-
   function reset() {
     setDraft(null);
-    setMade(null);
-    setCompanyId("");
-    setCompanyName("");
-    setContactName("");
+    setSending(false);
     setRole("");
-    setConsent(false);
     setError(null);
   }
 
@@ -130,23 +88,9 @@ export default function SpecCard({ candidateId }: { candidateId: string }) {
     setStage("idle");
   }
 
-  async function create() {
-    if (!draft) return;
-    if (!companyId && !companyName.trim()) return setError("Choose the company, or type a new one.");
-    if (!consent) return setError("Tick to confirm the candidate has agreed to be put forward.");
-    setStage("saving");
-    setError(null);
-    const content: SpecContent = { ...draft, checklist: lines(text.checklist), qualifications: lines(text.qualifications), highlights: lines(text.highlights) };
-    try {
-      const j = await api("POST", { action: "create", candidateId, companyId: companyId || null, companyName, contactName, role, consent, content });
-      const name = companyId ? companies.find((c) => c.id === companyId)?.name || companyName : companyName;
-      setMade({ url: j.url, ...emailText(content, j.url, name, contactName || null, role) });
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-    setStage("idle");
-  }
+  const content: SpecContent | null = draft
+    ? { ...draft, checklist: lines(text.checklist), qualifications: lines(text.qualifications), highlights: lines(text.highlights) }
+    : null;
 
   async function withdraw(id: string) {
     if (!window.confirm("Switch this link off? Anyone opening it will see that the profile is no longer available.")) return;
@@ -162,12 +106,13 @@ export default function SpecCard({ candidateId }: { candidateId: string }) {
 
   function status(s: Spec) {
     if (s.withdrawn) return { text: "Switched off", tone: "text-slate-400" };
+    if (s.email_error && !s.email_sent_at && !s.open_count) return { text: "Email didn't send. Copy the link and send it yourself", tone: "text-red-700" };
     if (s.response === "interested") return { text: "🔥 Interested, call them", tone: "text-green-700 font-semibold" };
     if (s.response === "not_hiring") return { text: "Not hiring right now", tone: "text-slate-500" };
     if (s.open_count > 0) {
       const mins = Math.round(s.view_seconds / 60);
       return {
-        text: `Opened ${s.open_count}× · last ${timeAgo(s.last_opened_at!)}${mins ? ` · ${mins} min reading` : ""}`,
+        text: `Opened ${s.open_count}× · last ${timeAgo(s.last_opened_at!)}${mins ? ` · ${mins} min reading` : ""}${s.video_plays ? " · watched your video" : ""}`,
         tone: "text-blue-700",
       };
     }
@@ -193,30 +138,12 @@ export default function SpecCard({ candidateId }: { candidateId: string }) {
           </button>
         )}
       </div>
-      <p className="mt-1 text-xs text-slate-500">An anonymised profile page for a company, with an email when they open it or respond.</p>
+      <p className="mt-1 text-xs text-slate-500">An anonymised profile page for one or more companies, emailed from the CRM, with an alert when they open it or respond.</p>
 
       {error && <p className="mt-3 rounded-lg bg-red-50 p-2.5 text-sm text-red-700">{error}</p>}
 
-      {open && !made && (
+      {open && (
         <div className="mt-4 space-y-3">
-          <div>
-            <label className={label}>Company</label>
-            <select className={field} value={companyId} onChange={(e) => setCompanyId(e.target.value)}>
-              <option value="">New company (type below)</option>
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            {!companyId && (
-              <input className={`${field} mt-2`} placeholder="Company name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
-            )}
-          </div>
-          <div>
-            <label className={label}>Contact name (optional)</label>
-            <input className={field} placeholder="e.g. Sarah Jones" value={contactName} onChange={(e) => setContactName(e.target.value)} />
-          </div>
           <div>
             <label className={label}>What they might need (optional)</label>
             <input className={field} placeholder="e.g. Class 1 night driver, Worcester depot" value={role} onChange={(e) => setRole(e.target.value)} />
@@ -282,63 +209,35 @@ export default function SpecCard({ candidateId }: { candidateId: string }) {
                 </div>
               </div>
 
-              <label className="flex items-start gap-2 text-sm text-slate-700">
-                <input type="checkbox" className="mt-0.5" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-                The candidate has agreed to be put forward to employers anonymously.
-              </label>
-
-              <div className="flex gap-2">
-                <button onClick={create} disabled={stage !== "idle"} className="flex-1 rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
-                  {stage === "saving" ? "Creating…" : "Create link"}
-                </button>
-                <button onClick={write} disabled={stage !== "idle"} className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-600">
-                  Rewrite
-                </button>
-              </div>
+              {!sending ? (
+                <div className="flex gap-2">
+                  <button onClick={() => setSending(true)} className="flex-1 rounded-lg bg-[#F7931E] px-4 py-2.5 text-sm font-semibold text-white">
+                    Next: who&apos;s it going to?
+                  </button>
+                  <button onClick={write} disabled={stage !== "idle"} className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-600">
+                    {stage === "writing" ? "Rewriting…" : "Rewrite"}
+                  </button>
+                </div>
+              ) : (
+                content && (
+                  <div className="border-t border-slate-100 pt-4">
+                    <SpecSender
+                      items={[{ candidateId, content }]}
+                      role={role}
+                      onDone={load}
+                      onClose={() => {
+                        setOpen(false);
+                        reset();
+                      }}
+                    />
+                  </div>
+                )
+              )}
             </>
           )}
 
           <button onClick={() => setOpen(false)} className="w-full text-center text-sm text-slate-500 hover:text-slate-700">
             Cancel
-          </button>
-        </div>
-      )}
-
-      {made && (
-        <div className="mt-4 space-y-3">
-          <p className="rounded-lg bg-green-50 p-2.5 text-sm text-green-800">Done. Copy the email below and send it from your own inbox.</p>
-          <div>
-            <label className={label}>Subject</label>
-            <div className="flex gap-2">
-              <input readOnly className={field} value={made.subject} />
-              <button onClick={() => copy(made.subject, "subject")} className="rounded-lg border border-slate-200 px-3 text-sm">
-                {copied === "subject" ? "Copied" : "Copy"}
-              </button>
-            </div>
-          </div>
-          <div>
-            <label className={label}>Email</label>
-            <textarea readOnly rows={12} className={field} value={made.body} />
-            <button onClick={() => copy(made.body, "body")} className="mt-1 w-full rounded-lg bg-[#F7931E] px-4 py-2 text-sm font-semibold text-white">
-              {copied === "body" ? "Copied" : "Copy email"}
-            </button>
-          </div>
-          <div className="flex gap-2">
-            <a href={`${made.url}?preview=1`} target="_blank" className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-center text-sm">
-              Preview page
-            </a>
-            <button onClick={() => copy(made.url, "link")} className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm">
-              {copied === "link" ? "Copied" : "Copy link only"}
-            </button>
-          </div>
-          <button
-            onClick={() => {
-              setOpen(false);
-              reset();
-            }}
-            className="w-full text-center text-sm text-slate-500 hover:text-slate-700"
-          >
-            Close
           </button>
         </div>
       )}
@@ -356,7 +255,9 @@ export default function SpecCard({ candidateId }: { candidateId: string }) {
                       {(s.candidate_count ?? 1) > 1 && <span className="ml-1.5 text-xs font-normal text-slate-500">shortlist of {s.candidate_count}</span>}
                     </p>
                     <p className={`text-xs ${st.tone}`}>{st.text}</p>
-                    <p className="text-xs text-slate-400">Sent {timeAgo(s.created_at)}</p>
+                    <p className="text-xs text-slate-400">
+                      {s.email_sent_at ? `Emailed to ${s.sent_to_email}` : "Link made"} {timeAgo(s.created_at)}
+                    </p>
                   </div>
                   {!s.withdrawn && (
                     <div className="flex flex-none gap-2 text-xs">

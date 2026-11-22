@@ -4,6 +4,7 @@
 // and tick the people they'd like to talk about.
 import { useEffect, useRef, useState } from "react";
 import type { SpecContent } from "@/lib/specs";
+import IntroVideo from "./IntroVideo";
 
 type Props = {
   token: string;
@@ -14,6 +15,7 @@ type Props = {
   intro: string | null;
   introducedOn: string;
   alreadyResponded: string | null;
+  videoUrl?: string | null;
   people: SpecContent[];
 };
 
@@ -137,6 +139,8 @@ export default function ShortlistClient(p: Props) {
           {p.roleTitle && <p className="mt-2 text-sm text-slate-500">For: {p.roleTitle}</p>}
           <p className="mt-3 text-[15px] text-slate-600">Tap anyone to see their full profile, and tick the people you&apos;d like to talk about.</p>
         </section>
+
+        {p.videoUrl && <IntroVideo url={p.videoUrl} token={p.token} preview={p.preview} about={"this shortlist"} />}
 
         {/* One card per candidate */}
         <div className="mt-4 space-y-3">

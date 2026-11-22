@@ -1,14 +1,21 @@
 // /api/crm/specs: spec pages for prospective clients (agency staff only)
 // GET  ?candidateId=...         the specs already sent for a candidate
 // POST action "draft"           the AI writes an anonymised draft for a role
-// POST action "create"          saves it (one candidate, or a shortlist of up to 5) and returns the link
+// POST action "create"          saves it (one candidate, or a shortlist of up to 5) for one or more companies.
+//                               Each company gets its own link. With sendEmail, the CRM emails each one.
+// POST action "video_upload"    a one-off upload address for the recruiter's intro video
 // POST action "withdraw"        switches a link off
 import { NextResponse } from "next/server";
 import { admin, requireAgency } from "@/lib/crmServer";
-import { cleanContent, newToken, specUrl, type SpecContent } from "@/lib/specs";
+import { cleanContent, newToken, sendSpecEmail, specUrl, VIDEO_BUCKET, type SpecContent } from "@/lib/specs";
+import { fillEmail, renderEmail } from "@/lib/specEmail";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 120;
+
+const MAX_COMPANIES = 20;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const MODEL = process.env.AI_MODEL || "claude-sonnet-5-5";
 
@@ -92,6 +99,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  // ---------- Somewhere to upload the intro video (goes straight to storage, not through the server) ----------
+  if (body.action === "video_upload") {
+    const ext = String(body.filename || "").split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4";
+    const path = `${new Date().toISOString().slice(0, 10)}/${newToken()}.${ext}`;
+    const { data, error } = await db.storage.from(VIDEO_BUCKET).createSignedUploadUrl(path);
+    if (error || !data) return fail(`Couldn't get the video ready to upload: ${error?.message || "unknown error"}. Has the spec-videos bucket been created?`, 500);
+    return NextResponse.json({ path: data.path, token: data.token });
+  }
+
   const role = String(body.role || "").trim().slice(0, 300);
 
   // ---------- AI draft (one candidate at a time) ----------
@@ -150,7 +166,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ content });
   }
 
-  // ---------- Save and get the link ----------
+  // ---------- Save, one link per company, and optionally email each one ----------
   if (body.action === "create") {
     if (!body.consent) return fail("Tick to confirm the candidates have agreed to be put forward.");
 
@@ -173,63 +189,136 @@ export async function POST(request: Request) {
       return c ? `${c.first_name}${c.last_name ? ` ${c.last_name}` : ""}` : "candidate";
     };
 
-    let companyId: string | null = body.companyId || null;
-    let companyName = String(body.companyName || "").trim().slice(0, 160);
-    const contactName = String(body.contactName || "").trim().slice(0, 120) || null;
-    const intro = String(body.intro || "").trim().slice(0, 300) || null;
+    // Who it's going to: a list of companies, or the older single-company fields
+    type Rec = { companyId?: string | null; companyName?: string; contactName?: string; email?: string };
+    const rawRecs: Rec[] = Array.isArray(body.recipients)
+      ? body.recipients
+      : [{ companyId: body.companyId, companyName: body.companyName, contactName: body.contactName, email: body.email }];
+    const recs = rawRecs
+      .map((r) => ({
+        companyId: typeof r?.companyId === "string" && r.companyId ? r.companyId : null,
+        companyName: String(r?.companyName || "").trim().slice(0, 160),
+        contactName: String(r?.contactName || "").trim().slice(0, 120) || null,
+        email: String(r?.email || "").trim().toLowerCase().slice(0, 200),
+      }))
+      .filter((r) => r.companyId || r.companyName);
+    if (!recs.length) return fail("Choose or type at least one company.");
+    if (recs.length > MAX_COMPANIES) return fail(`You can send to up to ${MAX_COMPANIES} companies at a time.`);
 
-    if (companyId) {
-      const { data: co } = await db.from("crm_companies").select("id, name, stage").eq("id", companyId).maybeSingle();
-      if (!co) return fail("That company couldn't be found.");
-      companyName = co.name;
-      if (co.stage === "lead") await db.from("crm_companies").update({ stage: "contacted", last_contacted_at: new Date().toISOString() }).eq("id", co.id);
-      else await db.from("crm_companies").update({ last_contacted_at: new Date().toISOString() }).eq("id", co.id);
-    } else {
-      if (!companyName) return fail("Choose or type the company you're sending it to.");
-      // New prospect goes into the sales pipeline
-      const { data: co, error } = await db
-        .from("crm_companies")
-        .insert({ name: companyName, stage: "contacted", source: "Spec CV", last_contacted_at: new Date().toISOString() })
-        .select("id")
-        .single();
-      if (error) return fail(`Couldn't add the company: ${error.message}`, 500);
-      companyId = co.id;
-      if (contactName) await db.from("crm_contacts").insert({ company_id: companyId, name: contactName, is_primary: true });
+    const sendEmail = !!body.sendEmail;
+    let template: { subject: string; text: string } | null = null;
+    if (sendEmail) {
+      const bad = recs.find((r) => !EMAIL_RE.test(r.email));
+      if (bad) return fail(`Add a valid email address for ${bad.companyName || "every company"}.`);
+      template = { subject: String(body.subject || "").trim().slice(0, 200), text: String(body.message || "").slice(0, 8000) };
+      if (!template.subject || !template.text.trim()) return fail("The email needs a subject and a message.");
     }
 
-    const token = newToken();
-    const { data: spec, error } = await db
-      .from("crm_specs")
-      .insert({
-        token,
-        candidate_id: items[0].candidate_id,
-        candidate_ids: ids,
-        content: items[0].content,
-        items,
-        intro,
-        company_id: companyId,
-        company_name: companyName,
-        contact_name: contactName,
-        role_title: role || null,
-        created_by: userId,
-        expires_at: new Date(Date.now() + 90 * 86400000).toISOString(),
-      })
-      .select("id")
-      .single();
-    if (error) return fail(`Couldn't save the spec: ${error.message}`, 500);
-
+    const intro = String(body.intro || "").trim().slice(0, 300) || null;
+    const videoPath = typeof body.videoPath === "string" && /^[\w\-./]+$/.test(body.videoPath) ? body.videoPath : null;
     const kind = items.length > 1 ? `Shortlist spec (${items.length} candidates)` : "Spec page";
-    await Promise.all([
-      ...ids.map((id) =>
-        db.from("crm_notes").insert({ candidate_id: id, kind: "note", body: `${kind} created for ${companyName}${role ? ` (${role})` : ""}.` })
-      ),
-      db.from("crm_notes").insert({ company_id: companyId, kind: "note", body: `${kind} created: ${ids.map(nameOf).join(", ")}${role ? ` for ${role}` : ""}.` }),
-      ...(cands ?? [])
-        .filter((c) => ["new", "screened"].includes(c.stage))
-        .map((c) => db.from("crm_candidates").update({ stage: "sent" }).eq("id", c.id)),
-    ]);
+    const buttonLabel = items.length > 1 ? "See the candidates" : `See ${items[0].content.display_name.split(" ")[0]}'s profile`;
+    const nowIso = () => new Date().toISOString();
 
-    return NextResponse.json({ id: spec.id, url: specUrl(token), companyId });
+    const results: { companyName: string; companyId: string | null; url: string | null; emailed: boolean; error: string | null }[] = [];
+
+    for (const r of recs) {
+      let companyId = r.companyId;
+      let companyName = r.companyName;
+      try {
+        if (companyId) {
+          const { data: co } = await db.from("crm_companies").select("id, name, stage").eq("id", companyId).maybeSingle();
+          if (!co) throw new Error("That company couldn't be found.");
+          companyName = co.name;
+          await db
+            .from("crm_companies")
+            .update(co.stage === "lead" ? { stage: "contacted", last_contacted_at: nowIso() } : { last_contacted_at: nowIso() })
+            .eq("id", co.id);
+          // Keep the contact we're emailing on the company
+          if (r.email) {
+            const { data: existing } = await db.from("crm_contacts").select("id").eq("company_id", co.id).ilike("email", r.email).limit(1);
+            if (!existing?.length) await db.from("crm_contacts").insert({ company_id: co.id, name: r.contactName || r.email, email: r.email });
+          }
+        } else {
+          // New prospect goes into the sales pipeline
+          const { data: co, error } = await db
+            .from("crm_companies")
+            .insert({ name: companyName, stage: "contacted", source: "Spec CV", last_contacted_at: nowIso() })
+            .select("id")
+            .single();
+          if (error) throw new Error(`Couldn't add the company: ${error.message}`);
+          companyId = co.id;
+          if (r.contactName || r.email) {
+            await db.from("crm_contacts").insert({ company_id: companyId, name: r.contactName || r.email, email: r.email || null, is_primary: true });
+          }
+        }
+
+        const token = newToken();
+        const { data: spec, error } = await db
+          .from("crm_specs")
+          .insert({
+            token,
+            candidate_id: items[0].candidate_id,
+            candidate_ids: ids,
+            content: items[0].content,
+            items,
+            intro,
+            company_id: companyId,
+            company_name: companyName,
+            contact_name: r.contactName,
+            role_title: role || null,
+            created_by: userId,
+            expires_at: new Date(Date.now() + 90 * 86400000).toISOString(),
+          })
+          .select("id")
+          .single();
+        if (error) throw new Error(`Couldn't save the spec: ${error.message}`);
+        const url = specUrl(token);
+        if (videoPath) await db.from("crm_specs").update({ video_path: videoPath }).eq("id", spec.id);
+
+        let emailed = false;
+        let emailError: string | null = null;
+        if (sendEmail && template) {
+          const filled = fillEmail(template, { name: r.contactName, company: companyName, link: url });
+          const out = renderEmail(filled.text, url, buttonLabel);
+          const sent = await sendSpecEmail(r.email, filled.subject, out.text, out.html);
+          emailed = sent.ok;
+          emailError = sent.error;
+          await db
+            .from("crm_specs")
+            .update({ sent_to_email: r.email, email_sent_at: sent.ok ? nowIso() : null, email_error: sent.error })
+            .eq("id", spec.id);
+          await wait(600); // stay under the email service's rate limit
+        }
+
+        const how = emailed ? ` and emailed to ${r.email}` : emailError ? ` (email to ${r.email} failed)` : "";
+        await db.from("crm_notes").insert({
+          company_id: companyId,
+          kind: "note",
+          body: `${kind} created${how}: ${ids.map(nameOf).join(", ")}${role ? ` for ${role}` : ""}${videoPath ? ", with your video" : ""}.`,
+        });
+        results.push({ companyName, companyId, url, emailed, error: emailError ? `Saved, but the email didn't send: ${emailError}` : null });
+      } catch (e) {
+        results.push({ companyName: companyName || "Company", companyId, url: null, emailed: false, error: (e as Error).message });
+      }
+    }
+
+    const done = results.filter((x) => x.url);
+    if (!done.length) return fail(results[0]?.error || "Nothing was saved.", 500);
+    {
+      const where = done.length === 1 ? done[0].companyName : `${done.length} companies`;
+      await Promise.all([
+        ...ids.map((id) =>
+          db.from("crm_notes").insert({ candidate_id: id, kind: "note", body: `${kind} ${sendEmail ? "sent" : "created"} for ${where}${role ? ` (${role})` : ""}.` })
+        ),
+        ...(cands ?? [])
+          .filter((c) => ["new", "screened"].includes(c.stage))
+          .map((c) => db.from("crm_candidates").update({ stage: "sent" }).eq("id", c.id)),
+      ]);
+    }
+
+    // The older single-company shape still gets { url, companyId } back
+    return NextResponse.json({ results, url: results[0]?.url ?? null, companyId: results[0]?.companyId ?? null, id: null });
   }
 
   return fail("Unknown action.");
