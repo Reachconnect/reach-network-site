@@ -660,23 +660,72 @@ export default function HomeClient({ jobs, jobCount }: { jobs: HomeJob[]; jobCou
       </section>
 
       {/* TOOLS */}
-      <section className="bg-white pb-4 pt-2">
-        <div className="mx-auto grid max-w-7xl gap-4 px-5 sm:px-6 md:grid-cols-2 lg:grid-cols-5 lg:px-8">
-          {[
-            { t: "What will a temp cost?", s: "Work out the real hourly cost, holiday, NI and pension included.", h: "/pay-rates#calculator", tag: "Calculator" },
-            { t: "What should I pay?", s: "Typical pay rates for drivers, warehouse, production and engineers.", h: "/pay-rates", tag: "Pay rates" },
-            { t: "Free CV builder", s: "A professional CV in 5 minutes. Add the basics, we write the rest.", h: "/cv-builder", tag: "For workers" },
-            { t: "What will I take home?", s: "Turn an hourly rate into weekly pay after tax, NI and pension.", h: "/take-home-pay", tag: "For workers" },
-            { t: "Driver and FLT guides", s: "CPC, tacho cards, licence categories and FLT training explained.", h: "/guides", tag: "Guides" },
-          ].map((x) => (
-            <Link key={x.t} href={x.h} className="group flex items-start gap-4 rounded-2xl border border-slate-200 p-5 transition hover:-translate-y-0.5 hover:border-orange/50 hover:shadow-lg">
-              <span className="flex-none rounded-lg bg-orange/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-orange">{x.tag}</span>
-              <span>
-                <span className="block font-display font-bold text-navy group-hover:text-orange">{x.t}</span>
-                <span className="mt-0.5 block text-sm text-slate-500">{x.s}</span>
-              </span>
-            </Link>
-          ))}
+      <section className="bg-white py-16 lg:py-20">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <Reveal>
+            <div className="max-w-2xl">
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Free tools</p>
+              <h2 className="mt-3 font-display text-3xl font-extrabold text-navy sm:text-4xl">Quick answers, no sign-up</h2>
+              <p className="mt-3 text-lg text-slate-600">Work out costs, check pay rates or build a CV in minutes.</p>
+            </div>
+          </Reveal>
+
+          <div className="mt-10 grid gap-6 lg:grid-cols-2">
+            {[
+              {
+                who: "For employers",
+                blurb: "Plan your budget before you book.",
+                dark: false,
+                items: [
+                  { t: "What will a temp cost?", s: "The real hourly cost, with holiday, NI and pension included.", h: "/pay-rates#calculator", i: "M4 2h16v20H4zM8 6h8M8 10h2m4 0h2M8 14h2m4 0h2M8 18h2m4 0h2" },
+                  { t: "What should I pay?", s: "Typical rates for drivers, warehouse, production and engineers.", h: "/pay-rates", i: "M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
+                  { t: "Free salary guide", s: "Midlands pay by role, from official ONS data. Download the PDF.", h: "/salary-guide", i: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M12 18v-6m-3 3 3 3 3-3" },
+                ],
+              },
+              {
+                who: "For workers",
+                blurb: "Everything you need to land the next job.",
+                dark: true,
+                items: [
+                  { t: "Free CV builder", s: "A professional CV in 5 minutes. Add the basics, we write the rest.", h: "/cv-builder", i: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5" },
+                  { t: "What will I take home?", s: "Turn an hourly rate into weekly pay after tax, NI and pension.", h: "/take-home-pay", i: "M2 7h20v12H2zM16 13h.01M2 11h20" },
+                  { t: "Driver and FLT guides", s: "CPC, tacho cards, licence categories and FLT training explained.", h: "/guides", i: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5" },
+                ],
+              },
+            ].map((g, gi) => (
+              <Reveal key={g.who} delay={gi * 120} className="h-full">
+                <div className={`relative h-full overflow-hidden rounded-3xl p-6 sm:p-8 ${g.dark ? "bg-navy text-white" : "bg-orange/5 ring-1 ring-orange/15"}`}>
+                  {g.dark && <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange/25 blur-3xl" />}
+                  <div className="relative flex items-baseline justify-between gap-4">
+                    <h3 className={`font-display text-2xl font-extrabold ${g.dark ? "text-white" : "text-navy"}`}>{g.who}</h3>
+                    <p className={`hidden text-sm sm:block ${g.dark ? "text-white/60" : "text-slate-500"}`}>{g.blurb}</p>
+                  </div>
+                  <div className="relative mt-6 space-y-3">
+                    {g.items.map((x) => (
+                      <Link
+                        key={x.t}
+                        href={x.h}
+                        className={`group flex items-center gap-4 rounded-2xl p-4 transition hover:-translate-y-0.5 ${
+                          g.dark ? "bg-white/5 ring-1 ring-white/10 hover:bg-white/10" : "bg-white shadow-sm ring-1 ring-black/5 hover:shadow-lg"
+                        }`}
+                      >
+                        <span className={`flex h-12 w-12 flex-none items-center justify-center rounded-xl ${g.dark ? "bg-orange text-white" : "bg-orange/10 text-orange"}`}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6" aria-hidden="true">
+                            <path d={x.i} />
+                          </svg>
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className={`block font-display text-lg font-bold ${g.dark ? "text-white" : "text-navy"} group-hover:text-orange`}>{x.t}</span>
+                          <span className={`mt-0.5 block text-sm ${g.dark ? "text-white/65" : "text-slate-500"}`}>{x.s}</span>
+                        </span>
+                        <span className="flex-none text-xl text-orange transition group-hover:translate-x-1">→</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
