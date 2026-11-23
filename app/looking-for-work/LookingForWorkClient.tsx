@@ -37,7 +37,7 @@ const STEPS = [
 
 const FAQS = [
   { q: "Does it cost anything?", a: "No. It's free to register and apply, and always will be." },
-  { q: "Do I need a CV?", a: "It helps, but it's not essential. You can apply without one and we'll talk it through on the phone." },
+  { q: "Do I need a CV?", a: "It helps, but it's not essential. You can apply without one, or build one free in 5 minutes with our CV builder at reachnetworkrec.com/cv-builder." },
   { q: "I can't see a job that suits me. What now?", a: "Send us your CV anyway. Lots of our work is filled before it's advertised, so we'll be in touch when something fits." },
   { q: "What documents will I need?", a: "Proof of ID and right to work, plus any licences, CPC, digi card or tickets for the work you're applying for." },
   { q: "How will I clock in?", a: "Temporary workers clock in and out on their phone with the Reach Connect app, so your hours are recorded correctly." },
@@ -419,6 +419,13 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
                   </>
                 )}
               </form>
+              <Link href="/cv-builder" className="flex items-center justify-between rounded-2xl bg-orange p-5 font-bold text-white transition hover:bg-orange-dark">
+                <span>
+                  <span className="block text-xs font-normal text-white/80">No CV? No problem</span>
+                  Build one free in 5 minutes
+                </span>
+                <span>→</span>
+              </Link>
               <Link href="/take-home-pay" className="flex items-center justify-between rounded-2xl border border-orange/40 bg-orange/5 p-5 font-bold text-navy transition hover:bg-orange/10">
                 <span>
                   <span className="block text-xs font-normal text-slate-500">Free calculator</span>

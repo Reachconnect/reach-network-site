@@ -661,10 +661,11 @@ export default function HomeClient({ jobs, jobCount }: { jobs: HomeJob[]; jobCou
 
       {/* TOOLS */}
       <section className="bg-white pb-4 pt-2">
-        <div className="mx-auto grid max-w-7xl gap-4 px-5 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-4 px-5 sm:px-6 md:grid-cols-2 lg:grid-cols-5 lg:px-8">
           {[
             { t: "What will a temp cost?", s: "Work out the real hourly cost, holiday, NI and pension included.", h: "/pay-rates#calculator", tag: "Calculator" },
             { t: "What should I pay?", s: "Typical pay rates for drivers, warehouse, production and engineers.", h: "/pay-rates", tag: "Pay rates" },
+            { t: "Free CV builder", s: "A professional CV in 5 minutes. Add the basics, we write the rest.", h: "/cv-builder", tag: "For workers" },
             { t: "What will I take home?", s: "Turn an hourly rate into weekly pay after tax, NI and pension.", h: "/take-home-pay", tag: "For workers" },
             { t: "Driver and FLT guides", s: "CPC, tacho cards, licence categories and FLT training explained.", h: "/guides", tag: "Guides" },
           ].map((x) => (
