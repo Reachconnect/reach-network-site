@@ -1,16 +1,21 @@
-import { createClient } from '@/lib/supabase/server'
-import LookingForWorkClient from './LookingForWorkClient'
+import LookingForWorkClient from "./LookingForWorkClient";
+import { listPublicJobs } from "@/lib/jobsPublic";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
+// Jobs published from the CRM, plus any still on the older website job list
 export default async function LookingForWorkPage() {
-  const supabase = await createClient()
-
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('*')
-    .eq('status', 'open')
-    .order('created_at', { ascending: false })
-
-  return <LookingForWorkClient jobs={jobs || []} />
+  const jobs = (await listPublicJobs()).map((j) => ({
+    id: j.key,
+    title: j.title,
+    category: j.category,
+    location: j.area || j.location,
+    employment_type: j.employment_type,
+    salary: j.salary,
+    description: j.summary || j.description,
+    status: "open",
+    created_at: j.created_at,
+    href: j.href,
+  }));
+  return <LookingForWorkClient jobs={jobs} />;
 }

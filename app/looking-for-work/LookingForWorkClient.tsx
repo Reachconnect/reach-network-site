@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import ApplyForm from "../jobs/ApplyForm";
 import Image from "next/image";
 import Footer from "../components/Footer";
 import { createClient } from "@/lib/supabase/client";
@@ -16,9 +17,9 @@ type Job = {
   description: string | null;
   status: string;
   created_at: string;
+  href: string;
 };
 
-const CATEGORIES = ["All categories", "Driving", "Warehousing", "Manufacturing", "Engineering"] as const;
 const EMPLOYMENT_TYPES = ["Permanent", "Temporary"] as const;
 
 const NAV_SECTIONS = [
@@ -62,7 +63,7 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<(typeof CATEGORIES)[number]>("All categories");
+  const [categoryFilter, setCategoryFilter] = useState<string>("All categories");
   const [locationFilters, setLocationFilters] = useState<string[]>([]);
   const [typeFilters, setTypeFilters] = useState<string[]>([]);
 
@@ -79,6 +80,8 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
   const [cvOnlyFile, setCvOnlyFile] = useState<File | null>(null);
   const [cvOnlyStatus, setCvOnlyStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
 
+  const categories = useMemo(() => ["All categories", ...Array.from(new Set(jobs.map((j) => j.category).filter(Boolean))).sort()], [jobs]);
+
   const locations = useMemo(
     () => Array.from(new Set(jobs.map((j) => j.location).filter(Boolean))) as string[],
     [jobs]
@@ -87,7 +90,7 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
       const matchesSearch =
-        search.trim() === "" || job.title.toLowerCase().includes(search.toLowerCase());
+        search.trim() === "" || `${job.title} ${job.category} ${job.location ?? ""}`.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = categoryFilter === "All categories" || job.category === categoryFilter;
       const matchesLocation = locationFilters.length === 0 || (job.location && locationFilters.includes(job.location));
       const matchesType = typeFilters.length === 0 || (job.employment_type && typeFilters.includes(job.employment_type));
@@ -347,10 +350,10 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
 
             <select
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value as (typeof CATEGORIES)[number])}
+              onChange={(e) => setCategoryFilter(e.target.value)}
               className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none"
             >
-              {CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -404,20 +407,30 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
                         {job.category.slice(0, 2).toUpperCase()}
                       </span>
                       <div>
-                        <p className="font-display text-sm font-bold text-navy">{job.title}</p>
+                        <Link href={job.href} className="font-display text-sm font-bold text-navy hover:text-orange-dark hover:underline">
+                          {job.title}
+                        </Link>
                         <p className="mt-0.5 text-xs text-slate-500">{job.category}</p>
                         <p className="mt-0.5 text-xs text-slate-400">
                           {job.location} {job.employment_type && `· ${job.employment_type}`} {job.salary && `· ${job.salary}`}
                         </p>
-                        {job.description && <p className="mt-2 text-xs text-slate-500 max-w-md">{job.description}</p>}
+                        {job.description && <p className="mt-2 line-clamp-2 max-w-md text-xs text-slate-500">{job.description}</p>}
                       </div>
                     </div>
-                    <button
-                      onClick={() => openApply(job)}
-                      className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-navy px-5 py-2.5 text-xs font-bold text-white transition hover:bg-navy-deep"
-                    >
-                      Apply now <span aria-hidden="true">&rarr;</span>
-                    </button>
+                    <div className="flex shrink-0 gap-2">
+                      <Link
+                        href={job.href}
+                        className="flex items-center justify-center rounded-full border border-navy px-5 py-2.5 text-xs font-bold text-navy transition hover:bg-slate-50"
+                      >
+                        View job
+                      </Link>
+                      <Link
+                        href={`${job.href}#apply`}
+                        className="flex items-center justify-center gap-1.5 rounded-full bg-navy px-5 py-2.5 text-xs font-bold text-white transition hover:bg-navy-deep"
+                      >
+                        Apply now <span aria-hidden="true">&rarr;</span>
+                      </Link>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -597,79 +610,16 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
       {showCvModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 max-h-[90vh] overflow-y-auto">
-            {cvOnlyStatus === "done" ? (
-              <div className="text-center py-6">
-                <p className="font-display text-lg font-bold text-navy">CV received!</p>
-                <p className="mt-2 text-sm text-slate-500">Our team will match you with suitable opportunities and be in touch.</p>
-                <button
-                  onClick={() => setShowCvModal(false)}
-                  className="mt-5 rounded-full bg-navy px-6 py-2.5 text-sm font-bold text-white"
-                >
-                  Close
-                </button>
-              </div>
-            ) : (
-              <>
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
                 <p className="font-display text-lg font-bold text-navy">Upload your CV</p>
                 <p className="mt-1 text-xs text-slate-500">We&rsquo;ll match you with suitable roles and get in touch.</p>
-
-                <form onSubmit={handleCvOnlySubmit} className="mt-4 space-y-3">
-                  <input
-                    placeholder="Full name"
-                    required
-                    value={cvOnlyForm.name}
-                    onChange={(e) => setCvOnlyForm({ ...cvOnlyForm, name: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    required
-                    value={cvOnlyForm.email}
-                    onChange={(e) => setCvOnlyForm({ ...cvOnlyForm, email: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none"
-                  />
-                  <input
-                    type="tel"
-                    placeholder="Phone (optional)"
-                    value={cvOnlyForm.phone}
-                    onChange={(e) => setCvOnlyForm({ ...cvOnlyForm, phone: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none"
-                  />
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600">Upload CV (PDF or Word)</label>
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      required
-                      onChange={(e) => setCvOnlyFile(e.target.files?.[0] || null)}
-                      className="mt-1 w-full text-xs text-slate-500"
-                    />
-                  </div>
-
-                  {cvOnlyStatus === "error" && (
-                    <p className="text-xs text-red-600">Something went wrong — please try again.</p>
-                  )}
-
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      type="submit"
-                      disabled={cvOnlyStatus === "submitting"}
-                      className="flex-1 rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark disabled:opacity-50"
-                    >
-                      {cvOnlyStatus === "submitting" ? "Uploading..." : "Submit CV"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowCvModal(false)}
-                      className="flex-1 rounded-full bg-slate-100 px-5 py-2.5 text-sm font-bold text-slate-700"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
+              </div>
+              <button onClick={() => setShowCvModal(false)} aria-label="Close" className="rounded-full px-2 text-xl leading-none text-slate-400 hover:text-slate-700">
+                ×
+              </button>
+            </div>
+            <ApplyForm jobKey={null} jobTitle={null} compact />
           </div>
         </div>
       )}

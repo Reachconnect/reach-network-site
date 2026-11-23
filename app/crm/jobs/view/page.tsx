@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Icon, candidateName, type Candidate, type Specialism } from "../../crm";
 import FindMatches from "../FindMatches";
+import JobWebsiteCard from "../JobWebsiteCard";
 import {
   CANDIDATE_STAGE_FOR,
   JOB_STATUSES,
@@ -164,6 +165,8 @@ function JobView() {
       </div>
 
       {job.description && <p className="mt-4 max-w-3xl whitespace-pre-wrap rounded-2xl bg-white p-4 text-sm text-slate-700 shadow-sm">{job.description}</p>}
+
+      <JobWebsiteCard job={job} />
 
       <div className="mt-4 flex items-center justify-between">
         <h2 className="text-lg font-bold text-[#1F3447]">Shortlist</h2>
