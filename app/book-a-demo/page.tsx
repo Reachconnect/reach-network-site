@@ -280,7 +280,7 @@ function FloatingPhone() {
 
   return (
     <div className="relative flex items-center justify-center py-10">
-      <div className="absolute h-[340px] w-[340px] rounded-full bg-[radial-gradient(circle,#FDEEDD_0%,#FDEEDD_55%,transparent_75%)]" />
+      <div className="absolute h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(247,147,30,0.35)_0%,rgba(247,147,30,0.12)_45%,transparent_70%)]" />
       <div className="relative animate-[floatBob_3.6s_ease-in-out_infinite] [transform:rotate(-8deg)]">
         <div className="w-[260px] rounded-[2.75rem] border-[7px] border-navy bg-navy shadow-2xl">
           <div className="relative h-5">
@@ -349,6 +349,13 @@ function FloatingPhone() {
 
               {activeScreen.render === "timesheets" && (
                 <div className="space-y-2">
+                  <div className="rounded-lg bg-navy p-2.5 text-white">
+                    <p className="text-[9px] uppercase tracking-wide text-white/60">This week</p>
+                    <div className="mt-1 flex items-end justify-between">
+                      <p className="text-sm font-bold">5 to approve</p>
+                      <p className="text-[10px] text-orange">196.5 hrs</p>
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between rounded-lg bg-white p-2.5">
                     <div>
                       <p className="text-xs font-bold text-navy">Amara Okafor</p>
@@ -369,6 +376,19 @@ function FloatingPhone() {
                     </div>
                     <span className="text-[10px] font-bold text-green-700">Approved</span>
                   </div>
+                  {[
+                    ["Priya Shah", "37.5 hrs · Uttoxeter"],
+                    ["Tom Walsh", "42 hrs · Coventry"],
+                    ["Daniel Mensah", "38.5 hrs · Birmingham"],
+                  ].map(([n, d]) => (
+                    <div key={n} className="flex items-center justify-between rounded-lg bg-white p-2.5">
+                      <div>
+                        <p className="text-xs font-bold text-navy">{n}</p>
+                        <p className="text-[10px] text-slate-500">{d}</p>
+                      </div>
+                      <span className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-bold text-navy">Approve</span>
+                    </div>
+                  ))}
                   <div
                     className={`rounded-lg bg-green-50 px-3 py-2 text-[11px] font-bold text-green-800 transition-all duration-300 ${
                       showThanks ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
@@ -551,7 +571,7 @@ export default function BookADemoPage() {
       </header>
 
       {/* HERO */}
-      <section className="relative overflow-hidden bg-navy pb-8 pt-10 lg:pb-0">
+      <section className="relative overflow-hidden bg-navy pb-6 pt-10 lg:pb-10">
         <div className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-orange/20 blur-3xl" />
         <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-6 lg:grid-cols-2 lg:gap-8 lg:px-8">
           <div className="pb-8 lg:pb-16">
@@ -582,14 +602,14 @@ export default function BookADemoPage() {
               ))}
             </div>
           </div>
-          <div className="lg:-mb-24">
+          <div className="flex justify-center">
             <FloatingPhone />
           </div>
         </div>
       </section>
 
       {/* WHAT YOU'LL SEE + FORM */}
-      <section id="book" className="scroll-mt-20 bg-slate-50 pb-20 pt-20 lg:pt-32">
+      <section id="book" className="scroll-mt-20 bg-slate-50 pb-20 pt-16 lg:pt-20">
         <div className="mx-auto grid max-w-7xl gap-10 px-6 lg:grid-cols-[1fr_480px] lg:px-8">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Your demo</p>
