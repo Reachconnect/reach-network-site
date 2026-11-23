@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { ogMeta } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Book a Reach Connect demo | Reach Network Recruitment",
   description: "See Reach Connect in 15 minutes: live clock-ins, timesheets in a tap and costs by site, for our temporary staffing clients.",
   alternates: { canonical: "/book-a-demo" },
+  ...ogMeta({ title: "See Reach Connect in 15 minutes", description: "See Reach Connect in 15 minutes: live clock-ins, timesheets in a tap and costs by site, for our temporary staffing clients.", path: "/book-a-demo", kicker: "Book a demo", sub: "Live clock-ins, timesheets in a tap and costs by site.", photo: "connect" }),
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

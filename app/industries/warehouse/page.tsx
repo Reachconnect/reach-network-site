@@ -1,11 +1,14 @@
 // Warehouse recruitment page
 import type { Metadata } from "next";
+import { ogMeta } from "@/lib/og";
 import IndustryPage, { type IndustryConfig } from "../IndustryPage";
 import { ICONS } from "../icons";
 
 export const metadata: Metadata = {
   title: "Warehouse recruitment: pickers, packers and FLT drivers | Reach Network Recruitment",
   description: "Checked, reliable warehouse staff: pickers, packers, forklift drivers, goods in and despatch, stock control and supervisors. Temporary, peak season and permanent, across the UK.",
+  alternates: { canonical: "/industries/warehouse" },
+  ...ogMeta({ title: "Warehouse teams, FLT drivers, pickers and packers", description: "Checked, reliable warehouse staff: pickers, packers, forklift drivers, goods in and despatch, stock control and supervisors. Temporary, peak season and permanent, across the UK.", path: "/industries/warehouse", kicker: "Warehouse recruitment", sub: "Checked people, matched to your site and shifts.", photo: "warehouse" }),
 };
 
 const cfg: IndustryConfig = {

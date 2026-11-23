@@ -1,11 +1,14 @@
 // Manufacturing recruitment page
 import type { Metadata } from "next";
+import { ogMeta } from "@/lib/og";
 import IndustryPage, { type IndustryConfig } from "../IndustryPage";
 import { ICONS } from "../icons";
 
 export const metadata: Metadata = {
   title: "Manufacturing recruitment: operatives, machine operators and welders | Reach Network Recruitment",
   description: "Checked, reliable manufacturing staff: production operatives, machine operators and setters, welders and fabricators, quality inspectors and supervisors. Temporary and permanent, across the UK.",
+  alternates: { canonical: "/industries/manufacturing" },
+  ...ogMeta({ title: "Production, food and machine operators", description: "Checked, reliable manufacturing staff: production operatives, machine operators and setters, welders and fabricators, quality inspectors and supervisors. Temporary and permanent, across the UK.", path: "/industries/manufacturing", kicker: "Manufacturing recruitment", sub: "Reliable people for every shift pattern.", photo: "manufacturing" }),
 };
 
 const cfg: IndustryConfig = {

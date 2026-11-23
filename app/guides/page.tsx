@@ -1,5 +1,6 @@
 // Guides and advice for candidates
 import type { Metadata } from "next";
+import { ogMeta } from "@/lib/og";
 import Link from "next/link";
 import SiteHeader from "../components/SiteHeader";
 import Footer from "../components/Footer";
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "Guides for drivers and warehouse workers: CPC, tacho cards, FLT, right to work | Reach Network Recruitment",
   description: "Plain-English guides to Driver CPC, digital tachograph cards, HGV licence categories, FLT training and proving your right to work.",
   alternates: { canonical: "/guides" },
+  ...ogMeta({ title: "The stuff you need to know, in plain English", description: "Guides to CPC, tacho cards, licence categories, FLT training and right to work.", path: "/guides", kicker: "Guides and advice", sub: "CPC · Tacho cards · FLT · Right to work", photo: "drivers" }),
 };
 
 export default function GuidesPage() {

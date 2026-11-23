@@ -1,5 +1,6 @@
 // Index of local pages
 import type { Metadata } from "next";
+import { ogMeta } from "@/lib/og";
 import Link from "next/link";
 import SiteHeader from "../components/SiteHeader";
 import Footer from "../components/Footer";
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "Areas we cover: drivers, warehouse, manufacturing and engineering staff | Reach Network Recruitment",
   description: "Local recruitment for drivers, warehouse, production staff and engineers across the West Midlands, Worcestershire, Staffordshire, Warwickshire and the East Midlands.",
   alternates: { canonical: "/staff" },
+  ...ogMeta({ title: "Local staff, across the Midlands", description: "Drivers, warehouse, production staff and engineers across the Midlands.", path: "/staff", kicker: "Areas we cover", sub: "22 towns · 4 sectors" }),
 };
 
 export default function StaffIndex() {

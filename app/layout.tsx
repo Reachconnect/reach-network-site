@@ -3,6 +3,7 @@ import { Manrope, Inter } from "next/font/google";
 import WebChat from "./components/WebChat";
 import SiteTracker from "./components/SiteTracker";
 import WhatsAppButton from "./components/WhatsAppButton";
+import { ogMeta } from "@/lib/og";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   title: "Reach Network Recruitment | Drivers, warehouse, manufacturing and engineering staff",
   description:
     "We go beyond recruitment to deliver the right people, the right support, and the right results. Driving, warehousing, manufacturing and engineering staffing across the UK.",
-  openGraph: { siteName: "Reach Network Recruitment", type: "website", locale: "en_GB" },
+  ...ogMeta({ title: "We find your staff, and show you it all, live", description: "Checked drivers, warehouse, manufacturing and engineering staff, with live clock-ins, timesheets and costs in Reach Connect.", path: "/", kicker: "Specialist recruitment", sub: "Drivers · Warehouse · Manufacturing · Engineering", photo: "drivers" }),
   // Set GOOGLE_SITE_VERIFICATION in Vercel to the code Google Search Console gives you
   verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
 };

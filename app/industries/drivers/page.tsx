@@ -1,11 +1,14 @@
 // Driver recruitment page
 import type { Metadata } from "next";
+import { ogMeta } from "@/lib/og";
 import IndustryPage, { type IndustryConfig } from "../IndustryPage";
 import { ICONS } from "../icons";
 
 export const metadata: Metadata = {
   title: "Driver recruitment: Class 1, Class 2, 7.5t and van drivers | Reach Network Recruitment",
   description: "Checked, reliable HGV Class 1, Class 2, 7.5 tonne, van and ADR drivers for short-notice cover, peak season and permanent roles across the UK.",
+  alternates: { canonical: "/industries/drivers" },
+  ...ogMeta({ title: "Checked Class 1, Class 2 and delivery drivers", description: "Checked, reliable HGV Class 1, Class 2, 7.5 tonne, van and ADR drivers for short-notice cover, peak season and permanent roles across the UK.", path: "/industries/drivers", kicker: "Driver recruitment", sub: "Short-notice cover, peaks and permanent roles across the UK.", photo: "drivers" }),
 };
 
 const cfg: IndustryConfig = {

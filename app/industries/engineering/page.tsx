@@ -1,11 +1,14 @@
 // Engineering recruitment page
 import type { Metadata } from "next";
+import { ogMeta } from "@/lib/og";
 import IndustryPage, { type IndustryConfig } from "../IndustryPage";
 import { ICONS } from "../icons";
 
 export const metadata: Metadata = {
   title: "Engineering recruitment: maintenance, electrical, HVAC, fire and gas engineers | Reach Network Recruitment",
   description: "Qualified, checked engineers: maintenance and multi-skilled, electrical, HVAC and refrigeration, fire and security, and gas and heating. Permanent, contract and temporary, across the UK.",
+  alternates: { canonical: "/industries/engineering" },
+  ...ogMeta({ title: "Maintenance and multi-skilled engineers", description: "Qualified, checked engineers: maintenance and multi-skilled, electrical, HVAC and refrigeration, fire and security, and gas and heating. Permanent, contract and temporary, across the UK.", path: "/industries/engineering", kicker: "Engineering recruitment", sub: "Qualified engineers, checked and ready.", photo: "engineering" }),
 };
 
 const cfg: IndustryConfig = {

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import SiteHeader from "../../../components/SiteHeader";
 import Footer from "../../../components/Footer";
+import { ogMeta, type OgPhoto } from "@/lib/og";
 import { OFFICE, SECTOR_PAGES, TOWNS, milesBetween, nearbyTowns } from "@/lib/locations";
 import { getCoverage, type CoverageOut } from "@/lib/coverage";
 import { listPublicJobs, type PublicJob } from "@/lib/jobsPublic";
@@ -28,10 +29,12 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const f = find(await params);
   if (!f) return {};
   const title = `${f.s.headline(f.t.name)} | Reach Network Recruitment`;
+  const description = `Temporary and permanent ${f.s.people} in ${f.t.name}, ${f.t.county}. Checked people for short-notice cover, peaks and permanent roles, with live clock-ins in Reach Connect.`;
   return {
     title,
-    description: `Temporary and permanent ${f.s.people} in ${f.t.name}, ${f.t.county}. Checked people for short-notice cover, peaks and permanent roles, with live clock-ins in Reach Connect.`,
+    description,
     alternates: { canonical: `/staff/${f.s.slug}/${f.t.slug}` },
+    ...ogMeta({ title: f.s.headline(f.t.name), description, path: `/staff/${f.s.slug}/${f.t.slug}`, kicker: `${f.s.noun} · ${f.t.county}`, sub: "Checked people for cover, peaks and permanent roles", photo: f.s.key as OgPhoto, tag: f.t.name }),
   };
 }
 

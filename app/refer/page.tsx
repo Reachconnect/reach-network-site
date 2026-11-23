@@ -1,5 +1,6 @@
 // Refer a friend
 import type { Metadata } from "next";
+import { ogMeta } from "@/lib/og";
 import Link from "next/link";
 import SiteHeader from "../components/SiteHeader";
 import Footer from "../components/Footer";
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: "Refer a friend | Reach Network Recruitment",
   description: "Know a good driver, warehouse worker or engineer? Refer them to Reach and get a thank-you bonus once they've started work.",
   alternates: { canonical: "/refer" },
+  ...ogMeta({ title: "Know someone good? Get a thank-you bonus.", description: "Refer a friend for driving, warehouse, production or engineering work.", path: "/refer", kicker: "Refer a friend", sub: "Driving, warehouse, production and engineering work", photo: "warehouse" }),
 };
 
 export default function ReferPage() {

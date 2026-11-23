@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import SiteHeader from "../../components/SiteHeader";
 import Footer from "../../components/Footer";
 import { GUIDES } from "@/lib/guides";
+import { ogMeta } from "@/lib/og";
 
 export const dynamicParams = false;
 
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const g = GUIDES.find((x) => x.slug === slug);
   if (!g) return {};
-  return { title: `${g.title} | Reach Network Recruitment`, description: g.summary, alternates: { canonical: `/guides/${g.slug}` } };
+  return { title: `${g.title} | Reach Network Recruitment`, description: g.summary, alternates: { canonical: `/guides/${g.slug}` }, ...ogMeta({ title: g.title, description: g.summary, path: `/guides/${g.slug}`, kicker: `Guide · ${g.tag}`, sub: `${g.minutes} minute read`, photo: g.tag === "Warehouse" ? "warehouse" : "drivers" }) };
 }
 
 export default async function GuidePage({ params }: { params: Promise<{ slug: string }> }) {

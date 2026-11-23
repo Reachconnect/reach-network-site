@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Footer from "../../components/Footer";
 import ApplyForm from "../ApplyForm";
+import { ogImageUrl, type OgPhoto } from "@/lib/og";
 import { SITE_URL } from "@/lib/specs";
 import { getPublicJob, jobPostingJsonLd, listPublicJobs, type PublicJob } from "@/lib/jobsPublic";
 
@@ -14,12 +15,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!j) return { title: "Job no longer available | Reach Network Recruitment", robots: { index: false } };
   const where = j.area || j.location;
   const title = `${j.title}${where ? ` in ${where}` : ""}${j.salary ? ` · ${j.salary}` : ""}`;
+  const cat = `${j.category} ${j.title}`.toLowerCase();
+  const photo: OgPhoto = /driv|hgv|class|van|lgv/.test(cat) ? "drivers" : /engineer|maint|electric|fitter/.test(cat) ? "engineering" : /production|manufactur|machine|food|assembly/.test(cat) ? "manufacturing" : "warehouse";
+  const jobOg = ogImageUrl({ title: j.title, kicker: `${j.employment_type || "Job"} · ${j.category}`, sub: [where, j.salary].filter(Boolean).join(" · "), photo, tag: "Apply now" });
   const description = (j.summary || `${j.employment_type || ""} ${j.title} job${where ? ` in ${where}` : ""} with Reach Network Recruitment.`).slice(0, 160);
   return {
     title: `${title} | Reach Network Recruitment`,
     description,
     alternates: { canonical: `${SITE_URL}/jobs/${slug}` },
-    openGraph: { title, description, url: `${SITE_URL}/jobs/${slug}`, type: "website" },
+    openGraph: { title, description, url: `${SITE_URL}/jobs/${slug}`, type: "website", siteName: "Reach Network Recruitment", images: [{ url: jobOg, width: 1200, height: 630, alt: title }] },
+    twitter: { card: "summary_large_image", title, description, images: [jobOg] },
   };
 }
 
