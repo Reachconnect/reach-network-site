@@ -605,7 +605,7 @@ export default function HomeClient({ jobs, jobCount }: { jobs: HomeJob[]; jobCou
           <Reveal delay={120}>
             <div className="relative h-[380px] overflow-hidden rounded-3xl ring-1 ring-white/10 sm:h-[460px]">
               <CoverageMap areas={areas} unit="people" />
-              <div className="pointer-events-none absolute left-4 top-4 z-[500] rounded-full bg-navy/80 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
+              <div className="pointer-events-none absolute right-4 top-4 z-[500] rounded-full bg-navy/80 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
                 <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-orange" /> Where our people are
               </div>
             </div>

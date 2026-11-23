@@ -18,10 +18,13 @@ function Fit({ areas }: { areas: CoverageArea[] }) {
 export default function CoverageMap({ areas, unit }: { areas: CoverageArea[]; unit: string }) {
   const biggest = Math.max(1, ...areas.map((a) => a.count));
   return (
+    <>
+    <style>{`.rnr-dark-tiles{filter:invert(100%) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.6)}.leaflet-container{background:#0F2438}`}</style>
     <MapContainer center={[53.0, -1.9]} zoom={6} scrollWheelZoom={false} className="h-full w-full" attributionControl>
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        className="rnr-dark-tiles"
       />
       <Fit areas={areas} />
       {areas.map((a) => (
@@ -39,5 +42,6 @@ export default function CoverageMap({ areas, unit }: { areas: CoverageArea[]; un
         </CircleMarker>
       ))}
     </MapContainer>
+    </>
   );
 }
