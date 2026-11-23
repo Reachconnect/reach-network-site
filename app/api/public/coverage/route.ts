@@ -12,7 +12,8 @@ const round = (n: number) => (n >= 100 ? Math.floor(n / 50) * 50 : n >= 20 ? Mat
 
 export async function GET(request: Request) {
   const key = (new URL(request.url).searchParams.get("sector") || "drivers") as SectorKey;
-  const sector = SECTORS[key];
+  // "all" counts every registered candidate with a postcode
+  const sector = (key as string) === "all" ? { any: /[\s\S]*/, types: {} as Record<string, RegExp> } : SECTORS[key];
   if (!sector) return NextResponse.json({ areas: [], total: 0 });
   const db = admin();
   const rows: Row[] = [];
