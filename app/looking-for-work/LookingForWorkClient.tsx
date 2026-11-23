@@ -419,6 +419,13 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
                   </>
                 )}
               </form>
+              <Link href="/take-home-pay" className="flex items-center justify-between rounded-2xl border border-orange/40 bg-orange/5 p-5 font-bold text-navy transition hover:bg-orange/10">
+                <span>
+                  <span className="block text-xs font-normal text-slate-500">Free calculator</span>
+                  What will I take home?
+                </span>
+                <span className="text-orange">→</span>
+              </Link>
               <a href="tel:01216301643" className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 font-bold text-navy transition hover:border-orange">
                 <span>
                   <span className="block text-xs font-normal text-slate-500">Rather talk?</span>

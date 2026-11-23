@@ -22,6 +22,7 @@ const NAV_SECTIONS = [
       { label: "Find a job", href: "/looking-for-work" },
       { label: "Register for work", href: "/looking-for-work" },
       { label: "Register CV", href: "/looking-for-work" },
+      { label: "Take-home pay calculator", href: "/take-home-pay" },
       { label: "Guides and advice", href: "/guides" },
       { label: "Refer a friend", href: "/refer" },
     ],

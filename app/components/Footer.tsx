@@ -91,6 +91,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/take-home-pay" className="text-xs text-white/60 transition hover:text-white">
+                  Take-home pay calculator
+                </Link>
+              </li>
+              <li>
                 <Link href="/guides" className="text-xs text-white/60 transition hover:text-white">
                   Guides and advice
                 </Link>

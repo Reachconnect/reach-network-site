@@ -4,6 +4,7 @@ import Link from "next/link";
 import Footer from "../../components/Footer";
 import ApplyForm from "../ApplyForm";
 import { ogImageUrl, type OgPhoto } from "@/lib/og";
+import { takeHome } from "@/lib/takeHome";
 import { SITE_URL } from "@/lib/specs";
 import { getPublicJob, jobPostingJsonLd, listPublicJobs, type PublicJob } from "@/lib/jobsPublic";
 
@@ -202,6 +203,18 @@ export default async function JobPage({ params }: { params: Promise<{ slug: stri
           <aside id="apply" className="scroll-mt-24">
             <div className="rounded-2xl bg-white p-6 shadow-sm lg:sticky lg:top-24">
               <ApplyForm jobKey={j.key} jobTitle={j.title} />
+              {(() => {
+                const hr = Number(j.salary_to) && Number(j.salary_to) < 100 ? Number(j.salary_to) : Number(j.salary_from) && Number(j.salary_from) < 100 ? Number(j.salary_from) : 0;
+                if (!hr) return null;
+                const t = takeHome({ rate: hr, hours: 40, overtimeHours: 0, overtimeMultiplier: 1, holidayRolledUp: false, scotland: false, pension: false, loan: "none" });
+                return (
+                  <a href="/take-home-pay" className="mt-5 block rounded-xl bg-orange/5 p-4 text-sm ring-1 ring-orange/30 transition hover:bg-orange/10">
+                    <span className="block text-slate-500">At £{hr.toFixed(2)} an hour for 40 hours, that&apos;s about</span>
+                    <span className="block font-display text-xl font-extrabold text-navy">£{t.net.toFixed(2)} a week take-home</span>
+                    <span className="block text-xs text-slate-500">after tax and NI, before pension. <span className="font-bold text-orange">Work out yours →</span></span>
+                  </a>
+                );
+              })()}
             </div>
           </aside>
         </div>

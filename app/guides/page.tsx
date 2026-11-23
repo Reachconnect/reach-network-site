@@ -28,6 +28,18 @@ export default function GuidesPage() {
           <p className="mt-4 max-w-xl text-lg text-white/80">Licences, cards, training and paperwork, checked against GOV.UK and the HSE.</p>
         </div>
       </section>
+      <section className="bg-slate-50 pt-12">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <Link href="/take-home-pay" className="group flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-orange p-6 text-white shadow-lg transition hover:-translate-y-0.5">
+            <span>
+              <span className="block text-xs font-bold uppercase tracking-wider text-white/80">Free calculator</span>
+              <span className="block font-display text-2xl font-extrabold">What will I actually take home?</span>
+              <span className="block text-white/90">Hourly rate to weekly pay, after tax, NI and pension.</span>
+            </span>
+            <span className="rounded-full bg-navy px-6 py-3 font-bold">Work it out →</span>
+          </Link>
+        </div>
+      </section>
       <section className="bg-slate-50 py-16">
         <div className="mx-auto grid max-w-7xl gap-4 px-6 sm:grid-cols-2 lg:grid-cols-3 lg:px-8">
           {GUIDES.map((g) => (

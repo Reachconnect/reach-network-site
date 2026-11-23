@@ -30,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/contact-us", 0.5],
     ["/faq", 0.5],
     ["/guides", 0.6],
+    ["/take-home-pay", 0.7],
     ["/refer", 0.5],
     ["/staff", 0.5],
     ["/privacy-notice", 0.2],
