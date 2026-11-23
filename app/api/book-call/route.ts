@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { addWebsiteLead } from "@/lib/websiteLead";
+import { addWebsiteLead, addWebsiteCandidate } from "@/lib/websiteLead";
 
 // Set RESEND_API_KEY in your Vercel project's Environment Variables.
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -139,23 +139,42 @@ export async function POST(req: NextRequest) {
       minute: "2-digit",
     });
 
-    await addWebsiteLead({
-      company: body.companyName,
-      name: body.fullName,
-      email: body.workEmail,
-      phone: body.phoneNumber,
-      jobTitle: body.jobTitle,
-      source: "Website: call booked",
-      details: [
-        `Call booked on the website by ${body.fullName}, ${body.jobTitle} (${body.phoneNumber}, ${body.workEmail}).`,
-        `Wants help with: ${body.helpTopic}`,
-        `Booked for ${body.date} at ${body.time}`,
-        body.notes ? `Notes: ${body.notes}` : "",
-      ],
-      reminder: `Booked call with ${body.fullName} (${body.companyName}): ${body.helpTopic}`,
-      dueAt: new Date(`${body.date}T${body.time}:00`).toISOString(),
-      alertSubject: `📞 Call booked: ${body.fullName}, ${body.companyName} (${body.date} ${body.time})`,
-    }).catch((e) => console.error("Call booking CRM error:", e));
+    const isCandidate = helpTopic.startsWith("Candidate:");
+    const due = new Date(`${date}T${time}:00`).toISOString();
+    const crm = isCandidate
+      ? addWebsiteCandidate({
+          name: fullName,
+          email: workEmail,
+          phone: phoneNumber,
+          source: "Website: call booked",
+          details: [
+            `Booked a call on the website (${phoneNumber}, ${workEmail}).`,
+            `About: ${helpTopic.replace(/^Candidate:\s*/, "")}`,
+            `Booked for ${date} at ${time}`,
+            notes ? `Notes: ${notes}` : "",
+          ],
+          reminder: `Booked call with ${fullName}: ${helpTopic.replace(/^Candidate:\s*/, "")}`,
+          dueAt: due,
+          alertSubject: `📞 Candidate call booked: ${fullName} (${date} ${time})`,
+        })
+      : addWebsiteLead({
+          company: companyName,
+          name: fullName,
+          email: workEmail,
+          phone: phoneNumber,
+          jobTitle,
+          source: "Website: call booked",
+          details: [
+            `Call booked on the website by ${fullName}, ${jobTitle} (${phoneNumber}, ${workEmail}).`,
+            `Wants help with: ${helpTopic.replace(/^Employer:\s*/, "")}`,
+            `Booked for ${date} at ${time}`,
+            notes ? `Notes: ${notes}` : "",
+          ],
+          reminder: `Booked call with ${fullName} (${companyName}): ${helpTopic.replace(/^Employer:\s*/, "")}`,
+          dueAt: due,
+          alertSubject: `📞 Call booked: ${fullName}, ${companyName} (${date} ${time})`,
+        });
+    await crm.catch((e) => console.error("Call booking CRM error:", e));
 
     const teamEmailPromise = resend.emails.send({
       from: `Reach Network Website <bookings@reachnetworkrec.com>`,

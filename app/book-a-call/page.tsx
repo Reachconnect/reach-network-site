@@ -1,58 +1,209 @@
 "use client";
 
-import { useState } from "react";
+// Book a call: employers and candidates pick a slot, it goes into the CRM
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Footer from "../components/Footer";
 
 const TIME_SLOTS = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
 
-const HELP_OPTIONS = [
-  "Hiring warehouse staff",
-  "Hiring drivers",
-  "Hiring manufacturing staff",
-  "Hiring engineers",
-  "General enquiry",
-];
+const TOPICS: Record<"employer" | "candidate", { label: string; icon: string }[]> = {
+  employer: [
+    { label: "Hiring drivers", icon: "M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" },
+    { label: "Hiring warehouse staff", icon: "M3 21V9l9-6 9 6v12M7 21v-7h10v7" },
+    { label: "Hiring manufacturing staff", icon: "M3 21V11l6 3V11l6 3V7l6 3v11z" },
+    { label: "Hiring engineers", icon: "M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z" },
+    { label: "Reach Connect", icon: "M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm4 17h2" },
+    { label: "General enquiry", icon: "M21 12a8 8 0 0 1-11.8 7L4 20l1-4.6A8 8 0 1 1 21 12z" },
+  ],
+  candidate: [
+    { label: "Driving work", icon: "M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" },
+    { label: "Warehouse work", icon: "M3 21V9l9-6 9 6v12M7 21v-7h10v7" },
+    { label: "Manufacturing work", icon: "M3 21V11l6 3V11l6 3V7l6 3v11z" },
+    { label: "Engineering work", icon: "M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z" },
+    { label: "A job I've seen", icon: "M4 6h16M4 12h16M4 18h10" },
+    { label: "Something else", icon: "M21 12a8 8 0 0 1-11.8 7L4 20l1-4.6A8 8 0 1 1 21 12z" },
+  ],
+};
 
-const WHAT_TO_EXPECT = [
-  { title: "Understand your needs", sub: "We'll learn about your roles, challenges, and hiring goals." },
-  { title: "Explore solutions", sub: "We'll share how our recruitment services can meet your needs." },
-  { title: "Get expert advice", sub: "Our specialists will offer insights and best-practice guidance." },
-  { title: "Next steps", sub: "We'll outline a clear plan to help you move forward." },
-];
+const EXPECT: Record<"employer" | "candidate", { title: string; body: string }[]> = {
+  employer: [
+    { title: "Your roles and sites", body: "What you need, where, the shifts and what good looks like." },
+    { title: "Honest advice", body: "Pay rates, availability and how quickly we can realistically fill it." },
+    { title: "How we'd work together", body: "Temporary, temp-to-perm or permanent, and what it costs." },
+    { title: "A clear next step", body: "A site visit, terms to sign or a Reach Connect demo." },
+  ],
+  candidate: [
+    { title: "Your experience", body: "What you've done, your licences or tickets and what you enjoy." },
+    { title: "What you want", body: "Pay, shifts, travel and whether you want temp or permanent work." },
+    { title: "What's available", body: "Roles we have right now that suit you." },
+    { title: "Getting started", body: "Registering, documents and your first shift or interview." },
+  ],
+};
 
 const FAQS = [
-  {
-    q: "I'm a candidate / hiring manager, do you charge for these calls?",
-    a: "No, our calls are completely free. We would never charge you.",
-  },
-  {
-    q: "I've seen a role on your website I'm interested in applying for, can I book a call in with you?",
-    a: "Of course, feel free to book a call in with us, we would love to chat. However, please make sure you send your CV before the call so we can discuss that too.",
-  },
-  {
-    q: "What if I need to cancel or reschedule?",
-    a: "Easy — you'll get a calendar invite after you book, which will land in your diary. If you need to cancel or rebook, simply re-arrange or cancel it in your own diary.",
-  },
-  {
-    q: "What happens after the call?",
-    a: "That depends who you are. If you're a client, we'll arrange a suitable time for a site visit if that's what we've discussed, or set up a look at ReachConnect. If you're a candidate and you've already provided us with your CV, we'll follow up over email with all the details of our client and the role.",
-  },
+  { q: "Is the call free?", a: "Yes, always. We never charge candidates, and there's no obligation for employers." },
+  { q: "How long is the call?", a: "Usually about 15 minutes. Longer if there's a lot to talk through." },
+  { q: "I've seen a job on your website. Can I book a call about it?", a: "Of course. Please send your CV from the job page first, so we can talk about it on the call." },
+  { q: "What if I need to cancel or move it?", a: "Just reply to your confirmation email, or call us on 0121 630 1643, and we'll find another time." },
+  { q: "What happens after the call?", a: "Employers get a clear next step, such as a site visit, terms or a Reach Connect demo. Candidates get details of suitable roles by email." },
 ];
 
-function formatDateKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+function key(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function formatTimeLabel(time: string): string {
-  const [h, m] = time.split(":").map(Number);
-  const period = h >= 12 ? "PM" : "AM";
-  const hour12 = h % 12 === 0 ? 12 : h % 12;
-  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+function label12(t: string) {
+  const [h, m] = t.split(":").map(Number);
+  return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "pm" : "am"}`;
+}
+
+function Icon({ d, className = "h-5 w-5" }: { d: string; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d={d} />
+    </svg>
+  );
+}
+
+function Booking({ who, setWho }: { who: "employer" | "candidate"; setWho: (w: "employer" | "candidate") => void }) {
+  const today = useMemo(() => new Date(), []);
+  const [month, setMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const [date, setDate] = useState<Date | null>(null);
+  const [time, setTime] = useState("");
+  const [f, setF] = useState({ fullName: "", workEmail: "", phoneNumber: "", companyName: "", jobTitle: "", helpTopic: "", notes: "" });
+  const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const input = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-navy focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20";
+
+  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const lead = (new Date(month.getFullYear(), month.getMonth(), 1).getDay() + 6) % 7;
+  const cells: (Date | null)[] = [...Array(lead).fill(null), ...Array.from({ length: days }, (_, i) => new Date(month.getFullYear(), month.getMonth(), i + 1))];
+  const todayKey = key(today);
+  const ok = (d: Date) => d.getDay() !== 0 && d.getDay() !== 6 && key(d) > todayKey;
+  const atStart = month.getFullYear() === today.getFullYear() && month.getMonth() === today.getMonth();
+  const ready = date && time && f.fullName && f.workEmail && f.phoneNumber && f.helpTopic && (who === "candidate" || f.companyName);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!date || !time) return;
+    setStatus("sending");
+    setError(null);
+    try {
+      const res = await fetch("/api/book-call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...f,
+          companyName: who === "candidate" ? f.companyName || "Candidate" : f.companyName,
+          jobTitle: who === "candidate" ? f.jobTitle || "Candidate" : f.jobTitle,
+          helpTopic: `${who === "candidate" ? "Candidate" : "Employer"}: ${f.helpTopic}`,
+          date: key(date),
+          time,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || "Something went wrong.");
+      setStatus("done");
+    } catch (err) {
+      setError(`${(err as Error).message} You can also call us on 0121 630 1643.`);
+      setStatus("idle");
+    }
+  }
+
+  if (status === "done" && date) {
+    return (
+      <div className="rounded-3xl bg-white p-10 text-center shadow-2xl">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl text-green-700">✓</div>
+        <p className="mt-4 font-display text-2xl font-extrabold text-navy">You&apos;re booked in</p>
+        <p className="mt-2 text-slate-600">
+          {date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })} at {label12(time)}. We&apos;ll call you on {f.phoneNumber}.
+        </p>
+        <p className="mt-1 text-sm text-slate-500">A confirmation is on its way to {f.workEmail}.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <div className="grid grid-cols-2 border-b border-slate-100">
+        {(["employer", "candidate"] as const).map((w) => (
+          <button type="button" key={w} onClick={() => { setWho(w); setF((p) => ({ ...p, helpTopic: "" })); }} className={`py-4 text-sm font-bold transition ${who === w ? "bg-navy text-white" : "text-slate-500 hover:bg-slate-50"}`}>
+            {w === "employer" ? "I'm hiring" : "I'm looking for work"}
+          </button>
+        ))}
+      </div>
+      <div className="grid gap-0 lg:grid-cols-2">
+        {/* LEFT: when */}
+        <div className="border-slate-100 p-6 sm:p-8 lg:border-r">
+          <p className="text-xs font-bold uppercase tracking-wider text-orange">1. Pick a time</p>
+          <div className="mt-4 flex items-center justify-between">
+            <button type="button" disabled={atStart} onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-navy disabled:opacity-30" aria-label="Previous month">‹</button>
+            <p className="font-display font-bold text-navy">{month.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</p>
+            <button type="button" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-navy" aria-label="Next month">›</button>
+          </div>
+          <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400">
+            {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => <span key={i}>{d}</span>)}
+          </div>
+          <div className="mt-1 grid grid-cols-7 gap-1">
+            {cells.map((d, i) =>
+              d ? (
+                <button type="button" key={i} disabled={!ok(d)} onClick={() => setDate(d)} className={`aspect-square rounded-xl text-sm font-bold transition ${date && key(date) === key(d) ? "bg-orange text-white shadow-md" : ok(d) ? "text-navy hover:bg-orange/10" : "text-slate-300"}`}>
+                  {d.getDate()}
+                </button>
+              ) : (
+                <span key={i} />
+              )
+            )}
+          </div>
+          {date && (
+            <div className="mt-5 animate-[fadeIn_.3s_ease]">
+              <p className="text-sm font-semibold text-navy">{date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</p>
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                {TIME_SLOTS.map((t) => (
+                  <button type="button" key={t} onClick={() => setTime(t)} className={`rounded-xl border py-2 text-xs font-bold transition ${time === t ? "border-orange bg-orange/10 text-navy" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}>
+                    {label12(t)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT: who */}
+        <div className="space-y-4 bg-slate-50/60 p-6 sm:p-8">
+          <p className="text-xs font-bold uppercase tracking-wider text-orange">2. What&apos;s it about?</p>
+          <div className="grid grid-cols-2 gap-2">
+            {TOPICS[who].map((t) => (
+              <button type="button" key={t.label} onClick={() => setF((p) => ({ ...p, helpTopic: t.label }))} className={`flex items-center gap-2 rounded-xl border p-2.5 text-left text-xs font-bold transition ${f.helpTopic === t.label ? "border-orange bg-orange/10 text-navy" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}>
+                <Icon d={t.icon} className="h-4 w-4 flex-none text-orange" />
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <p className="pt-2 text-xs font-bold uppercase tracking-wider text-orange">3. Your details</p>
+          <input className={input} placeholder="Full name" value={f.fullName} onChange={set("fullName")} autoComplete="name" required />
+          {who === "employer" && (
+            <div className="grid grid-cols-2 gap-3">
+              <input className={input} placeholder="Company" value={f.companyName} onChange={set("companyName")} autoComplete="organization" required />
+              <input className={input} placeholder="Job title" value={f.jobTitle} onChange={set("jobTitle")} autoComplete="organization-title" />
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <input className={input} type="email" placeholder="Email" value={f.workEmail} onChange={set("workEmail")} autoComplete="email" required />
+            <input className={input} type="tel" placeholder="Phone" value={f.phoneNumber} onChange={set("phoneNumber")} autoComplete="tel" required />
+          </div>
+          <textarea className={input} rows={2} placeholder="Anything we should know? (optional)" value={f.notes} onChange={set("notes")} />
+          {error && <p className="rounded-lg bg-red-50 p-2.5 text-sm text-red-700">{error}</p>}
+          <button disabled={!ready || status === "sending"} className="w-full rounded-full bg-orange px-5 py-3.5 font-bold text-white shadow-lg shadow-orange/30 transition hover:bg-orange-dark disabled:opacity-40 disabled:shadow-none">
+            {status === "sending" ? "Booking…" : date && time ? `Book ${date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} at ${label12(time)}` : "Pick a date and time"}
+          </button>
+        </div>
+      </div>
+    </form>
+  );
 }
 
 const NAV_SECTIONS = [
@@ -86,86 +237,21 @@ const NAV_SECTIONS = [
     label: "Reach Network Recruitment",
     links: [
       { label: "About us", href: "/about-us" },
-      { label: "Why choose us", href: "/why-choose-us" },
-      { label: "FAQ", href: "/book-a-call#faq" },
+      { label: "Why choose us", href: "/about-us" },
+      { label: "FAQ", href: "/faq" },
     ],
   },
 ];
 
-export default function BookACall() {
-  const today = new Date();
-  const [viewMonth, setViewMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+export default function BookACallPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
-
-  const [form, setForm] = useState({
-    fullName: "",
-    workEmail: "",
-    phoneNumber: "",
-    companyName: "",
-    jobTitle: "",
-    helpTopic: "",
-    notes: "",
-  });
-
-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const startOfMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
-  const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
-  const firstWeekday = (startOfMonth.getDay() + 6) % 7;
-
-  const calendarCells: (Date | null)[] = [
-    ...Array(firstWeekday).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => new Date(viewMonth.getFullYear(), viewMonth.getMonth(), i + 1)),
-  ];
-
-  const todayKey = formatDateKey(today);
-
-  function isSelectable(date: Date) {
-    const day = date.getDay();
-    const isWeekend = day === 0 || day === 6;
-    const isPast = formatDateKey(date) < todayKey;
-    return !isWeekend && !isPast;
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedDate || !selectedTime) {
-      setErrorMessage("Please select a date and time.");
-      setStatus("error");
-      return;
-    }
-    setStatus("submitting");
-    setErrorMessage("");
-
-    try {
-      const res = await fetch("/api/book-call", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          date: formatDateKey(selectedDate),
-          time: selectedTime,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Something went wrong.");
-      }
-      setStatus("success");
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
-      setStatus("error");
-    }
-  }
+  const [who, setWho] = useState<"employer" | "candidate">("employer");
+  const [faq, setFaq] = useState<number | null>(0);
 
   return (
     <main className="overflow-x-hidden font-body">
+      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}`}</style>
       {/* HEADER */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-navy">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3 lg:px-8">
@@ -175,32 +261,23 @@ export default function BookACall() {
             </span>
             <span className="font-display leading-none">
               <span className="block text-lg font-extrabold tracking-tight text-white">REACH</span>
-              <span className="block text-[9px] font-semibold tracking-[0.2em] text-white/60">
-                NETWORK RECRUITMENT
-              </span>
+              <span className="block text-[9px] font-semibold tracking-[0.2em] text-white/60">NETWORK RECRUITMENT</span>
             </span>
           </Link>
 
           <div className="flex shrink-0 items-center gap-3">
-            <a
-              href="tel:01216301643"
-              className="hidden shrink-0 items-center gap-2 whitespace-nowrap text-sm font-semibold text-white/85 transition hover:text-white sm:flex"
-            >
+            <a href="tel:01216301643" className="hidden shrink-0 items-center gap-2 whitespace-nowrap text-sm font-semibold text-white/85 transition hover:text-white sm:flex">
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
                 <path d="M3.5 2.5A1.5 1.5 0 0 1 5 1h1.3a1.5 1.5 0 0 1 1.46 1.16l.62 2.68a1.5 1.5 0 0 1-.4 1.42l-1.1 1.1a11.5 11.5 0 0 0 5 5l1.1-1.1a1.5 1.5 0 0 1 1.42-.4l2.68.62A1.5 1.5 0 0 1 18 12.7V14a1.5 1.5 0 0 1-1.5 1.5C8.5 15.5 3.5 10.5 3.5 2.5z" />
               </svg>
               0121 630 1643
             </a>
-            <Link
-              href="/book-a-call"
-              className="hidden rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:block"
-            >
+            <Link href="/book-a-call" className="hidden rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark sm:block">
               Let&rsquo;s Talk
             </Link>
-
             <button
               type="button"
-              onClick={() => setMenuOpen((open) => !open)}
+              onClick={() => setMenuOpen((o) => !o)}
               aria-expanded={menuOpen}
               aria-label="Toggle menu"
               className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white transition hover:border-white/40"
@@ -218,11 +295,7 @@ export default function BookACall() {
           </div>
         </div>
 
-        <div
-          className={`overflow-hidden border-t border-white/10 bg-navy transition-[max-height] duration-300 ease-in-out ${
-            menuOpen ? "max-h-96" : "max-h-0 border-t-0"
-          }`}
-        >
+        <div className={`overflow-hidden border-t border-white/10 bg-navy transition-[max-height] duration-300 ease-in-out ${menuOpen ? "max-h-96" : "max-h-0 border-t-0"}`}>
           <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-4 lg:px-8">
             {NAV_SECTIONS.map((section) => (
               <div key={section.label}>
@@ -232,28 +305,14 @@ export default function BookACall() {
                   className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
                 >
                   {section.label}
-                  <svg
-                    viewBox="0 0 12 12"
-                    className={`h-3 w-3 opacity-60 transition-transform ${openSection === section.label ? "rotate-180" : ""}`}
-                    fill="none"
-                  >
-                    <path
-                      d="M2.5 4.5 6 8l3.5-3.5"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
+                  <svg viewBox="0 0 12 12" className={`h-3 w-3 opacity-60 transition-transform ${openSection === section.label ? "rotate-180" : ""}`} fill="none">
+                    <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
                 {openSection === section.label && (
                   <div className="ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
                     {section.links.map((link) => (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        className="rounded-lg px-3 py-2 text-left text-xs font-semibold text-white/70 transition hover:bg-white/5 hover:text-white"
-                      >
+                      <Link key={link.label} href={link.href} className="rounded-lg px-3 py-2 text-left text-xs font-semibold text-white/70 transition hover:bg-white/5 hover:text-white">
                         {link.label}
                       </Link>
                     ))}
@@ -261,345 +320,110 @@ export default function BookACall() {
                 )}
               </div>
             ))}
-            <Link href="/contact-us" className="rounded-lg px-3 py-3 text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white">
+            <Link href="/contact-us" className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white">
               Contact us
             </Link>
-            <div className="mt-2 flex flex-col gap-3 border-t border-white/10 pt-4 sm:hidden">
-              <a href="tel:01216301643" className="flex items-center gap-2 px-3 text-sm font-semibold text-white/85">
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
-                  <path d="M3.5 2.5A1.5 1.5 0 0 1 5 1h1.3a1.5 1.5 0 0 1 1.46 1.16l.62 2.68a1.5 1.5 0 0 1-.4 1.42l-1.1 1.1a11.5 11.5 0 0 0 5 5l1.1-1.1a1.5 1.5 0 0 1 1.42-.4l2.68.62A1.5 1.5 0 0 1 18 12.7V14a1.5 1.5 0 0 1-1.5 1.5C8.5 15.5 3.5 10.5 3.5 2.5z" />
-                </svg>
-                0121 630 1643
-              </a>
-            </div>
+            <Link href="/book-a-call" className="mx-3 mt-2 rounded-full bg-orange px-5 py-2.5 text-center text-sm font-bold text-white transition hover:bg-orange-dark sm:hidden">
+              Let&rsquo;s Talk
+            </Link>
           </nav>
         </div>
       </header>
 
-      {/* HERO — full-bleed, matching the Candidate CTA treatment on the homepage */}
-      <section className="relative isolate min-h-[420px] overflow-hidden bg-navy py-14 lg:py-16">
-        <div className="absolute inset-0">
-          <Image
-            src="/PlaceholderPanel/coverphoto.png"
-            alt="Reach Network team member"
-            fill
-            sizes="100vw"
-            className="object-cover object-top"
-            priority
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/20" />
-
-        <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="max-w-lg">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Book a call</p>
-            <h1 className="font-display mt-3 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
-              Let&rsquo;s talk about your hiring goals.
-            </h1>
-            <p className="mt-4 max-w-md text-sm text-white/70 sm:text-base">
-              Schedule a free call with our team and discover how Reach can help you find the right people, faster.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2">
-              {["No obligation", "Quick and easy", "Tailored to you"].map((label) => (
-                <div key={label} className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-                    <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
-                      <path d="M6.2 10.9 3.5 8.2l1-1 1.7 1.7 4.6-4.6 1 1z" />
-                    </svg>
-                  </span>
-                  <span className="text-xs font-semibold text-white/75">{label}</span>
-                </div>
-              ))}
-            </div>
+      {/* HERO */}
+      <section className="relative overflow-hidden bg-navy pb-40 pt-12">
+        <Image src="/industries/contactus.png" alt="" fill priority sizes="100vw" className="object-cover opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-navy/70 to-navy" />
+        <div className="relative mx-auto max-w-7xl px-6 text-center lg:px-8">
+          <nav className="text-sm text-white/60">
+            <Link href="/" className="hover:text-white">Home</Link> <span className="mx-1">›</span> <span className="text-white/90">Book a call</span>
+          </nav>
+          <p className="mt-6 text-xs font-bold uppercase tracking-[0.3em] text-orange">Book a call</p>
+          <h1 className="mx-auto mt-3 max-w-3xl font-display text-4xl font-extrabold leading-tight text-white sm:text-5xl">
+            Pick a time. <span className="text-orange">We&apos;ll call you.</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">A free 15-minute call, whether you&apos;re hiring or looking for work.</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/75">
+            {["Free", "About 15 minutes", "No obligation"].map((x) => (
+              <span key={x} className="flex items-center gap-2">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange text-[10px] font-bold text-white">✓</span>
+                {x}
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* BOOKING CARD — pulled up close to the hero */}
-      <section className="bg-slate-50 pb-12 pt-6 lg:pb-16 lg:pt-8">
-        <div className="mx-auto max-w-6xl px-6 lg:px-8">
-          <form
-            onSubmit={handleSubmit}
-            className="grid gap-8 rounded-3xl bg-white p-5 shadow-xl shadow-navy/5 sm:p-6 lg:grid-cols-2 lg:p-10"
-          >
-            {/* Calendar */}
-            <div>
-              <h2 className="font-display text-lg font-extrabold text-navy">1. Select a date and time</h2>
-
-              <div className="mt-4 rounded-2xl border border-slate-200 p-3 sm:p-4">
-                <div className="flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"
-                    aria-label="Previous month"
-                  >
-                    &#8249;
-                  </button>
-                  <p className="text-sm font-bold text-navy">
-                    {viewMonth.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"
-                    aria-label="Next month"
-                  >
-                    &#8250;
-                  </button>
-                </div>
-
-                <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[9px] font-bold uppercase text-slate-400 sm:text-[10px]">
-                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                    <span key={d}>{d}</span>
-                  ))}
-                </div>
-
-                <div className="mt-1 grid grid-cols-7 gap-1">
-                  {calendarCells.map((date, i) => {
-                    if (!date) return <div key={i} />;
-                    const selectable = isSelectable(date);
-                    const isSelected = selectedDate && formatDateKey(date) === formatDateKey(selectedDate);
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        disabled={!selectable}
-                        onClick={() => {
-                          setSelectedDate(date);
-                          setSelectedTime(null);
-                        }}
-                        className={`aspect-square rounded-full text-xs font-semibold transition ${
-                          isSelected
-                            ? "bg-navy text-white"
-                            : selectable
-                            ? "text-navy hover:bg-slate-100"
-                            : "cursor-not-allowed text-slate-300"
-                        }`}
-                      >
-                        {date.getDate()}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {selectedDate && (
-                  <div className="mt-5 border-t border-slate-200 pt-4">
-                    <p className="text-xs font-semibold text-slate-500">
-                      Available times for{" "}
-                      {selectedDate.toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" })}
-                    </p>
-                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      {TIME_SLOTS.map((time) => (
-                        <button
-                          key={time}
-                          type="button"
-                          onClick={() => setSelectedTime(time)}
-                          className={`rounded-lg border px-2 py-2 text-xs font-semibold transition ${
-                            selectedTime === time
-                              ? "border-navy bg-navy text-white"
-                              : "border-slate-200 text-navy hover:border-navy/40"
-                          }`}
-                        >
-                          {formatTimeLabel(time)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <p className="mt-4 flex items-center gap-1.5 text-[11px] text-slate-400">
-                  <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
-                    <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.5 3v4.3l3 1.8-.5.9-3.5-2.1V4h1z" />
-                  </svg>
-                  The call will last about 30 minutes.
-                </p>
-              </div>
-            </div>
-
-            {/* Form fields */}
-            <div>
-              <h2 className="font-display text-lg font-extrabold text-navy">2. Tell us about you</h2>
-
-              <div className="mt-4 space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-navy">
-                    Full name <span className="text-orange">*</span>
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. Alex Johnson"
-                    value={form.fullName}
-                    onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-navy">
-                    Work email <span className="text-orange">*</span>
-                  </label>
-                  <input
-                    required
-                    type="email"
-                    placeholder="e.g. alex.johnson@company.com"
-                    value={form.workEmail}
-                    onChange={(e) => setForm({ ...form, workEmail: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-navy">
-                    Phone number <span className="text-orange">*</span>
-                  </label>
-                  <input
-                    required
-                    type="tel"
-                    placeholder="e.g. (555) 123-4567"
-                    value={form.phoneNumber}
-                    onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-navy">
-                    Company name <span className="text-orange">*</span>
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. Acme Logistics"
-                    value={form.companyName}
-                    onChange={(e) => setForm({ ...form, companyName: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-navy">
-                    Job title <span className="text-orange">*</span>
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. Operations Manager"
-                    value={form.jobTitle}
-                    onChange={(e) => setForm({ ...form, jobTitle: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-navy">
-                    What can we help you with? <span className="text-orange">*</span>
-                  </label>
-                  <select
-                    required
-                    value={form.helpTopic}
-                    onChange={(e) => setForm({ ...form, helpTopic: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none"
-                  >
-                    <option value="">Select an option</option>
-                    {HELP_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-navy">Anything else we should know?</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Briefly tell us about your hiring needs..."
-                    value={form.notes}
-                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                    className="mt-1 w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none"
-                  />
-                </div>
-
-                {status === "error" && <p className="text-sm font-semibold text-red-600">{errorMessage}</p>}
-
-                {status === "success" ? (
-                  <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-                    You&rsquo;re booked in! Check your email for a confirmation and calendar invite.
-                  </div>
-                ) : (
-                  <button
-                    type="submit"
-                    disabled={status === "submitting"}
-                    className="flex items-center gap-1.5 rounded-full bg-orange px-7 py-3.5 text-sm font-bold text-white transition hover:bg-orange-dark disabled:opacity-60"
-                  >
-                    {status === "submitting" ? "Booking..." : "Confirm booking"}
-                    {status !== "submitting" && <span aria-hidden="true">&rarr;</span>}
-                  </button>
-                )}
-              </div>
-            </div>
-          </form>
-
-          <p className="mt-5 flex items-center justify-center gap-1.5 text-xs text-slate-400">
-            <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
-              <path d="M8 1a3 3 0 00-3 3v2H4a1 1 0 00-1 1v6a1 1 0 001 1h8a1 1 0 001-1V7a1 1 0 00-1-1h-1V4a3 3 0 00-3-3zm-1.5 5V4a1.5 1.5 0 013 0v2h-3z" />
-            </svg>
-            Your information is secure and will never be shared.
+      {/* BOOKING */}
+      <section className="relative -mt-32 pb-16">
+        <div className="mx-auto max-w-5xl px-6 lg:px-8">
+          <Booking who={who} setWho={setWho} />
+          <p className="mt-5 text-center text-sm text-slate-500">
+            Need us now? Call <a href="tel:01216301643" className="font-bold text-navy hover:text-orange">0121 630 1643</a>
           </p>
         </div>
       </section>
 
       {/* WHAT TO EXPECT */}
-      <section className="bg-white py-16 lg:py-20">
-        <div className="mx-auto max-w-6xl px-6 lg:px-8">
-          <div className="grid gap-10 lg:grid-cols-[220px_1fr] lg:gap-6">
-            <h2 className="font-display text-2xl font-extrabold text-navy">What to expect on the call</h2>
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              {WHAT_TO_EXPECT.map((item) => (
-                <div key={item.title}>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-orange/40 text-orange">
-                    <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
-                      <circle cx="8" cy="8" r="3" />
-                    </svg>
-                  </span>
-                  <p className="font-display mt-3 text-sm font-bold text-navy">{item.title}</p>
-                  <p className="mt-1 text-xs text-slate-500">{item.sub}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
       <section className="bg-slate-50 py-16 lg:py-20">
-        <div className="mx-auto max-w-4xl px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-2xl font-extrabold text-navy">Frequently asked questions</h2>
-            <a href="#contact" className="hidden text-xs font-bold text-orange hover:text-orange-dark sm:block">
-              More questions? Contact us
-            </a>
-          </div>
-
-          <div className="mt-6 space-y-2">
-            {FAQS.map((faq, i) => (
-              <div key={faq.q} className="rounded-xl bg-white">
-                <button
-                  type="button"
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-navy"
-                >
-                  {faq.q}
-                  <span className={`shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`}>&#9660;</span>
-                </button>
-                {openFaq === i && <p className="px-5 pb-4 text-sm text-slate-500">{faq.a}</p>}
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">On the call</p>
+          <h2 className="mt-3 font-display text-3xl font-extrabold text-navy">What we&apos;ll talk about</h2>
+          <div key={who} className="mt-10 grid animate-[fadeIn_.35s_ease] gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {EXPECT[who].map((x, n) => (
+              <div key={x.title} className="relative rounded-2xl bg-white p-6 shadow-sm">
+                <span className="font-display text-4xl font-extrabold text-orange/25">0{n + 1}</span>
+                <p className="mt-2 font-display text-lg font-bold text-navy">{x.title}</p>
+                <p className="mt-1 text-sm text-slate-600">{x.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* FAQ + CONTACT */}
+      <section className="bg-white py-16 lg:py-20">
+        <div className="mx-auto grid max-w-7xl gap-10 px-6 lg:grid-cols-[1fr_380px] lg:px-8">
+          <div>
+            <h2 className="font-display text-3xl font-extrabold text-navy">Questions</h2>
+            <div className="mt-6 divide-y divide-slate-200 rounded-2xl border border-slate-200">
+              {FAQS.map((x, n) => (
+                <div key={x.q}>
+                  <button onClick={() => setFaq(faq === n ? null : n)} className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left">
+                    <span className="font-display font-bold text-navy">{x.q}</span>
+                    <span className={`flex h-7 w-7 flex-none items-center justify-center rounded-full bg-slate-100 text-navy transition ${faq === n ? "rotate-45" : ""}`}>+</span>
+                  </button>
+                  {faq === n && <p className="px-6 pb-5 leading-relaxed text-slate-600">{x.a}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-3 lg:pt-14">
+            <a href="tel:01216301643" className="flex items-center gap-4 rounded-2xl bg-navy p-5 text-white transition hover:-translate-y-0.5">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange">
+                <Icon d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" />
+              </span>
+              <span>
+                <span className="block text-xs text-white/60">Call us</span>
+                <span className="block font-display text-lg font-bold">0121 630 1643</span>
+              </span>
+            </a>
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 p-5">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange/10 text-orange">
+                <Icon d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21zm0-9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
+              </span>
+              <span>
+                <span className="block text-xs text-slate-500">Our office</span>
+                <span className="block font-bold text-navy">132a High Street, Bromsgrove, B61 8ES</span>
+              </span>
+            </div>
+            <Link href={who === "employer" ? "/i-need-staff#request" : "/looking-for-work"} className="block rounded-2xl border border-orange/40 bg-orange/5 p-5 font-bold text-navy transition hover:bg-orange/10">
+              {who === "employer" ? "Rather just send a staff request? →" : "Rather browse jobs first? →"}
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </main>
   );

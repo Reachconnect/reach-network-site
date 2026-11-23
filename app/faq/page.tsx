@@ -1,66 +1,101 @@
 "use client";
 
-import { useState } from "react";
+// FAQ: searchable, grouped by who's asking
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Footer from "../components/Footer";
 
-const FAQ_SECTIONS = [
+type Item = { q: string; a: string };
+type Group = { key: string; label: string; icon: string; items: Item[] };
+
+const GROUPS: Group[] = [
   {
-    heading: "For employers",
+    key: "employers",
+    label: "Employers",
+    icon: "M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6",
     items: [
-      {
-        q: "How quickly can you supply staff?",
-        a: "For temporary staff, often within 24-48 hours. For permanent hires, it typically takes 1-3 weeks depending on the role.",
-      },
-      {
-        q: "What industries do you cover?",
-        a: "Driving, warehousing, manufacturing, and engineering, across both temporary and permanent recruitment.",
-      },
-      {
-        q: "Do you handle compliance and vetting?",
-        a: "Yes — every candidate is reference-checked, and where relevant, licence and DBS-checked before placement.",
-      },
-      {
-        q: "Is there a minimum contract length for temporary staff?",
-        a: "No, we work flexibly around your needs — from a single shift to ongoing cover.",
-      },
+      { q: "How quickly can you supply temporary staff?", a: "Often the same or next day, depending on the role, location and shift. We'll always tell you honestly how quickly we can fill it when you call." },
+      { q: "How long does a permanent hire take?", a: "We usually send a screened shortlist within a week. The full process depends on your interviews and the candidate's notice period." },
+      { q: "Which sectors do you cover?", a: "Drivers (Class 1, Class 2 and delivery), warehouse, manufacturing and engineering, for temporary, temp-to-perm and permanent roles." },
+      { q: "Is there a minimum booking?", a: "No. We can cover a single shift or provide ongoing cover, whatever you need." },
+      { q: "What if a worker isn't right?", a: "Tell us straight away. We'll replace them as quickly as we can and make sure it doesn't happen again." },
+      { q: "Can we take a temporary worker on permanently?", a: "Yes. Temp-to-perm is a great way to try before you hire. The terms for this are set out clearly in our terms of business." },
     ],
   },
   {
-    heading: "For candidates",
+    key: "pricing",
+    label: "Pricing and terms",
+    icon: "M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
     items: [
-      {
-        q: "Is it free to register with you?",
-        a: "Yes, completely free. We never charge candidates to register or apply for roles.",
-      },
-      {
-        q: "How do I apply for a role?",
-        a: "Browse live roles on our jobs page and click Apply now, or book a call with us directly if you'd like to discuss your options first.",
-      },
-      {
-        q: "What if I need to cancel or reschedule a call?",
-        a: "You'll get a calendar invite after booking — just update or cancel it in your own diary and let us know.",
-      },
-      {
-        q: "What happens after I apply?",
-        a: "A member of our team will review your application and be in touch with next steps if you're a good fit for the role.",
-      },
+      { q: "How does pricing work for temporary staff?", a: "You pay an hourly charge rate that covers the worker's pay, holiday pay, employer costs and our fee. It's agreed before we start." },
+      { q: "How does pricing work for permanent hires?", a: "A one-off fee based on the role's salary, only payable when your new starter begins." },
+      { q: "How often will we be invoiced?", a: "Temporary staff are invoiced weekly, based on the hours you've approved." },
+      { q: "How do we sign your terms?", a: "Online in a couple of minutes. We'll email you a link, you read and sign on any device, and you get a signed copy straight away." },
     ],
   },
   {
-    heading: "About Reach Connect",
+    key: "checks",
+    label: "Checks and compliance",
+    icon: "M9 12l2 2 4-4m5.6-4A11.96 11.96 0 0 1 12 2.9 11.96 11.96 0 0 1 3.4 6 12 12 0 0 0 12 21a12 12 0 0 0 8.6-15z",
     items: [
-      {
-        q: "What is Reach Connect?",
-        a: "Our client portal software, giving you live visibility of fill rates, spend, attendance, timesheets, and worker ratings in one place.",
-      },
-      {
-        q: "Is there a cost to use Reach Connect?",
-        a: "It's included as part of our ongoing client relationship — book a demo to see it in action and discuss details.",
-      },
+      { q: "What checks do you do on workers?", a: "ID and right to work, work history, and any licences, CPC, digi cards or tickets the role needs. We take references where the role calls for them." },
+      { q: "Who employs the temporary workers?", a: "We do. We handle their pay, holiday pay, tax and National Insurance, so you don't have to." },
+      { q: "Do workers get a site induction?", a: "Yes. We brief every worker on your site, PPE and who to report to, and you can run your own induction on their first shift." },
+      { q: "How do you look after personal data?", a: "We only collect what we need and keep it secure. Our privacy notice explains how." },
+    ],
+  },
+  {
+    key: "candidates",
+    label: "Candidates",
+    icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+    items: [
+      { q: "Is it free to register?", a: "Yes, completely free. We never charge candidates to register or apply." },
+      { q: "How do I apply?", a: "Find a job on our Looking for work page and press Quick apply, or just send us your CV and we'll call you when something fits." },
+      { q: "What documents do I need?", a: "Proof of ID and right to work, plus any licences, CPC, digi card or tickets for the work you're applying for." },
+      { q: "How and when do I get paid?", a: "Temporary workers are paid weekly for the hours on their approved timesheet. We'll go through the details when you register." },
+      { q: "How do I clock in?", a: "On your phone, with the Reach Connect app. It checks you're at the right site so your hours are recorded correctly." },
+      { q: "What happens after I apply?", a: "We'll review your application and call you if it's a good fit, usually within a couple of working days." },
+    ],
+  },
+  {
+    key: "connect",
+    label: "Reach Connect",
+    icon: "M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm4 17h2",
+    items: [
+      { q: "What is Reach Connect?", a: "Our portal for temporary staffing clients. See who's on site, check GPS and face-matched clock-ins, approve timesheets and track costs by site." },
+      { q: "Does it cost extra?", a: "No. It comes with our temporary staffing service." },
+      { q: "Do we need to install anything?", a: "No. It works in any browser on a computer, tablet or phone." },
+      { q: "Can my colleagues have access?", a: "Yes. Add as many colleagues as you need, each with their own login." },
+      { q: "Can I see a demo?", a: "Of course. Book a 15-minute demo and we'll show you everything." },
     ],
   },
 ];
+
+function Icon({ d, className = "h-5 w-5" }: { d: string; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d={d} />
+    </svg>
+  );
+}
+
+// Bold the search words in an answer
+function Highlight({ text, q }: { text: string; q: string }) {
+  if (!q) return <>{text}</>;
+  const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${safe})`, "ig"));
+  return (
+    <>
+      {parts.map((p, i) => (p.toLowerCase() === q.toLowerCase() ? <mark key={i} className="rounded bg-orange/25 px-0.5 text-navy">{p}</mark> : <span key={i}>{p}</span>))}
+    </>
+  );
+}
+
+const JSON_LD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: GROUPS.flatMap((g) => g.items).map((i) => ({ "@type": "Question", name: i.q, acceptedAnswer: { "@type": "Answer", text: i.a } })),
+});
 
 const NAV_SECTIONS = [
   {
@@ -93,7 +128,7 @@ const NAV_SECTIONS = [
     label: "Reach Network Recruitment",
     links: [
       { label: "About us", href: "/about-us" },
-      { label: "Why choose us", href: "/why-choose-us" },
+      { label: "Why choose us", href: "/about-us" },
       { label: "FAQ", href: "/faq" },
     ],
   },
@@ -102,10 +137,23 @@ const NAV_SECTIONS = [
 export default function FAQPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
-  const [openFaq, setOpenFaq] = useState<string | null>(null);
+  const [group, setGroup] = useState("all");
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState<string | null>("employers-0");
+  const [helpful, setHelpful] = useState<Record<string, boolean>>({});
+
+  const results = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return GROUPS.filter((g) => group === "all" || g.key === group)
+      .map((g) => ({ ...g, items: g.items.map((it, n) => ({ ...it, id: `${g.key}-${n}` })).filter((it) => !term || `${it.q} ${it.a}`.toLowerCase().includes(term)) }))
+      .filter((g) => g.items.length);
+  }, [group, q]);
+  const count = results.reduce((n, g) => n + g.items.length, 0);
 
   return (
     <main className="overflow-x-hidden font-body">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON_LD }} />
+      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}`}</style>
       {/* HEADER */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-navy">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3 lg:px-8">
@@ -185,60 +233,136 @@ export default function FAQPage() {
       </header>
 
       {/* HERO */}
-      <section className="bg-navy py-14 lg:py-20">
-        <div className="mx-auto max-w-4xl px-6 text-center lg:px-8">
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Help centre</p>
-          <h1 className="font-display mt-3 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
-            Frequently asked questions
-          </h1>
-          <p className="mt-4 text-sm text-white/70 sm:text-base">
-            Everything you need to know about working with Reach Network Recruitment.
-          </p>
+      <section className="relative overflow-hidden bg-navy pb-20 pt-12">
+        <div className="pointer-events-none absolute -right-40 -top-40 h-[480px] w-[480px] rounded-full bg-orange/15 blur-3xl" />
+        <div className="relative mx-auto max-w-3xl px-6 text-center lg:px-8">
+          <nav className="text-sm text-white/60">
+            <Link href="/" className="hover:text-white">Home</Link> <span className="mx-1">›</span> <span className="text-white/90">FAQ</span>
+          </nav>
+          <p className="mt-6 text-xs font-bold uppercase tracking-[0.3em] text-orange">Help centre</p>
+          <h1 className="mt-3 font-display text-4xl font-extrabold text-white sm:text-5xl">How can we help?</h1>
+          <label className="mx-auto mt-8 flex max-w-xl items-center gap-3 rounded-2xl bg-white px-4 shadow-2xl">
+            <Icon d="M21 21l-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" className="h-5 w-5 flex-none text-slate-400" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search, e.g. timesheets, pay, checks" className="w-full bg-transparent py-4 text-navy placeholder:text-slate-400 focus:outline-none" />
+            {q && (
+              <button onClick={() => setQ("")} className="text-sm font-bold text-slate-400 hover:text-navy">
+                Clear
+              </button>
+            )}
+          </label>
         </div>
       </section>
 
-      {/* FAQ SECTIONS */}
-      <section className="bg-slate-50 py-16 lg:py-20">
-        <div className="mx-auto max-w-3xl px-6 lg:px-8">
-          {FAQ_SECTIONS.map((section) => (
-            <div key={section.heading} className="mb-10 last:mb-0">
-              <h2 className="font-display text-lg font-extrabold text-navy">{section.heading}</h2>
-              <div className="mt-4 space-y-2">
-                {section.items.map((faq) => {
-                  const key = `${section.heading}-${faq.q}`;
-                  const isOpen = openFaq === key;
-                  return (
-                    <div key={key} className="rounded-xl bg-white">
-                      <button
-                        type="button"
-                        onClick={() => setOpenFaq(isOpen ? null : key)}
-                        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-navy"
-                      >
-                        {faq.q}
-                        <span className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}>&#9660;</span>
-                      </button>
-                      {isOpen && <p className="px-5 pb-4 text-sm text-slate-500">{faq.a}</p>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="bg-navy py-14">
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Still have questions?</p>
-            <h2 className="font-display mt-3 text-2xl font-extrabold text-white sm:text-3xl">
-              We&rsquo;re happy to help.
-            </h2>
+      {/* TOPICS */}
+      <section className="bg-slate-50 pb-16">
+        <div className="mx-auto max-w-6xl px-6 lg:px-8">
+          <div className="-mt-8 grid grid-cols-2 gap-2 rounded-2xl bg-white p-2 shadow-lg sm:grid-cols-3 lg:grid-cols-6">
+            {[{ key: "all", label: "Everything", icon: "M4 6h16M4 12h16M4 18h16" }, ...GROUPS].map((g) => (
+              <button key={g.key} onClick={() => setGroup(g.key)} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold transition ${group === g.key ? "bg-navy text-white" : "text-slate-600 hover:bg-slate-100"}`}>
+                <Icon d={g.icon} className={`h-4 w-4 ${group === g.key ? "text-orange" : "text-slate-400"}`} />
+                {g.label}
+              </button>
+            ))}
           </div>
-          <Link href="/contact-us" className="flex w-fit items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark">
-            Contact us <span aria-hidden="true">&rarr;</span>
-          </Link>
+
+          <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-10">
+              {q && (
+                <p className="text-sm text-slate-500">
+                  {count} answer{count === 1 ? "" : "s"} for &ldquo;{q}&rdquo;
+                </p>
+              )}
+              {results.map((g) => (
+                <div key={g.key} className="animate-[fadeIn_.3s_ease]">
+                  <h2 className="flex items-center gap-2 font-display text-xl font-extrabold text-navy">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange/10 text-orange">
+                      <Icon d={g.icon} className="h-4 w-4" />
+                    </span>
+                    {g.label}
+                  </h2>
+                  <div className="mt-4 space-y-2">
+                    {g.items.map((it) => {
+                      const isOpen = open === it.id || !!q;
+                      return (
+                        <div key={it.id} className={`overflow-hidden rounded-2xl border bg-white transition ${isOpen ? "border-orange/40 shadow-md" : "border-slate-200"}`}>
+                          <button onClick={() => setOpen(open === it.id ? null : it.id)} className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left">
+                            <span className="font-display font-bold text-navy">
+                              <Highlight text={it.q} q={q.trim()} />
+                            </span>
+                            <span className={`flex h-7 w-7 flex-none items-center justify-center rounded-full transition ${isOpen ? "rotate-45 bg-orange text-white" : "bg-slate-100 text-navy"}`}>+</span>
+                          </button>
+                          {isOpen && (
+                            <div className="px-5 pb-4">
+                              <p className="leading-relaxed text-slate-600">
+                                <Highlight text={it.a} q={q.trim()} />
+                              </p>
+                              <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+                                {helpful[it.id] === undefined ? (
+                                  <>
+                                    Helpful?
+                                    <button onClick={() => setHelpful((h) => ({ ...h, [it.id]: true }))} className="rounded-full border border-slate-200 px-2.5 py-0.5 font-bold hover:border-navy hover:text-navy">
+                                      Yes
+                                    </button>
+                                    <button onClick={() => setHelpful((h) => ({ ...h, [it.id]: false }))} className="rounded-full border border-slate-200 px-2.5 py-0.5 font-bold hover:border-navy hover:text-navy">
+                                      No
+                                    </button>
+                                  </>
+                                ) : helpful[it.id] ? (
+                                  <span className="font-semibold text-green-600">Thanks!</span>
+                                ) : (
+                                  <span>
+                                    Sorry about that.{" "}
+                                    <Link href="/book-a-call" className="font-bold text-orange hover:underline">
+                                      Ask us directly →
+                                    </Link>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {count === 0 && (
+                <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white p-10 text-center">
+                  <p className="font-display text-xl font-bold text-navy">No answers for that yet</p>
+                  <p className="mt-2 text-slate-600">Try a different word, or ask us directly.</p>
+                  <Link href="/book-a-call" className="mt-5 inline-block rounded-full bg-orange px-6 py-3 font-bold text-white hover:bg-orange-dark">
+                    Book a call
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
+              <div className="rounded-2xl bg-navy p-6 text-white">
+                <p className="font-display text-lg font-bold">Still got a question?</p>
+                <p className="mt-1 text-sm text-white/70">Talk to a real person. We&apos;re happy to help.</p>
+                <a href="tel:01216301643" className="mt-4 flex items-center justify-center gap-2 rounded-full bg-orange py-3 font-bold transition hover:bg-orange-dark">
+                  Call 0121 630 1643
+                </a>
+                <Link href="/book-a-call" className="mt-2 block rounded-full border border-white/25 py-3 text-center font-bold transition hover:bg-white/10">
+                  Book a call
+                </Link>
+              </div>
+              {[
+                { label: "I need staff", href: "/i-need-staff", sub: "Send a staff request" },
+                { label: "Find a job", href: "/looking-for-work", sub: "See live jobs" },
+                { label: "Reach Connect demo", href: "/book-a-demo", sub: "15 minutes, no obligation" },
+              ].map((l) => (
+                <Link key={l.href} href={l.href} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-orange">
+                  <span>
+                    <span className="block font-bold text-navy">{l.label}</span>
+                    <span className="block text-xs text-slate-500">{l.sub}</span>
+                  </span>
+                  <span className="text-orange">→</span>
+                </Link>
+              ))}
+            </aside>
+          </div>
         </div>
       </section>
 

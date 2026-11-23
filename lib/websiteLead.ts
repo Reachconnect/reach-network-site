@@ -34,3 +34,39 @@ export async function addWebsiteLead(l: {
   await sendAlert(l.alertSubject, details, { label: "Open in the CRM", url: `${SITE_URL}/crm/sales/view?id=${companyId}` });
   return companyId;
 }
+
+// A candidate booked a call on the website: add or update them, note it and set a reminder
+export async function addWebsiteCandidate(l: {
+  name: string;
+  email: string;
+  phone?: string | null;
+  source: string;
+  details: string[];
+  reminder: string;
+  dueAt?: string;
+  alertSubject: string;
+}) {
+  const db = admin();
+  const email = l.email.trim().toLowerCase();
+  const parts = l.name.trim().split(/\s+/);
+  const first = parts.shift() || l.name.trim();
+  const last = parts.join(" ") || null;
+  const { data: existing } = await db.from("crm_candidates").select("id, phone").ilike("email", email).limit(1);
+  let candidateId = existing?.[0]?.id as string | undefined;
+  if (candidateId) {
+    if (l.phone && !existing![0].phone) await db.from("crm_candidates").update({ phone: l.phone.trim() }).eq("id", candidateId);
+  } else {
+    const { data, error } = await db
+      .from("crm_candidates")
+      .insert({ first_name: first, last_name: last, email, phone: l.phone?.trim() || null, stage: "new", source: l.source })
+      .select("id")
+      .single();
+    if (error) throw error;
+    candidateId = data.id;
+  }
+  const details = l.details.filter(Boolean);
+  await db.from("crm_notes").insert({ candidate_id: candidateId, kind: "note", body: details.join("\n") });
+  await db.from("crm_reminders").insert({ candidate_id: candidateId, title: l.reminder, due_at: l.dueAt || new Date().toISOString() });
+  await sendAlert(l.alertSubject, details, { label: "Open their profile", url: `${SITE_URL}/crm/candidates/view?id=${candidateId}` });
+  return candidateId;
+}
