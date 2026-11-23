@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 const INSIDE = [
   { t: "Hourly pay by role", s: "12 roles across driving, warehouse, manufacturing and engineering." },
-  { t: "West and East Midlands", s: "Official ONS figures for both regions, with the typical range." },
+  { t: "West and East Midlands", s: "Official ONS median pay for both regions, April 2026." },
   { t: "What we're seeing", s: "Current rates from our own recent jobs, where we have enough." },
   { t: "The true cost of a worker", s: "Holiday pay, NI and pension at six pay rates, per hour, week and year." },
   { t: "The 2026/27 numbers", s: "Minimum wage, NI thresholds, holiday and pension rules on one page." },

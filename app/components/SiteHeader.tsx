@@ -13,6 +13,7 @@ const NAV_SECTIONS = [
       { label: "Our services", href: "/our-services" },
       { label: "How it works", href: "/how-it-works" },
       { label: "Pay rates and costs", href: "/pay-rates" },
+      { label: "Free salary guide", href: "/salary-guide" },
       { label: "Reach Connect sign in", href: "#" },
     ],
   },

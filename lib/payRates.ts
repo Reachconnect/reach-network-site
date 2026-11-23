@@ -11,6 +11,7 @@ export const ROLES: { key: string; label: string; sector: string; re: RegExp }[]
   { key: "flt", label: "FLT, reach or counterbalance driver", sector: "Warehouse", re: /\bflt\b|fork.?lift|reach truck|counterbalance|vna|bendi/i },
   { key: "teamleader", label: "Team leader or supervisor", sector: "Warehouse", re: /team leader|supervisor|shift manager/i },
   { key: "production", label: "Production operative", sector: "Manufacturing", re: /production|food|assembly|line operative/i },
+  { key: "assembler", label: "Assembler", sector: "Manufacturing", re: /assembl/i },
   { key: "machine", label: "Machine operator", sector: "Manufacturing", re: /machine|cnc|press|setter/i },
   { key: "maintenance", label: "Maintenance engineer", sector: "Engineering", re: /maintenance|multi.?skill|electrical engineer|mechanical engineer/i },
   { key: "engineer", label: "Engineer (other)", sector: "Engineering", re: /engineer|technician|fitter|electrician/i },

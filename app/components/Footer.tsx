@@ -65,6 +65,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/salary-guide" className="text-xs text-white/60 transition hover:text-white">
+                  Free salary guide
+                </Link>
+              </li>
+              <li>
                 <Link href="/staff" className="text-xs text-white/60 transition hover:text-white">
                   Areas we cover
                 </Link>

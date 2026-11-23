@@ -120,7 +120,7 @@ export async function buildSalaryGuide(opts: { roles: GuideRole[]; crm: CrmRate[
   y = para(p2, "For each role we show two kinds of figure, so you can see both the official picture and what's happening right now:", M, y, W - 2 * M, f.r, 11, NAVY);
   y -= 14;
   const boxes = [
-    { t: "Official figures (ONS)", s: "Median hourly pay and the middle half of earners (25th to 75th percentile), from the Office for National Statistics. Reliable and broad, but measured each April and covering all employees in that occupation." },
+    { t: "Official figures (ONS)", s: "Median hourly pay (half earn more, half earn less) from the Office for National Statistics, measured in April 2026. Reliable and independent, but it covers all employees in that occupation, not just new starters or agency workers." },
     { t: "Reach jobs", s: "The range on roles we've recruited for recently. More current and more specific, shown only where we have at least 3 jobs for that role." },
   ];
   for (const b of boxes) {
@@ -164,8 +164,8 @@ export async function buildSalaryGuide(opts: { roles: GuideRole[]; crm: CrmRate[
     y = H - 158;
     p.drawRectangle({ x: M, y: y - 8, width: col.w, height: 26, color: NAVY });
     text(p, "ROLE", col.role + 10, y + 1, f.b, 7.5, WHITE);
-    text(p, "WEST MIDLANDS", col.wm, y + 1, f.b, 7.5, WHITE);
-    text(p, "EAST MIDLANDS", col.em, y + 1, f.b, 7.5, WHITE);
+    text(p, "WEST MIDS (ONS)", col.wm, y + 1, f.b, 7.5, WHITE);
+    text(p, "EAST MIDS (ONS)", col.em, y + 1, f.b, 7.5, WHITE);
     text(p, "REACH JOBS", col.reach, y + 1, f.b, 7.5, ORANGE);
     y -= 30;
     for (const r of rows) {
@@ -183,6 +183,7 @@ export async function buildSalaryGuide(opts: { roles: GuideRole[]; crm: CrmRate[
         if (!v) return text(p, "-", x, y, f.r, 10, GREY);
         text(p, v.main, x, y, f.b, 11, NAVY);
         if (v.sub) text(p, v.sub, x, y - 13, f.r, 7.5, GREY);
+        else text(p, "median", x, y - 13, f.r, 7.5, GREY);
       };
       cell(wm, col.wm);
       cell(em, col.em);
@@ -197,7 +198,7 @@ export async function buildSalaryGuide(opts: { roles: GuideRole[]; crm: CrmRate[
       y -= h + 2;
     }
     y -= 14;
-    para(p, "ONS figures are median hourly pay excluding overtime, with the middle half of earners (25th to 75th percentile) underneath. Dashes mean the ONS doesn't publish a reliable figure for that area.", M, y, col.w, f.r, 8, GREY);
+    para(p, "ONS figures are median hourly pay excluding overtime, April 2026 (provisional), by place of work. A dash means the ONS doesn't publish a reliable figure for that area. The ONS doesn't split HGV drivers by licence class.", M, y, col.w, f.r, 8, GREY);
     // CTA box
     p.drawRectangle({ x: M, y: 70, width: col.w, height: 74, color: NAVY });
     text(p, `Need ${s.toLowerCase()} staff?`, M + 20, 118, f.b, 14, WHITE);
