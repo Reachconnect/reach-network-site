@@ -560,7 +560,7 @@ export default function ReachConnectPage() {
                 Book a demo <span aria-hidden="true">→</span>
               </Link>
               <button onClick={() => setVideo(true)} className="flex items-center gap-2 rounded-full border border-white/30 px-6 py-3.5 font-bold text-white transition hover:bg-white/10">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-[10px] text-navy">▶</span> Watch the overview
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-[10px] text-navy">▶</span> Watch the 45-second tour
               </button>
             </div>
             <div className="mt-8 grid max-w-lg grid-cols-2 gap-3 text-sm text-white/80">
@@ -775,7 +775,7 @@ export default function ReachConnectPage() {
                 Close ✕
               </button>
             </div>
-            <video src="/industries/reach-network-highlight.mp4" controls autoPlay playsInline className="w-full rounded-2xl bg-black" />
+            <video src="/reach-connect/overview.mp4" poster="/reach-connect/poster.jpg" controls autoPlay muted playsInline className="w-full rounded-2xl bg-black" />
           </div>
         </div>
       )}
