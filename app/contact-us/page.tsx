@@ -1,24 +1,110 @@
 "use client";
 
+// Contact us
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Footer from "../components/Footer";
 
-const TRUST_POINTS = [
-  { title: "Quick responses" },
-  { title: "Real people, real support" },
-  { title: "Here when you need us" },
-  { title: "Trusted by businesses" },
+const ROUTES = [
+  { label: "I need staff", body: "Send a staff request in two minutes.", href: "/i-need-staff#request", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm11-3v6m3-3h-6" },
+  { label: "I'm looking for work", body: "See live jobs or send your CV.", href: "/looking-for-work", icon: "M21 21l-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" },
+  { label: "Book a call", body: "Pick a time and we'll call you.", href: "/book-a-call", icon: "M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" },
+  { label: "Reach Connect demo", body: "See the client portal in 15 minutes.", href: "/book-a-demo", icon: "M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm4 17h2" },
 ];
 
-const HELP_OPTIONS = [
-  "General enquiry",
-  "I need staff",
-  "I'm looking for work",
-  "ReachConnect support",
-  "Something else",
-];
+const TOPICS = ["I need staff", "I'm looking for work", "Reach Connect support", "Terms or invoices", "General enquiry"];
+
+const PHONE_ICON = "M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z";
+const MAIL_ICON = "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm18 2-10 7L2 6";
+const PIN_ICON = "M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21zm0-9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z";
+
+function Icon({ d, className = "h-5 w-5" }: { d: string; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d={d} />
+    </svg>
+  );
+}
+
+function ContactForm() {
+  const [f, setF] = useState({ fullName: "", companyName: "", jobTitle: "", phoneNumber: "", workEmail: "", helpTopic: "", message: "" });
+  const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const candidate = f.helpTopic === "I'm looking for work";
+  const input = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-navy focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20";
+  const ready = f.helpTopic && f.fullName && f.workEmail && f.phoneNumber && f.message && (candidate || f.companyName);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("sending");
+    setError(null);
+    try {
+      const res = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(candidate ? { ...f, companyName: "", jobTitle: "" } : f) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || "Something went wrong.");
+      setStatus("done");
+    } catch (err) {
+      setError(`${(err as Error).message} You can also call us on 0121 630 1643.`);
+      setStatus("idle");
+    }
+  }
+
+  if (status === "done") {
+    return (
+      <div className="flex h-full flex-col items-center justify-center rounded-3xl bg-white p-10 text-center shadow-2xl">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl text-green-700">✓</div>
+        <p className="mt-4 font-display text-2xl font-extrabold text-navy">Message sent</p>
+        <p className="mt-2 max-w-sm text-slate-600">Thanks, {f.fullName.split(" ")[0]}. We&apos;ll get back to you shortly, and a copy is on its way to {f.workEmail}.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
+      <p className="font-display text-2xl font-extrabold text-navy">Send us a message</p>
+      <p className="mt-1 text-sm text-slate-500">What&apos;s it about?</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {TOPICS.map((t) => (
+          <button type="button" key={t} onClick={() => setF((p) => ({ ...p, helpTopic: t }))} className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${f.helpTopic === t ? "border-orange bg-orange/10 text-navy" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+      <div className="mt-5 space-y-3">
+        <input className={input} placeholder="Full name" value={f.fullName} onChange={set("fullName")} autoComplete="name" required />
+        {!candidate && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <input className={input} placeholder="Company" value={f.companyName} onChange={set("companyName")} autoComplete="organization" required />
+            <input className={input} placeholder="Job title (optional)" value={f.jobTitle} onChange={set("jobTitle")} autoComplete="organization-title" />
+          </div>
+        )}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input className={input} type="email" placeholder="Email" value={f.workEmail} onChange={set("workEmail")} autoComplete="email" required />
+          <input className={input} type="tel" placeholder="Phone" value={f.phoneNumber} onChange={set("phoneNumber")} autoComplete="tel" required />
+        </div>
+        <textarea className={input} rows={4} placeholder={candidate ? "What kind of work are you looking for, and where?" : "How can we help?"} value={f.message} onChange={set("message")} required />
+        {candidate && (
+          <p className="rounded-xl bg-orange/5 p-3 text-sm text-slate-600">
+            Got a CV?{" "}
+            <Link href="/looking-for-work" className="font-bold text-orange hover:underline">
+              Send it from our jobs page
+            </Link>{" "}
+            so we can match you faster.
+          </p>
+        )}
+        {error && <p className="rounded-lg bg-red-50 p-2.5 text-sm text-red-700">{error}</p>}
+        <button disabled={!ready || status === "sending"} className="w-full rounded-full bg-orange px-5 py-3.5 font-bold text-white shadow-lg shadow-orange/30 transition hover:bg-orange-dark disabled:opacity-40 disabled:shadow-none">
+          {status === "sending" ? "Sending…" : "Send message"}
+        </button>
+        <p className="text-center text-xs text-slate-400">
+          We&apos;ll only use your details to reply. See our <Link href="/privacy-notice" className="underline">privacy notice</Link>.
+        </p>
+      </div>
+    </form>
+  );
+}
 
 const NAV_SECTIONS = [
   {
@@ -51,8 +137,8 @@ const NAV_SECTIONS = [
     label: "Reach Network Recruitment",
     links: [
       { label: "About us", href: "/about-us" },
-      { label: "Why choose us", href: "/why-choose-us" },
-      { label: "FAQ", href: "/book-a-call#faq" },
+      { label: "Why choose us", href: "/about-us" },
+      { label: "FAQ", href: "/faq" },
     ],
   },
 ];
@@ -60,36 +146,6 @@ const NAV_SECTIONS = [
 export default function ContactUs() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    fullName: "",
-    companyName: "",
-    jobTitle: "",
-    phoneNumber: "",
-    workEmail: "",
-    helpTopic: "",
-    message: "",
-  });
-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
-  const [errorMessage, setErrorMessage] = useState("");
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setStatus("submitting");
-    setErrorMessage("");
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Something went wrong.");
-      setStatus("success");
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Something went wrong.");
-      setStatus("error");
-    }
-  }
 
   return (
     <main className="overflow-x-hidden font-body">
@@ -146,28 +202,14 @@ export default function ContactUs() {
                   className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
                 >
                   {section.label}
-                  <svg
-                    viewBox="0 0 12 12"
-                    className={`h-3 w-3 opacity-60 transition-transform ${openSection === section.label ? "rotate-180" : ""}`}
-                    fill="none"
-                  >
-                    <path
-                      d="M2.5 4.5 6 8l3.5-3.5"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
+                  <svg viewBox="0 0 12 12" className={`h-3 w-3 opacity-60 transition-transform ${openSection === section.label ? "rotate-180" : ""}`} fill="none">
+                    <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
                 {openSection === section.label && (
                   <div className="ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
                     {section.links.map((link) => (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        className="rounded-lg px-3 py-2 text-left text-xs font-semibold text-white/70 transition hover:bg-white/5 hover:text-white"
-                      >
+                      <Link key={link.label} href={link.href} className="rounded-lg px-3 py-2 text-left text-xs font-semibold text-white/70 transition hover:bg-white/5 hover:text-white">
                         {link.label}
                       </Link>
                     ))}
@@ -186,295 +228,104 @@ export default function ContactUs() {
       </header>
 
       {/* HERO */}
-      <section className="relative isolate min-h-[480px] overflow-hidden bg-navy">
-        <div className="absolute inset-0">
-          <Image
-            src="/industries/contactus.png"
-            alt="Reach Network team member"
-            fill
-            sizes="100vw"
-            className="object-cover object-top"
-            priority
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/90 to-navy/40" />
-
-        <div className="relative mx-auto max-w-7xl px-6 pb-16 pt-10 lg:px-8 lg:pb-20">
-          <div className="max-w-lg">
-            <h1 className="font-display text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
-              Contact us
-              <br />
-              <span className="text-orange">We&rsquo;re here to help.</span>
-            </h1>
-            <p className="mt-4 max-w-md text-sm text-white/70 sm:text-base">
-              Have a question, need support or want to learn more about Reach Network? Get in touch with our team today.
-            </p>
-
-            <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
-              {TRUST_POINTS.map((point) => (
-                <div key={point.title}>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full border border-orange/40 text-orange">
-                    <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
-                      <circle cx="8" cy="8" r="3" />
-                    </svg>
-                  </span>
-                  <p className="mt-2 text-xs font-semibold text-white/80">{point.title}</p>
-                </div>
-              ))}
-            </div>
+      <section className="relative overflow-hidden bg-navy pb-36 pt-12">
+        <Image src="/industries/contactus.png" alt="" fill priority sizes="100vw" className="object-cover opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-navy/60 to-navy" />
+        <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+          <nav className="text-sm text-white/60">
+            <Link href="/" className="hover:text-white">Home</Link> <span className="mx-1">›</span> <span className="text-white/90">Contact us</span>
+          </nav>
+          <p className="mt-6 text-xs font-bold uppercase tracking-[0.3em] text-orange">Contact us</p>
+          <h1 className="mt-3 max-w-2xl font-display text-4xl font-extrabold leading-tight text-white sm:text-5xl">
+            Talk to a real person. <span className="text-orange">Fast.</span>
+          </h1>
+          <p className="mt-4 max-w-xl text-lg text-white/80">Call, email, pop in or send a message. Whatever&apos;s easiest for you.</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a href="tel:01216301643" className="flex items-center gap-2 rounded-full bg-orange px-6 py-3.5 font-bold text-white shadow-lg shadow-orange/30 hover:bg-orange-dark">
+              <Icon d={PHONE_ICON} className="h-4 w-4" /> 0121 630 1643
+            </a>
+            <a href="mailto:info@reachnetworkrec.com" className="flex items-center gap-2 rounded-full border border-white/30 px-6 py-3.5 font-bold text-white hover:bg-white/10">
+              <Icon d={MAIL_ICON} className="h-4 w-4" /> info@reachnetworkrec.com
+            </a>
           </div>
         </div>
       </section>
 
-      {/* GET IN TOUCH + OTHER WAYS */}
-      <section className="bg-slate-50 py-16 lg:py-20">
-        <div className="mx-auto grid max-w-7xl gap-8 px-6 lg:grid-cols-[1fr_400px] lg:px-8">
-          {/* Form */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm sm:p-7">
-            <p className="font-display border-b-2 border-orange pb-2 text-lg font-extrabold text-navy" style={{ display: "inline-block" }}>
-              Get in touch
-            </p>
-            <p className="mt-3 text-xs text-slate-500">
-              Fill in the form and a member of our team will get back to you as soon as possible.
-            </p>
-
-            {status === "success" ? (
-              <div className="mt-5 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-                Thanks — your message is in. We&rsquo;ll get back to you as soon as possible.
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="text-xs font-semibold text-navy">Your name <span className="text-orange">*</span></label>
-                    <input required type="text" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-navy">Company name <span className="text-orange">*</span></label>
-                    <input required type="text" value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="text-xs font-semibold text-navy">Job title <span className="text-orange">*</span></label>
-                    <input required type="text" value={form.jobTitle} onChange={(e) => setForm({ ...form, jobTitle: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-navy">Phone number <span className="text-orange">*</span></label>
-                    <input required type="tel" value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-navy">Work email <span className="text-orange">*</span></label>
-                  <input required type="email" value={form.workEmail} onChange={(e) => setForm({ ...form, workEmail: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none" />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-navy">How can we help? <span className="text-orange">*</span></label>
-                  <select required value={form.helpTopic} onChange={(e) => setForm({ ...form, helpTopic: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none">
-                    <option value="">Please select an option</option>
-                    {HELP_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-navy">Your message <span className="text-orange">*</span></label>
-                  <textarea required rows={4} placeholder="Tell us more about your enquiry..." value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="mt-1 w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-navy placeholder:text-slate-400 focus:border-navy focus:outline-none" />
-                </div>
-
-                {status === "error" && <p className="text-sm font-semibold text-red-600">{errorMessage}</p>}
-
-                <button type="submit" disabled={status === "submitting"} className="flex w-full items-center justify-center gap-1.5 rounded-full bg-orange px-7 py-3.5 text-sm font-bold text-white transition hover:bg-orange-dark disabled:opacity-60">
-                  {status === "submitting" ? "Sending..." : "Send message"}
-                  {status !== "submitting" && <span aria-hidden="true">&rarr;</span>}
-                </button>
-
-                <p className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
-                  <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
-                    <path d="M8 1a3 3 0 00-3 3v2H4a1 1 0 00-1 1v6a1 1 0 001 1h8a1 1 0 001-1V7a1 1 0 00-1-1h-1V4a3 3 0 00-3-3zm-1.5 5V4a1.5 1.5 0 013 0v2h-3z" />
-                  </svg>
-                  Your information is safe and secure.
-                </p>
-              </form>
-            )}
-          </div>
-
-          {/* Other ways to reach us */}
-          <div className="space-y-6">
-            <div>
-              <p className="font-display border-b-2 border-orange pb-2 text-lg font-extrabold text-navy" style={{ display: "inline-block" }}>
-                Other ways to reach us
+      {/* QUICK ROUTES */}
+      <section className="relative -mt-24">
+        <div className="mx-auto grid max-w-7xl gap-3 px-6 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
+          {ROUTES.map((r) => (
+            <Link key={r.label} href={r.href} className="group rounded-2xl bg-white p-5 shadow-xl ring-1 ring-black/5 transition hover:-translate-y-1 hover:ring-orange/40">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange/10 text-orange transition group-hover:bg-orange group-hover:text-white">
+                <Icon d={r.icon} />
+              </span>
+              <p className="mt-4 font-display text-lg font-bold text-navy">{r.label}</p>
+              <p className="mt-1 text-sm text-slate-500">{r.body}</p>
+              <p className="mt-3 text-sm font-bold text-orange">
+                Go <span className="inline-block transition group-hover:translate-x-1">→</span>
               </p>
-
-              <div className="mt-5 space-y-5">
-                <div className="flex gap-3.5">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4.5 w-4.5">
-                      <path d="M3.5 2.5A1.5 1.5 0 0 1 5 1h1.3a1.5 1.5 0 0 1 1.46 1.16l.62 2.68a1.5 1.5 0 0 1-.4 1.42l-1.1 1.1a11.5 11.5 0 0 0 5 5l1.1-1.1a1.5 1.5 0 0 1 1.42-.4l2.68.62A1.5 1.5 0 0 1 18 12.7V14a1.5 1.5 0 0 1-1.5 1.5C8.5 15.5 3.5 10.5 3.5 2.5z" />
-                    </svg>
-                  </span>
-                  <div>
-                    <p className="font-display text-sm font-bold text-navy">Call us</p>
-                    <p className="text-sm text-slate-600">0121 630 1643</p>
-                    <p className="text-xs text-slate-400">Mon &ndash; Fri: 8am &ndash; 5.30pm</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-3.5">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4.5 w-4.5">
-                      <path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h12a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 16 16H4a1.5 1.5 0 0 1-1.5-1.5v-9zm1.7.2 5.8 4.35 5.8-4.35" fill="none" stroke="currentColor" strokeWidth="1.4" />
-                    </svg>
-                  </span>
-                  <div>
-                    <p className="font-display text-sm font-bold text-navy">Email us</p>
-                    <p className="text-sm text-slate-600">info@reachnetworkrec.com</p>
-                    <p className="text-xs text-slate-400">We aim to respond within 1 working hour</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-navy p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-display text-sm font-bold text-white">Existing customer?</p>
-                  <p className="mt-1.5 text-xs text-white/70">
-                    Log in to the ReachConnect platform for support or to manage your account.
-                  </p>
-                  <a href="#" className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-orange hover:text-orange-dark">
-                    Go to platform <span aria-hidden="true">&rarr;</span>
-                  </a>
-                </div>
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" className="h-4.5 w-4.5">
-                    <circle cx="8" cy="6" r="2.3" />
-                    <path d="M3.5 13.5a4.5 4.5 0 0 1 9 0" />
-                  </svg>
-                </span>
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-navy p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-display text-sm font-bold text-white">New candidate?</p>
-                  <p className="mt-1.5 text-xs text-white/70">
-                    Register your CV and let us match you with the right opportunities.
-                  </p>
-                  <Link href="/looking-for-work" className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-orange hover:text-orange-dark">
-                    Register here <span aria-hidden="true">&rarr;</span>
-                  </Link>
-                </div>
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-                  <svg viewBox="0 0 16 16" fill="currentColor" className="h-4.5 w-4.5">
-                    <path d="M9 2a1 1 0 0 1 1 1v4h4a1 1 0 1 1 0 2h-4v4a1 1 0 1 1-2 0V9H4a1 1 0 1 1 0-2h4V3a1 1 0 0 1 1-1z" />
-                  </svg>
-                </span>
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-navy p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-display text-sm font-bold text-white">Looking for work?</p>
-                  <p className="mt-1.5 text-xs text-white/70">
-                    Browse live roles and register for work today.
-                  </p>
-                  <Link href="/looking-for-work" className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-orange hover:text-orange-dark">
-                    Register for work <span aria-hidden="true">&rarr;</span>
-                  </Link>
-                </div>
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-                  <svg viewBox="0 0 16 16" fill="currentColor" className="h-4.5 w-4.5">
-                    <path d="M3 6a1 1 0 0 1 1-1h8a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1zm0 4a1 1 0 0 1 1-1h8a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1z" />
-                  </svg>
-                </span>
-              </div>
-            </div>
-          </div>
+            </Link>
+          ))}
         </div>
       </section>
 
-      {/* HEAD OFFICE */}
-      <section className="bg-white pb-16 lg:pb-20">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="min-h-[220px] overflow-hidden rounded-2xl">
+      {/* FORM + DETAILS */}
+      <section className="bg-slate-50 pb-16 pt-14 lg:pb-20">
+        <div className="mx-auto grid max-w-7xl gap-8 px-6 lg:grid-cols-[1.2fr_1fr] lg:px-8">
+          <ContactForm />
+          <div className="space-y-4">
+            <div className="rounded-3xl bg-navy p-7 text-white">
+              <p className="font-display text-xl font-bold">Get in touch</p>
+              <div className="mt-5 space-y-4">
+                <a href="tel:01216301643" className="flex items-center gap-4 rounded-2xl bg-white/5 p-4 transition hover:bg-white/10">
+                  <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-orange">
+                    <Icon d={PHONE_ICON} />
+                  </span>
+                  <span>
+                    <span className="block text-xs text-white/60">Phone</span>
+                    <span className="block font-bold">0121 630 1643</span>
+                  </span>
+                </a>
+                <a href="mailto:info@reachnetworkrec.com" className="flex items-center gap-4 rounded-2xl bg-white/5 p-4 transition hover:bg-white/10">
+                  <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-orange">
+                    <Icon d={MAIL_ICON} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-xs text-white/60">Email</span>
+                    <span className="block truncate font-bold">info@reachnetworkrec.com</span>
+                  </span>
+                </a>
+                <a href="https://www.google.com/maps/search/?api=1&query=132a+High+Street+Bromsgrove+B61+8ES" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 rounded-2xl bg-white/5 p-4 transition hover:bg-white/10">
+                  <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-orange">
+                    <Icon d={PIN_ICON} />
+                  </span>
+                  <span>
+                    <span className="block text-xs text-white/60">Office</span>
+                    <span className="block font-bold">132a High Street, Bromsgrove, B61 8ES</span>
+                    <span className="block text-xs text-orange">Get directions →</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+            <div className="relative h-72 overflow-hidden rounded-3xl shadow-sm ring-1 ring-black/5">
               <iframe
-                title="Reach Network Recruitment office location"
-                src="https://www.google.com/maps?q=132a+High+Street,+Bromsgrove,+B61+8ES,+United+Kingdom&output=embed"
-                width="100%"
-                height="100%"
-                style={{ border: 0, minHeight: 220 }}
+                title="Reach Network Recruitment office map"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=-2.0700%2C52.3310%2C-2.0480%2C52.3400&layer=mapnik&marker=52.3355%2C-2.0590"
+                className="absolute inset-0 h-full w-full border-0"
                 loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
-
-            <div className="rounded-2xl bg-slate-50 p-6 sm:p-7">
-              <p className="font-display text-lg font-extrabold text-navy">Our head office</p>
-
-              <div className="mt-5 flex gap-3.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-                  <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
-                    <path d="M8 1a5 5 0 0 0-5 5c0 3.75 5 9 5 9s5-5.25 5-9a5 5 0 0 0-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="font-display text-sm font-bold text-navy">Reach Network Recruitment</p>
-                  <p className="text-sm text-slate-600">132a High Street</p>
-                  <p className="text-sm text-slate-600">Bromsgrove</p>
-                  <p className="text-sm text-slate-600">B61 8ES</p>
-                </div>
-              </div>
-
-              <div className="mt-5 flex gap-3.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" className="h-4 w-4">
-                    <circle cx="8" cy="8" r="6.5" />
-                    <path d="M8 4.5V8l2.6 1.5" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="font-display text-sm font-bold text-navy">Opening hours</p>
-                  <p className="text-sm text-slate-600">Monday &ndash; Friday, 8:00am &ndash; 5:30pm</p>
-                </div>
-              </div>
-
-              <div className="mt-5 rounded-xl bg-white p-4">
-                <p className="text-xs font-semibold text-navy">We cover the whole of the UK</p>
-                <p className="mt-0.5 text-xs text-slate-500">With teams and partners nationwide, we&rsquo;re never far away.</p>
-              </div>
-            </div>
+            <Link href="/faq" className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-orange">
+              <span>
+                <span className="block font-bold text-navy">Quick question?</span>
+                <span className="block text-sm text-slate-500">The answer may already be in our FAQ.</span>
+              </span>
+              <span className="text-orange">→</span>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* NEED IMMEDIATE HELP */}
-      <section className="bg-navy py-6">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-6 sm:flex-row sm:items-center lg:px-8">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-              <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
-                <path d="M3.5 2.5A1.5 1.5 0 0 1 5 1h1.3a1.5 1.5 0 0 1 1.46 1.16l.62 2.68a1.5 1.5 0 0 1-.4 1.42l-1.1 1.1a11.5 11.5 0 0 0 5 5l1.1-1.1a1.5 1.5 0 0 1 1.42-.4l2.68.62A1.5 1.5 0 0 1 18 12.7V14a1.5 1.5 0 0 1-1.5 1.5C8.5 15.5 3.5 10.5 3.5 2.5z" />
-              </svg>
-            </span>
-            <div>
-              <p className="text-sm font-bold text-white">Need immediate help?</p>
-              <p className="text-xs text-white/60">Our team is ready to support you.</p>
-            </div>
-          </div>
-          <a href="tel:01216301643" className="flex items-center gap-1.5 text-sm font-bold text-white">
-            Call us now on <span className="text-orange">0121 630 1643</span>
-            <span aria-hidden="true" className="text-orange">&rarr;</span>
-          </a>
-        </div>
-      </section>
-
-      {/* FOOTER */}
       <Footer />
     </main>
   );

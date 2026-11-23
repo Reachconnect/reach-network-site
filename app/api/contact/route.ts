@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { addWebsiteLead, addWebsiteCandidate } from "@/lib/websiteLead";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const TEAM_EMAIL = "info@reachnetworkrec.com";
@@ -14,29 +15,41 @@ type ContactPayload = {
   message: string;
 };
 
+function esc(v: string) {
+  return String(v || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body: ContactPayload = await req.json();
     const { fullName, companyName, jobTitle, phoneNumber, workEmail, helpTopic, message } = body;
 
-    if (!fullName || !companyName || !jobTitle || !phoneNumber || !workEmail || !helpTopic || !message) {
+    const isCandidate = /looking for work/i.test(helpTopic || "");
+    if (!fullName || !phoneNumber || !workEmail || !helpTopic || !message || (!isCandidate && !companyName)) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
+
+    // Into the CRM: candidates on a candidate profile, everyone else as a company lead
+    const details = [`Contact form message from ${fullName}${jobTitle ? `, ${jobTitle}` : ""} (${phoneNumber}, ${workEmail}).`, `About: ${helpTopic}`, `Message: ${message}`];
+    await (isCandidate
+      ? addWebsiteCandidate({ name: fullName, email: workEmail, phone: phoneNumber, source: "Website: contact form", details, reminder: `Reply to ${fullName}'s message`, alertSubject: `✉️ Website message: ${fullName} (looking for work)` })
+      : addWebsiteLead({ company: companyName, name: fullName, email: workEmail, phone: phoneNumber, jobTitle, source: "Website: contact form", details, reminder: `Reply to ${fullName} (${companyName}): ${helpTopic}`, alertSubject: `✉️ Website message: ${fullName}, ${companyName}` })
+    ).catch((e) => console.error("Contact form CRM error:", e));
 
     const teamEmail = resend.emails.send({
       from: `Reach Network Website <bookings@reachnetworkrec.com>`,
       to: TEAM_EMAIL,
-      subject: `New contact form message: ${fullName} (${companyName})`,
+      subject: `New contact form message: ${fullName} (${companyName || "candidate"})`,
       html: `
         <h2>New contact form submission</h2>
         <table cellpadding="6" style="border-collapse:collapse">
-          <tr><td><strong>Name</strong></td><td>${fullName}</td></tr>
-          <tr><td><strong>Company</strong></td><td>${companyName}</td></tr>
-          <tr><td><strong>Job title</strong></td><td>${jobTitle}</td></tr>
-          <tr><td><strong>Phone</strong></td><td>${phoneNumber}</td></tr>
-          <tr><td><strong>Email</strong></td><td>${workEmail}</td></tr>
-          <tr><td><strong>How can we help</strong></td><td>${helpTopic}</td></tr>
-          <tr><td><strong>Message</strong></td><td>${message}</td></tr>
+          <tr><td><strong>Name</strong></td><td>${esc(fullName)}</td></tr>
+          <tr><td><strong>Company</strong></td><td>${esc(companyName)}</td></tr>
+          <tr><td><strong>Job title</strong></td><td>${esc(jobTitle)}</td></tr>
+          <tr><td><strong>Phone</strong></td><td>${esc(phoneNumber)}</td></tr>
+          <tr><td><strong>Email</strong></td><td>${esc(workEmail)}</td></tr>
+          <tr><td><strong>How can we help</strong></td><td>${esc(helpTopic)}</td></tr>
+          <tr><td><strong>Message</strong></td><td>${esc(message)}</td></tr>
         </table>
       `,
     });
@@ -46,7 +59,7 @@ export async function POST(req: NextRequest) {
       to: workEmail,
       subject: `We've received your message`,
       html: `
-        <h2>Thanks, ${fullName.split(" ")[0]}</h2>
+        <h2>Thanks, ${esc(fullName.split(" ")[0])}</h2>
         <p>We've received your message and a member of our team will get back to you as soon as possible.</p>
         <p>Talk soon,<br/>Reach Network Recruitment</p>
       `,
