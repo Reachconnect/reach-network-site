@@ -22,6 +22,7 @@ export default function WebChat() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,13 +79,14 @@ export default function WebChat() {
 
   async function start() {
     if (!name.trim() || !text.trim()) return setError("Please add your name and a message.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Please add your email, so we can reply if you leave the page.");
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`${API}/api/webchat/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, message: text }),
+        body: JSON.stringify({ name, email: email.trim(), phone, message: text }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Sorry, something went wrong.");
@@ -163,6 +165,15 @@ export default function WebChat() {
                 className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-[#F7931E] focus:outline-none focus:ring-2 focus:ring-[#F7931E]/30"
               />
               <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email (so we can reply if you leave)"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-[#F7931E] focus:outline-none focus:ring-2 focus:ring-[#F7931E]/30"
+              />
+              <input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Mobile number (optional)"
@@ -180,7 +191,7 @@ export default function WebChat() {
               <button onClick={start} disabled={busy} className="w-full rounded-lg bg-[#F7931E] px-4 py-3 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50">
                 {busy ? "Starting…" : "Start chat"}
               </button>
-              <p className="text-xs text-slate-500">We&apos;ll only use your details to help with your enquiry.</p>
+              <p className="text-xs text-slate-500">If we reply after you&apos;ve left, we&apos;ll email it to you. We&apos;ll only use your details to help with your enquiry.</p>
             </div>
           ) : (
             <>
