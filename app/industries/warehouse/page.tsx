@@ -60,6 +60,7 @@ const cfg: IndustryConfig = {
       tab: "Goods in & despatch",
       title: "Goods in and despatch",
       image: "/industries/industry-warehousing.png",
+      zoom: true,
       pos: "object-center",
       intro: "Reliable people for the busiest parts of your warehouse: unloading, checking, booking in and getting orders out of the door on time.",
       work: ["Unloading containers and trailers", "Checking deliveries against paperwork", "Booking in on your WMS", "Despatch and trailer loading", "Marshalling and yard work"],

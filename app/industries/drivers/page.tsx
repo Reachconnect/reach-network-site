@@ -60,6 +60,7 @@ const cfg: IndustryConfig = {
     tab: "7.5 tonne (C1)",
     title: "7.5 tonne drivers",
     image: "/industries/industry-driving.png",
+      zoom: true,
     pos: "object-center",
     intro: "C1 drivers for home delivery, removals, events and local distribution, including two-person crews.",
     work: ["Home and two-person deliveries", "Removals and furniture", "Catering, events and exhibitions", "Local distribution", "Horseboxes and specialist bodies"],

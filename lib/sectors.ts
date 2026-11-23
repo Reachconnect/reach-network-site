@@ -33,7 +33,13 @@ export const SECTORS: Record<SectorKey, { any: RegExp; types: Record<string, Reg
     },
   },
   engineering: {
-    any: /engineer|electric|mechanic|maintenance|technician|hvac|refrigerat|fire|security|gas|plumb|fitter|multi[- ]?skill/,
-    types: {},
+    any: /engineer|electric|mechanic|maintenance|technician|hvac|refrigerat|fire|security|\bgas\b|plumb|heating|multi[- ]?skill/,
+    types: {
+      maintenance: /maintenance|multi[- ]?skill|mechanical|plc|electro[- ]?mech|fitter/,
+      electrical: /electric|18th|testing and inspection|\bjib\b|\becs\b/,
+      hvac: /hvac|refrigerat|air con|f-?gas|ventilat|chiller/,
+      fire: /fire|security|alarm|cctv|access control|intruder/,
+      gas: /\bgas\b|heating|boiler|plumb/,
+    },
   },
 };

@@ -60,6 +60,7 @@ const cfg: IndustryConfig = {
       tab: "Welders & fabricators",
       title: "Welders and fabricators",
       image: "/industries/industry-manufacturing.png",
+      zoom: true,
       pos: "object-[center_25%]",
       intro: "MIG, TIG and stick welders and fabricators for structural, sheet metal and precision work.",
       work: ["MIG, TIG and MMA (stick) welding", "Structural steel fabrication", "Sheet metal work", "Platers and fitters", "Reading fabrication drawings"],

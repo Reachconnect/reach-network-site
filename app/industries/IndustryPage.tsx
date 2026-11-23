@@ -24,6 +24,7 @@ export type IndustryType = {
   checks: string[];
   shifts: string;
   unit: string;
+  zoom?: boolean; // for photos with white edges built in
 };
 
 export type IndustryConfig = {
@@ -376,7 +377,7 @@ export default function IndustryPage({ cfg }: { cfg: IndustryConfig }) {
 
           <div key={t.key} className="mt-6 grid animate-[fadeIn_.35s_ease] gap-8 lg:grid-cols-[1.05fr_1fr]">
             <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-navy shadow-lg">
-              <Image src={t.image} alt={t.title} fill sizes="(max-width: 1024px) 100vw, 50vw" className={`object-cover ${t.pos}`} />
+              <Image src={t.image} alt={t.title} fill sizes="(max-width: 1024px) 100vw, 50vw" className={`object-cover ${t.pos} ${t.zoom ? "scale-[1.12]" : ""}`} />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-navy/90 to-transparent p-6 pt-16">
                 <p className="font-display text-2xl font-extrabold text-white">{t.title}</p>
                 <p className="mt-1 text-sm text-white/75">{t.shifts}</p>

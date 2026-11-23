@@ -1,299 +1,156 @@
-"use client";
+// Engineering recruitment page
+import type { Metadata } from "next";
+import IndustryPage, { type IndustryConfig } from "../IndustryPage";
+import { ICONS } from "../icons";
 
-import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import Footer from "../../components/Footer";
+export const metadata: Metadata = {
+  title: "Engineering recruitment: maintenance, electrical, HVAC, fire and gas engineers | Reach Network Recruitment",
+  description: "Qualified, checked engineers: maintenance and multi-skilled, electrical, HVAC and refrigeration, fire and security, and gas and heating. Permanent, contract and temporary, across the UK.",
+};
 
-const BENEFITS = [
-  { title: "Specialist recruiters", sub: "Experts in engineering recruitment across multiple disciplines." },
-  { title: "Vetted & qualified", sub: "All candidates are thoroughly screened, assessed and reference-checked." },
-  { title: "Fast & reliable", sub: "We respond quickly and deliver the right people when you need them." },
-  { title: "Technical expertise", sub: "We understand your projects, challenges and skills requirements." },
-  { title: "Health & safety first", sub: "Safety and compliance are at the heart of everything we do." },
-  { title: "Built to last", sub: "We build long-term partnerships that drive real results." },
-];
-
-const ROLE_TYPES = [
-  "Mechanical Engineering",
-  "Electrical Engineering",
-  "Civil & Structural Engineering",
-  "Design & Development",
-  "Project Engineering",
-  "Maintenance Engineering",
-  "Quality Engineering",
-  "Manufacturing Engineering",
-  "Graduate & Apprentice Engineers",
-];
-
-const PROCESS = [
-  { step: "1", title: "Understand", sub: "We take the time to understand your project, technical needs and company culture." },
-  { step: "2", title: "Source & assess", sub: "We find and assess the right engineers with the skills, experience and mindset you need." },
-  { step: "3", title: "Deliver", sub: "We present qualified candidates quickly, ready to make an impact from day one." },
-  { step: "4", title: "Support", sub: "We provide ongoing support to ensure the right fit and long-term success." },
-];
-
-const NAV_SECTIONS = [
-  {
-    label: "For Employers",
-    links: [
-      { label: "I need staff", href: "/i-need-staff" },
-      { label: "Book a call", href: "/book-a-call" },
-      { label: "Our services", href: "/our-services" },
-      { label: "How it works", href: "/how-it-works" },
-      { label: "Reach Connect sign in", href: "#" },
-    ],
-  },
-  {
-    label: "For Candidates",
-    links: [
-      { label: "Find a job", href: "/looking-for-work" },
-      { label: "Register for work", href: "/looking-for-work" },
-      { label: "Register CV", href: "/looking-for-work" },
-      { label: "Career advice", href: "/looking-for-work" },
-    ],
-  },
-  {
-    label: "Reach Connect",
-    links: [
-      { label: "Book a demo", href: "/book-a-demo" },
-      { label: "Features", href: "/book-a-demo#features" },
-    ],
-  },
-  {
-    label: "Reach Network Recruitment",
-    links: [
-      { label: "About us", href: "/about-us" },
-      { label: "Why choose us", href: "/about-us" },
-      { label: "FAQ", href: "/faq" },
-    ],
-  },
-];
+const cfg: IndustryConfig = {
+  sector: "engineering",
+  crumb: "Engineering",
+  eyebrow: "Engineering recruitment",
+  headline: "Qualified engineers,",
+  accent: "with every ticket checked.",
+  intro: "Maintenance, electrical, HVAC and refrigeration, fire and security, and gas engineers for permanent, contract and temporary roles. We check the qualifications that matter before you meet them.",
+  heroImage: "/industries/engineeringpeople.png",
+  heroPos: "object-[78%_center]",
+  heroAlt: "Two engineers in hard hats reviewing plans",
+  chips: ["Maintenance · Electrical · HVAC · Fire & security · Gas", "Permanent, contract and temporary", "Site-based and field engineers"],
+  benefits: [
+    { title: "Tickets verified", sub: "Gas Safe, F-gas, 18th Edition, ECS and more, checked.", icon: ICONS.badge },
+    { title: "Technically screened", sub: "We ask the questions an engineer would ask.", icon: ICONS.shield },
+    { title: "Field and site based", sub: "Mobile engineers with clean licences, or on-site teams.", icon: ICONS.truck },
+    { title: "Perm or contract", sub: "Permanent hires, contractors and temporary cover.", icon: ICONS.calendar },
+    { title: "UK-wide", sub: "Strongest across the Midlands, with engineers nationwide.", icon: ICONS.pin },
+    { title: "One point of contact", sub: "A recruiter who understands the roles.", icon: ICONS.person },
+  ],
+  typesEyebrow: "The engineers we supply",
+  typesHeading: "Pick your discipline",
+  workLabel: "Roles we cover",
+  types: [
+    {
+      key: "maintenance",
+      tab: "Maintenance & multi-skilled",
+      title: "Maintenance engineers",
+      image: "/industries/industry-engineering.png",
+      zoom: true,
+      pos: "object-[center_28%]",
+      intro: "Multi-skilled maintenance engineers who keep production running, with planned maintenance, breakdowns and fault-finding across mechanical, electrical and controls.",
+      work: ["Multi-skilled maintenance engineers", "Electrical and mechanical biased roles", "PLC and controls engineers", "Planned and reactive maintenance", "Shift and day maintenance", "Maintenance supervisors and managers"],
+      checks: ["Time-served apprenticeship or equivalent (NVQ, HNC)", "Electrical, mechanical or controls bias", "PLCs used (e.g. Siemens, Allen-Bradley)", "References from recent employers"],
+      shifts: "Days, nights and rotating shifts",
+      unit: "maintenance engineers",
+    },
+    {
+      key: "electrical",
+      tab: "Electrical",
+      title: "Electrical engineers and electricians",
+      image: "/industries/aboutusone.png",
+      pos: "object-[78%_center]",
+      intro: "Qualified electricians and electrical engineers for installation, testing and maintenance in commercial and industrial settings.",
+      work: ["Approved and qualified electricians", "Testing and inspection", "Commercial and industrial installation", "Electrical maintenance engineers", "Supervisors and contracts managers"],
+      checks: ["18th Edition (BS 7671)", "ECS or JIB card and its grade", "Testing and inspection (2391 or equivalent)", "Level 3 qualification and AM2"],
+      shifts: "Days, with call-out on some roles",
+      unit: "electrical engineers",
+    },
+    {
+      key: "hvac",
+      tab: "HVAC & refrigeration",
+      title: "HVAC and refrigeration engineers",
+      image: "/industries/happyworker.png",
+      pos: "object-[75%_center]",
+      intro: "Installation and service engineers for air conditioning, refrigeration and ventilation, from commercial kitchens to cold stores.",
+      work: ["Refrigeration installation engineers", "Refrigeration and air con service engineers", "Commercial kitchen and cold store work", "Ventilation and heat pumps", "Supervisors and project engineers"],
+      checks: ["F-gas certificate and category", "Refrigeration and AC qualifications", "Full driving licence for field roles", "References from recent employers"],
+      shifts: "Days, with call-out on service roles",
+      unit: "HVAC and refrigeration engineers",
+    },
+    {
+      key: "fire",
+      tab: "Fire & security",
+      title: "Fire and security engineers",
+      image: "/industries/buildsomething.png",
+      pos: "object-[82%_center]",
+      intro: "Engineers who install, commission and maintain fire alarms and security systems, from junior engineers to senior commissioning engineers.",
+      work: ["Fire alarm service and maintenance", "Installation and commissioning", "Intruder alarms and CCTV", "Access control", "Emergency lighting"],
+      checks: ["Systems and panels worked on", "Standards worked to (e.g. BS 5839)", "Background checks where your contracts need them", "Full driving licence for field roles"],
+      shifts: "Days, with call-out on service roles",
+      unit: "fire and security engineers",
+    },
+    {
+      key: "gas",
+      tab: "Gas & heating",
+      title: "Gas and heating engineers",
+      image: "/industries/engineeringpeople.png",
+      pos: "object-[86%_30%]",
+      intro: "Gas Safe registered engineers for domestic and commercial heating, servicing, breakdowns and installation.",
+      work: ["Domestic gas service and breakdown", "Commercial gas engineers", "Boiler installation", "Heating and plumbing", "Social housing and planned works"],
+      checks: ["Gas Safe registration checked on the public register", "ACS qualifications and expiry dates", "Domestic or commercial categories", "Full driving licence for field roles"],
+      shifts: "Days, with call-out on some roles",
+      unit: "gas and heating engineers",
+    },
+  ],
+  peopleWord: "engineers",
+  coverageFallback: "We supply engineers nationwide, and we're strongest across the Midlands.",
+  complianceHeading: "Six checks before an engineer reaches you",
+  complianceIntro: "An engineer working on your systems needs the right qualifications, not just the right CV. Here's what we check before you meet them.",
+  compliance: [
+    {
+      title: "Technical interview",
+      short: "We find out what they can really do",
+      body: "Every engineer is interviewed by us before they're put forward. We ask about the systems, equipment and fault-finding they've done, so we're honest with you about their level.",
+      points: ["Systems and equipment worked on", "Install, service or fault-finding experience", "Honest view of their level"],
+    },
+    {
+      title: "ID and right to work",
+      short: "Who they are, and that they can work in the UK",
+      body: "We check original identity documents and the right to work in the UK in line with Home Office guidance: a passport, or a share code checked online. The check is recorded and dated, and time-limited permissions get a reminder before they run out.",
+      points: ["Photo ID matched to the person", "Right to work check, recorded and dated", "Follow-up dates for time-limited permission"],
+    },
+    {
+      title: "Qualifications verified",
+      short: "Tickets checked, not assumed",
+      body: "We see the certificates the role needs and check them where there's a register to check against, such as the Gas Safe Register. Expiry dates are recorded so you know when a renewal is due.",
+      points: ["Gas Safe and ACS checked", "F-gas, 18th Edition, ECS and JIB cards seen", "Expiry dates recorded"],
+    },
+    {
+      title: "Driving licence",
+      short: "For engineers on the road",
+      body: "For field engineers driving a company van, we check their licence for categories, points and any bans, so your insurer is happy from day one.",
+      points: ["Licence categories", "Points and endorsements", "Any disqualifications"],
+    },
+    {
+      title: "Work history and references",
+      short: "No unexplained gaps",
+      body: "We go through their work history, ask about any gaps, and take references from recent employers before they start with you.",
+      points: ["Full work history with gaps explained", "References from recent employers", "Background checks where your contracts need them"],
+    },
+    {
+      title: "Ongoing checks",
+      short: "Not just a one-off",
+      body: "For contractors and temporary engineers we stay in touch once they start. Feedback is acted on quickly, and qualification, licence and right to work dates are tracked with reminders before anything expires.",
+      points: ["Regular check-ins with you", "Renewal reminders (e.g. ACS every five years)", "Your feedback acted on quickly"],
+    },
+  ],
+  enquiryIndustry: "Engineering",
+  enquiryHeading: "Tell us about the role. We'll find the right engineer.",
+  enquiryImage: "/industries/engineeringpeople.png",
+  enquiryPos: "object-[78%_center]",
+  enquiryPlaceholder: "Anything else? Qualifications needed, systems, salary or day rate, van and call-out",
+  shiftOptions: ["Days", "Nights", "Rotating shifts", "Days with call-out", "Contract"],
+  faqs: [
+    { q: "How quickly can you find an engineer?", a: "For permanent roles we usually send a shortlist within a few days. For short-notice contract or temporary cover, call us on 0121 630 1643 and we'll tell you honestly what's possible." },
+    { q: "How do you check qualifications?", a: "We see the certificates the role needs, and check them where there's a register to check against, such as the Gas Safe Register. We record expiry dates so renewals don't slip." },
+    { q: "Do you supply contractors as well as permanent engineers?", a: "Yes: permanent hires, contractors and temporary cover. Tell us what suits your project and budget." },
+    { q: "Can you find engineers who'll drive a company van?", a: "Yes. For field roles we check the engineer's driving licence for categories, points and any bans before they start." },
+    { q: "What if an engineer isn't right for us?", a: "Tell us. We'll talk to you and the engineer straight away and, if it's not working, find you a replacement." },
+  ],
+  candidate: { title: "Are you an engineer looking for work?", sub: "Maintenance, electrical, HVAC, fire and security, and gas roles, permanent and contract.", button: "See engineering jobs" },
+};
 
 export default function EngineeringPage() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [openSection, setOpenSection] = useState<string | null>(null);
-
-  return (
-    <main className="overflow-x-hidden font-body">
-      {/* HEADER */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-navy">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-orange">
-              <span className="h-3 w-3 rounded-full bg-orange" />
-            </span>
-            <span className="font-display leading-none">
-              <span className="block text-lg font-extrabold tracking-tight text-white">REACH</span>
-              <span className="block text-[9px] font-semibold tracking-[0.2em] text-white/60">NETWORK RECRUITMENT</span>
-            </span>
-          </Link>
-
-          <div className="flex shrink-0 items-center gap-3">
-            <a href="tel:01216301643" className="hidden shrink-0 items-center gap-2 whitespace-nowrap text-sm font-semibold text-white/85 transition hover:text-white sm:flex">
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
-                <path d="M3.5 2.5A1.5 1.5 0 0 1 5 1h1.3a1.5 1.5 0 0 1 1.46 1.16l.62 2.68a1.5 1.5 0 0 1-.4 1.42l-1.1 1.1a11.5 11.5 0 0 0 5 5l1.1-1.1a1.5 1.5 0 0 1 1.42-.4l2.68.62A1.5 1.5 0 0 1 18 12.7V14a1.5 1.5 0 0 1-1.5 1.5C8.5 15.5 3.5 10.5 3.5 2.5z" />
-              </svg>
-              0121 630 1643
-            </a>
-            <Link href="/book-a-call" className="hidden rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark sm:block">
-              Let&rsquo;s Talk
-            </Link>
-            <button
-              type="button"
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-expanded={menuOpen}
-              aria-label="Toggle menu"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white transition hover:border-white/40"
-            >
-              {menuOpen ? (
-                <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4">
-                  <path d="M4 4l12 12M16 4L4 16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4">
-                  <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-                </svg>
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div className={`overflow-hidden border-t border-white/10 bg-navy transition-[max-height] duration-300 ease-in-out ${menuOpen ? "max-h-96" : "max-h-0 border-t-0"}`}>
-          <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-4 lg:px-8">
-            {NAV_SECTIONS.map((section) => (
-              <div key={section.label}>
-                <button
-                  type="button"
-                  onClick={() => setOpenSection(openSection === section.label ? null : section.label)}
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
-                >
-                  {section.label}
-                  <svg viewBox="0 0 12 12" className={`h-3 w-3 opacity-60 transition-transform ${openSection === section.label ? "rotate-180" : ""}`} fill="none">
-                    <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                {openSection === section.label && (
-                  <div className="ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
-                    {section.links.map((link) => (
-                      <Link key={link.label} href={link.href} className="rounded-lg px-3 py-2 text-left text-xs font-semibold text-white/70 transition hover:bg-white/5 hover:text-white">
-                        {link.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            <Link href="/contact-us" className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white">
-              Contact us
-            </Link>
-            <Link href="/book-a-call" className="mx-3 mt-2 rounded-full bg-orange px-5 py-2.5 text-center text-sm font-bold text-white transition hover:bg-orange-dark sm:hidden">
-              Let&rsquo;s Talk
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      {/* HERO */}
-      <section className="relative isolate min-h-[480px] overflow-hidden bg-navy">
-        <div className="absolute inset-0">
-          <Image src="/industries/engineeringpeople.png" alt="Engineers reviewing plans" fill sizes="100vw" className="object-cover object-center" priority />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/20" />
-
-        <div className="relative mx-auto max-w-7xl px-6 pb-24 pt-8 lg:px-8 lg:pb-32 lg:pt-10">
-          <p className="flex items-center gap-1.5 text-xs font-semibold text-white/50">
-            <Link href="/" className="hover:text-white">Home</Link>
-            <span>&#8250;</span>
-            <Link href="/industries" className="hover:text-white">Industries</Link>
-            <span>&#8250;</span>
-            <span>Engineering</span>
-          </p>
-
-          <div className="mt-6 max-w-lg">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Engineering recruitment</p>
-            <h1 className="font-display mt-3 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
-              Engineering talent. <span className="text-orange">Engineered for success.</span>
-            </h1>
-            <p className="mt-4 max-w-md text-sm text-white/70 sm:text-base">
-              From design and development to maintenance and project delivery, we connect skilled engineering professionals with leading organisations.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/book-a-call" className="flex items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark">
-                Find engineering staff <span aria-hidden="true">&rarr;</span>
-              </Link>
-              <Link href="/looking-for-work" className="flex items-center gap-1.5 rounded-full border border-white/25 px-6 py-3 text-sm font-bold text-white transition hover:border-white/50">
-                Find engineering jobs <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* BENEFITS STRIP */}
-      <section className="relative z-10 -mt-16 lg:-mt-20">
-        <div className="mx-auto max-w-6xl px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-6 rounded-2xl bg-white p-6 shadow-xl shadow-navy/10 sm:grid-cols-3 lg:grid-cols-6 lg:p-8">
-            {BENEFITS.map((b) => (
-              <div key={b.title} className="text-center">
-                <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-navy">
-                  <svg viewBox="0 0 16 16" fill="currentColor" className="h-4.5 w-4.5">
-                    <circle cx="8" cy="8" r="3" />
-                  </svg>
-                </span>
-                <p className="font-display mt-3 text-xs font-bold text-navy">{b.title}</p>
-                <p className="mt-1 text-[11px] leading-snug text-slate-500">{b.sub}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ROLES + PHOTO + WORKFORCE SOLUTIONS */}
-      <section className="bg-white pb-16 pt-16 lg:pb-24 lg:pt-24">
-        <div className="mx-auto max-w-6xl px-6 lg:px-8">
-          <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
-            <div className="relative overflow-hidden rounded-2xl bg-navy p-8 lg:p-10">
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">We supply talent across</p>
-              <h2 className="font-display mt-3 text-2xl font-extrabold text-white">Engineering disciplines</h2>
-              <ul className="mt-6 space-y-3">
-                {ROLE_TYPES.map((role) => (
-                  <li key={role} className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange/20 text-orange">
-                      <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
-                        <path d="M6.2 10.9 3.5 8.2l1-1 1.7 1.7 4.6-4.6 1 1z" />
-                      </svg>
-                    </span>
-                    <span className="text-sm font-medium text-white/90">{role}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="relative min-h-[220px] overflow-hidden rounded-2xl sm:min-h-[260px] lg:min-h-[180px]">
-                <Image src="/industries/industry-engineering.png" alt="Engineer at work" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-6 lg:p-8">
-                <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Tailored solutions</p>
-                <h3 className="font-display mt-3 text-xl font-extrabold text-navy">
-                  Workforce solutions built around you
-                </h3>
-                <p className="mt-3 text-sm text-slate-500">
-                  Every engineering project is unique. We take the time to understand your requirements and deliver skilled professionals that fit your business, team and goals.
-                </p>
-                <Link href="/book-a-call" className="mt-5 flex w-fit items-center gap-1.5 rounded-full border border-navy/20 px-5 py-2.5 text-sm font-bold text-navy transition hover:border-navy/40">
-                  Let&rsquo;s talk <span aria-hidden="true">&rarr;</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PROCESS */}
-      <section className="bg-slate-50 py-16 lg:py-20">
-        <div className="mx-auto max-w-6xl px-6 text-center lg:px-8">
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Our process</p>
-          <h2 className="font-display mt-3 text-2xl font-extrabold text-navy sm:text-3xl">Simple. Fast. Effective.</h2>
-
-          <div className="mt-10 grid grid-cols-1 gap-8 text-left sm:grid-cols-2 lg:grid-cols-4">
-            {PROCESS.map((p) => (
-              <div key={p.step}>
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-navy text-sm font-extrabold text-white">
-                  {p.step}
-                </span>
-                <p className="font-display mt-3 text-sm font-bold text-navy">{p.title}</p>
-                <p className="mt-1 text-xs text-slate-500">{p.sub}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="bg-white pb-16 lg:pb-20">
-        <div className="mx-auto max-w-6xl px-6 lg:px-8">
-          <div className="flex flex-col items-start gap-5 rounded-2xl bg-navy p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between lg:p-8">
-            <div className="flex items-center gap-4">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-                <svg viewBox="0 0 16 16" fill="currentColor" className="h-4.5 w-4.5">
-                  <path d="M8 1a3 3 0 013 3v1.5a3 3 0 01-6 0V4a3 3 0 013-3zM3 13a5 5 0 0110 0" />
-                </svg>
-              </span>
-              <div>
-                <p className="font-display text-sm font-bold text-white">Need engineering talent?</p>
-                <p className="mt-0.5 text-xs text-white/60">Get in touch today and let us help you build stronger teams and deliver your projects.</p>
-              </div>
-            </div>
-            <Link href="/book-a-call" className="flex shrink-0 items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark">
-              Let&rsquo;s talk <span aria-hidden="true">&rarr;</span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <Footer />
-    </main>
-  );
+  return <IndustryPage cfg={cfg} />;
 }
