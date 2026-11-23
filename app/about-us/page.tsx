@@ -227,31 +227,6 @@ export default function AboutUsPage() {
         </div>
       </section>
 
-      {/* FOUNDER */}
-      <section className="bg-slate-50 py-16">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 lg:grid-cols-[320px_1fr] lg:px-8">
-          <div className="mx-auto flex aspect-square w-64 items-center justify-center rounded-full bg-gradient-to-br from-navy to-navy-deep shadow-2xl ring-8 ring-white lg:w-full">
-            <span className="font-display text-7xl font-extrabold text-orange">DR</span>
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Meet the founder</p>
-            <p className="mt-3 font-display text-3xl font-extrabold text-navy">Darren Rowell</p>
-            <p className="font-semibold text-slate-500">Director</p>
-            <blockquote className="mt-5 border-l-4 border-orange pl-5 text-lg leading-relaxed text-slate-700">
-              &ldquo;I set up Reach to do recruitment properly: check every worker, be honest with clients about what&apos;s possible, and give them technology that shows exactly what&apos;s happening on their sites.&rdquo;
-            </blockquote>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/book-a-call" className="rounded-full bg-navy px-6 py-3 font-bold text-white hover:bg-navy-deep">
-                Book a call
-              </Link>
-              <a href="mailto:darrenrowell@reachnetworkrec.com" className="rounded-full border border-slate-300 px-6 py-3 font-bold text-navy hover:border-navy">
-                Email Darren
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* VALUES */}
       <section className="bg-navy py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
