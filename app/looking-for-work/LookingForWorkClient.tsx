@@ -300,7 +300,7 @@ export default function LookingForWorkClient({ jobs }: { jobs: Job[] }) {
       {/* JOBS */}
       <section id="jobs" className="scroll-mt-16 bg-slate-50 pb-16">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="-mt-8 flex gap-2 overflow-x-auto rounded-2xl bg-white p-2 shadow-lg">
+          <div className="relative z-10 -mt-8 flex gap-2 overflow-x-auto rounded-2xl bg-white p-2 shadow-lg">
             {categories.map(([c, n]) => (
               <button key={c} onClick={() => setCategory(c)} className={`flex flex-none items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${category === c ? "bg-navy text-white" : "text-slate-600 hover:bg-slate-100"}`}>
                 {c === "All" ? "All jobs" : c}

@@ -256,7 +256,7 @@ export default function FAQPage() {
       {/* TOPICS */}
       <section className="bg-slate-50 pb-16">
         <div className="mx-auto max-w-6xl px-6 lg:px-8">
-          <div className="-mt-8 grid grid-cols-2 gap-2 rounded-2xl bg-white p-2 shadow-lg sm:grid-cols-3 lg:grid-cols-6">
+          <div className="relative z-10 -mt-8 grid grid-cols-2 gap-2 rounded-2xl bg-white p-2 shadow-lg sm:grid-cols-3 lg:grid-cols-6">
             {[{ key: "all", label: "Everything", icon: "M4 6h16M4 12h16M4 18h16" }, ...GROUPS].map((g) => (
               <button key={g.key} onClick={() => setGroup(g.key)} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold transition ${group === g.key ? "bg-navy text-white" : "text-slate-600 hover:bg-slate-100"}`}>
                 <Icon d={g.icon} className={`h-4 w-4 ${group === g.key ? "text-orange" : "text-slate-400"}`} />
