@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logSpam, spamReason } from "@/lib/spam";
 import { Resend } from "resend";
 import { addWebsiteLead, addWebsiteCandidate } from "@/lib/websiteLead";
 
@@ -87,6 +88,12 @@ export async function POST(req: NextRequest) {
 
     if (!fullName || !workEmail || !phoneNumber || !companyName || !jobTitle || !helpTopic || !date || !time) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+    }
+
+    const spam = spamReason({ body: body as unknown as Record<string, unknown>, text: [fullName, companyName, jobTitle, notes], phone: phoneNumber });
+    if (spam) {
+      logSpam("book-call", spam, { fullName, companyName, workEmail });
+      return NextResponse.json({ ok: true });
     }
 
     const start = new Date(`${date}T${time}:00`);

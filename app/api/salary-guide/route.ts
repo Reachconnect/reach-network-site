@@ -1,5 +1,6 @@
 // POST /api/salary-guide: an employer asks for the salary guide. They go into the CRM as a lead, get it by email, and download it.
 import { NextResponse } from "next/server";
+import { logSpam, spamReason } from "@/lib/spam";
 import { addWebsiteLead } from "@/lib/websiteLead";
 import { getRoleRates } from "@/lib/payRates";
 import { GUIDE_ROLES, GUIDE_YEAR } from "@/lib/salaryGuide";
@@ -20,6 +21,11 @@ export async function POST(req: Request) {
   if (s(b.website)) return NextResponse.json({ error: "Something went wrong." }, { status: 400 }); // bots
   if (!f.name || !f.company || !f.email || !f.phone) return NextResponse.json({ error: "Please fill in your name, company, email and phone." }, { status: 400 });
   if (!EMAIL_RE.test(f.email)) return NextResponse.json({ error: "That email doesn't look right." }, { status: 400 });
+  const spam = spamReason({ body: b, text: [f.name, f.company, f.jobTitle, f.sites], phone: f.phone });
+  if (spam) {
+    logSpam("salary-guide", spam, { name: f.name, company: f.company });
+    return NextResponse.json({ error: "Something went wrong. Please call us on 0121 630 1643." }, { status: 400 });
+  }
 
   await addWebsiteLead({
     company: f.company,

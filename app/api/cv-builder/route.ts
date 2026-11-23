@@ -2,6 +2,7 @@
 // action "generate" {input}      AI writes the CV; the candidate goes into the CRM straight away
 // action "download" {input, cv}  makes the PDF, saves it privately on their CRM profile, and returns it
 import { NextResponse } from "next/server";
+import { logSpam, spamReason } from "@/lib/spam";
 import { admin } from "@/lib/crmServer";
 import { newToken, sendAlert, SITE_URL } from "@/lib/specs";
 import { CV_PROMPT, buildCvPdf, type Cv, type CvInput } from "@/lib/cvBuilder";
@@ -152,6 +153,11 @@ export async function POST(request: Request) {
   const i = cleanInput(body.input);
   if (!i.name || !i.email || !i.phone) return fail("Please add your name, email and phone number.");
   if (!EMAIL_RE.test(i.email)) return fail("That email address doesn't look right.");
+  const spam = spamReason({ body, text: [i.name, i.target, i.about, i.extras, i.town, ...i.jobs.flatMap((j) => [j.title, j.employer, j.notes])], phone: i.phone, place: i.town });
+  if (spam) {
+    logSpam("cv-builder", spam, { name: i.name, email: i.email });
+    return fail("Something went wrong. Please check your details and try again.");
+  }
   const db = admin();
 
   if (body.action === "generate") {

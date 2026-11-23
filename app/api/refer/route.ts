@@ -1,5 +1,6 @@
 // POST /api/refer: a worker refers a friend. The friend goes into the CRM as a new candidate.
 import { NextResponse } from "next/server";
+import { logSpam, spamReason } from "@/lib/spam";
 import { addWebsiteCandidate } from "@/lib/websiteLead";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -14,6 +15,11 @@ export async function POST(req: Request) {
   if (!you.name || !you.phone || !friend.name || !friend.phone) return NextResponse.json({ error: "Please fill in both names and phone numbers." }, { status: 400 });
   if (!b.consent) return NextResponse.json({ error: "Please confirm your friend is happy for us to contact them." }, { status: 400 });
   if (friend.email && !EMAIL_RE.test(friend.email)) return NextResponse.json({ error: "Your friend's email doesn't look right." }, { status: 400 });
+  const spam = spamReason({ body: b, text: [you.name, friend.name, friend.notes, friend.work], phone: you.phone }) || spamReason({ body: {}, text: [], phone: friend.phone });
+  if (spam) {
+    logSpam("refer", spam, { you: you.name, friend: friend.name });
+    return NextResponse.json({ ok: true });
+  }
 
   // Candidates are matched on email, so use a placeholder when the friend has none
   const email = friend.email || `no-email+${friend.phone.replace(/\D/g, "")}@referral.reachnetworkrec.com`;

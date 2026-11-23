@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logSpam, spamReason } from "@/lib/spam";
 import { Resend } from "resend";
 import { addWebsiteLead, addWebsiteCandidate } from "@/lib/websiteLead";
 
@@ -27,6 +28,12 @@ export async function POST(req: NextRequest) {
     const isCandidate = /looking for work/i.test(helpTopic || "");
     if (!fullName || !phoneNumber || !workEmail || !helpTopic || !message || (!isCandidate && !companyName)) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+    }
+
+    const spam = spamReason({ body: body as unknown as Record<string, unknown>, text: [fullName, companyName, jobTitle, message], phone: phoneNumber });
+    if (spam) {
+      logSpam("contact", spam, { fullName, companyName, workEmail });
+      return NextResponse.json({ ok: true });
     }
 
     // Into the CRM: candidates on a candidate profile, everyone else as a company lead

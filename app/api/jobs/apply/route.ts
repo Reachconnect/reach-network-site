@@ -2,6 +2,7 @@
 // action "upload" {filename, size}  a private place to upload their CV
 // action "apply"  {job, name, email, phone, message, cv_path, cv_name, consent}
 import { NextResponse } from "next/server";
+import { logSpam, spamReason } from "@/lib/spam";
 import { admin } from "@/lib/crmServer";
 import { SITE_URL, newToken, sendAlert } from "@/lib/specs";
 import { EMAIL_RE } from "@/lib/mail";
@@ -37,6 +38,11 @@ export async function POST(request: Request) {
   if (!EMAIL_RE.test(email)) return fail("Please check your email address.");
   if (!phone && !cvPath) return fail("Please add a phone number or your CV so we can get in touch.");
   if (!body.consent) return fail("Please tick the box so we can keep your details and contact you about jobs.");
+  const spam = spamReason({ body, text: [name, message], phone: phone || undefined });
+  if (spam) {
+    logSpam("jobs/apply", spam, { name, email });
+    return NextResponse.json({ ok: true });
+  }
 
   // Which job?
   const ref = str(body.job, 60);

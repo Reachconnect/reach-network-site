@@ -91,6 +91,8 @@ function EnquiryForm({ cfg, role }: { cfg: IndustryConfig; role: string }) {
   const [f, setF] = useState({ fullName: "", companyName: "", email: "", phoneNumber: "", rolesRequired: role, numberOfStaff: "1", location: "", startDate: "", shifts: cfg.shiftOptions[0], notes: "" });
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [hp, setHp] = useState("");
+  const [started] = useState(() => Date.now());
   useEffect(() => setF((p) => ({ ...p, rolesRequired: role })), [role]);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF((p) => ({ ...p, [k]: e.target.value }));
 
@@ -102,7 +104,7 @@ function EnquiryForm({ cfg, role }: { cfg: IndustryConfig; role: string }) {
       const res = await fetch("/api/book-staff", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...f, industry: cfg.enquiryIndustry, notes: [`Shifts: ${f.shifts}`, f.notes].filter(Boolean).join("\n") }),
+        body: JSON.stringify({ ...f, industry: cfg.enquiryIndustry, notes: [`Shifts: ${f.shifts}`, f.notes].filter(Boolean).join("\n"), website: hp, _t: Date.now() - started }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Something went wrong.");
       setStatus("done");
@@ -124,7 +126,8 @@ function EnquiryForm({ cfg, role }: { cfg: IndustryConfig; role: string }) {
 
   const input = "w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-navy focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20";
   return (
-    <form onSubmit={submit} className="rounded-2xl bg-white p-6 shadow-xl sm:p-8">
+    <form onSubmit={submit} className="relative rounded-2xl bg-white p-6 shadow-xl sm:p-8">
+      <input type="text" name="website" tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 opacity-0" />
       <p className="font-display text-xl font-bold text-navy">Tell us what you need</p>
       <p className="mt-1 text-sm text-slate-500">We&apos;ll call you back, usually within the hour during the working day.</p>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">

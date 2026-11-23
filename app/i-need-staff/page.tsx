@@ -119,6 +119,8 @@ type Wizard = {
 function StaffRequest({ preset }: { preset: { sector: string; n: number } }) {
   const [step, setStep] = useState(0);
   const [w, setW] = useState<Wizard>({ sector: "", role: "", howMany: 1, type: "Temporary", start: "As soon as possible", shifts: "Days", location: "", fullName: "", companyName: "", email: "", phoneNumber: "", notes: "" });
+  const [hp, setHp] = useState("");
+  const [started] = useState(() => Date.now());
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -144,6 +146,8 @@ function StaffRequest({ preset }: { preset: { sector: string; n: number } }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          website: hp,
+          _t: Date.now() - started,
           fullName: w.fullName,
           companyName: w.companyName,
           email: w.email,
@@ -271,7 +275,8 @@ function StaffRequest({ preset }: { preset: { sector: string; n: number } }) {
       )}
 
       {step === 2 && (
-        <form onSubmit={submit} className="mt-6 animate-[fadeIn_.3s_ease] space-y-3">
+        <form onSubmit={submit} className="relative mt-6 animate-[fadeIn_.3s_ease] space-y-3">
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 opacity-0" />
           <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             <b className="text-navy">
               {w.howMany} x {w.role}
