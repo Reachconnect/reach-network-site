@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { admin } from "@/lib/crmServer";
-import { SITE_URL, sendAlert } from "@/lib/specs";
+import { addWebsiteLead } from "@/lib/websiteLead";
 
 // Set RESEND_API_KEY in your Vercel project's Environment Variables.
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -98,26 +97,20 @@ export async function POST(req: NextRequest) {
 }
 
 async function addToCrm(b: StaffRequestPayload) {
-  const db = admin();
-  const name = b.companyName.trim().slice(0, 160);
-  const { data: found } = await db.from("crm_companies").select("id, stage").ilike("name", name).limit(1);
-  let companyId = found?.[0]?.id as string | undefined;
-  if (!companyId) {
-    const { data, error } = await db.from("crm_companies").insert({ name, stage: "lead", source: `Website enquiry (${b.industry})`, last_contacted_at: new Date().toISOString() }).select("id").single();
-    if (error) throw error;
-    companyId = data.id;
-  }
-  const email = b.email.trim().toLowerCase();
-  const { data: contact } = await db.from("crm_contacts").select("id").eq("company_id", companyId).ilike("email", email).limit(1);
-  if (!contact?.length) await db.from("crm_contacts").insert({ company_id: companyId, name: b.fullName.trim(), email, phone: b.phoneNumber.trim(), is_primary: !found?.length });
-  const details = [
-    `Website staffing request from ${b.fullName} (${b.phoneNumber}, ${email}).`,
-    `Needs: ${b.numberOfStaff} x ${b.rolesRequired} (${b.industry})`,
-    `Location: ${b.location}`,
-    `Start: ${b.startDate}${b.endDate ? `, until ${b.endDate}` : ""}`,
-    b.notes ? `Notes: ${b.notes}` : "",
-  ].filter(Boolean).join("\n");
-  await db.from("crm_notes").insert({ company_id: companyId, kind: "note", body: details });
-  await db.from("crm_reminders").insert({ company_id: companyId, title: `Call back ${b.fullName}: ${b.numberOfStaff} x ${b.rolesRequired}`, due_at: new Date().toISOString() });
-  await sendAlert(`🔥 Staffing request: ${b.companyName} needs ${b.numberOfStaff} x ${b.rolesRequired}`, details.split("\n"), { label: "Open in the CRM", url: `${SITE_URL}/crm/sales/view?id=${companyId}` });
+  await addWebsiteLead({
+    company: b.companyName,
+    name: b.fullName,
+    email: b.email,
+    phone: b.phoneNumber,
+    source: `Website enquiry (${b.industry})`,
+    details: [
+      `Website staffing request from ${b.fullName} (${b.phoneNumber}, ${b.email}).`,
+      `Needs: ${b.numberOfStaff} x ${b.rolesRequired} (${b.industry})`,
+      `Location: ${b.location}`,
+      `Start: ${b.startDate}${b.endDate ? `, until ${b.endDate}` : ""}`,
+      b.notes ? `Notes: ${b.notes}` : "",
+    ],
+    reminder: `Call back ${b.fullName}: ${b.numberOfStaff} x ${b.rolesRequired}`,
+    alertSubject: `🔥 Staffing request: ${b.companyName} needs ${b.numberOfStaff} x ${b.rolesRequired}`,
+  });
 }

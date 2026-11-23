@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { addWebsiteLead } from "@/lib/websiteLead";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const TEAM_EMAIL = "hello@reachnetworkrec.com";
@@ -38,6 +39,23 @@ export async function POST(req: NextRequest) {
     if (!fullName || !jobTitle || !companyName || !phoneNumber || !workEmail || !teamSize || !industry || !goal || !preferredDate) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
+
+    await addWebsiteLead({
+      company: companyName,
+      name: fullName,
+      email: workEmail,
+      phone: phoneNumber,
+      jobTitle,
+      source: "Website: Reach Connect demo",
+      details: [
+        `Reach Connect demo request from ${fullName}, ${jobTitle} (${phoneNumber}, ${workEmail}).`,
+        `Team size: ${teamSize} · Industry: ${industry} · Main goal: ${goal}`,
+        `Preferred: ${preferredDate}${preferredTime ? ` at ${preferredTime}` : ""}`,
+        notes ? `Notes: ${notes}` : "",
+      ],
+      reminder: `Book Reach Connect demo with ${fullName} (${companyName})`,
+      alertSubject: `📅 Demo request: ${companyName}`,
+    }).catch((e) => console.error("Demo request CRM error:", e));
 
     const teamEmail = resend.emails.send({
       from: `Reach Connect Website <bookings@reachnetworkrec.com>`,

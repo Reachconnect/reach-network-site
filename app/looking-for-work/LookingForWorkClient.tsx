@@ -53,7 +53,7 @@ const NAV_SECTIONS = [
     label: "Reach Network Recruitment",
     links: [
       { label: "About us", href: "/about-us" },
-      { label: "Why choose us", href: "/about-us" },
+      { label: "Why choose us", href: "/why-choose-us" },
       { label: "FAQ", href: "/faq" },
     ],
   },

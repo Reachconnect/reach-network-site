@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { addWebsiteLead } from "@/lib/websiteLead";
 
 // Set RESEND_API_KEY in your Vercel project's Environment Variables.
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -137,6 +138,24 @@ export async function POST(req: NextRequest) {
       hour: "numeric",
       minute: "2-digit",
     });
+
+    await addWebsiteLead({
+      company: body.companyName,
+      name: body.fullName,
+      email: body.workEmail,
+      phone: body.phoneNumber,
+      jobTitle: body.jobTitle,
+      source: "Website: call booked",
+      details: [
+        `Call booked on the website by ${body.fullName}, ${body.jobTitle} (${body.phoneNumber}, ${body.workEmail}).`,
+        `Wants help with: ${body.helpTopic}`,
+        `Booked for ${body.date} at ${body.time}`,
+        body.notes ? `Notes: ${body.notes}` : "",
+      ],
+      reminder: `Booked call with ${body.fullName} (${body.companyName}): ${body.helpTopic}`,
+      dueAt: new Date(`${body.date}T${body.time}:00`).toISOString(),
+      alertSubject: `📞 Call booked: ${body.fullName}, ${body.companyName} (${body.date} ${body.time})`,
+    }).catch((e) => console.error("Call booking CRM error:", e));
 
     const teamEmailPromise = resend.emails.send({
       from: `Reach Network Website <bookings@reachnetworkrec.com>`,
