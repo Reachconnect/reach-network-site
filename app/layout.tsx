@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Inter } from "next/font/google";
 import WebChat from "./components/WebChat";
 import SiteTracker from "./components/SiteTracker";
+import WhatsAppButton from "./components/WhatsAppButton";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -17,9 +18,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Reach Network Recruitment | Recruitment done different",
+  metadataBase: new URL("https://reachnetworkrec.com"),
+  title: "Reach Network Recruitment | Drivers, warehouse, manufacturing and engineering staff",
   description:
     "We go beyond recruitment to deliver the right people, the right support, and the right results. Driving, warehousing, manufacturing and engineering staffing across the UK.",
+  openGraph: { siteName: "Reach Network Recruitment", type: "website", locale: "en_GB" },
+  // Set GOOGLE_SITE_VERIFICATION in Vercel to the code Google Search Console gives you
+  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
 };
 
 export default function RootLayout({
@@ -32,6 +37,7 @@ export default function RootLayout({
       <body className={`${manrope.variable} ${inter.variable} antialiased`}>
         {children}
         <WebChat />
+        <WhatsAppButton />
         <SiteTracker />
       </body>
     </html>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import Footer from "./components/Footer";
+import { CaseStudyStrip, Reviews, TrustBar } from "./components/TrustSections";
 import type { CoverageArea } from "./industries/CoverageMap";
 
 const CoverageMap = dynamic(() => import("./industries/CoverageMap"), {
@@ -457,6 +458,8 @@ export default function HomeClient({ jobs, jobCount }: { jobs: HomeJob[]; jobCou
         </div>
       </section>
 
+      <TrustBar dark />
+
       {/* TWO DOORS */}
       <section className="bg-white py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
@@ -655,6 +658,28 @@ export default function HomeClient({ jobs, jobCount }: { jobs: HomeJob[]; jobCou
           </div>
         </div>
       </section>
+
+      {/* TOOLS */}
+      <section className="bg-white pb-4 pt-2">
+        <div className="mx-auto grid max-w-7xl gap-4 px-5 sm:px-6 md:grid-cols-3 lg:px-8">
+          {[
+            { t: "What will a temp cost?", s: "Work out the real hourly cost, holiday, NI and pension included.", h: "/pay-rates#calculator", tag: "Calculator" },
+            { t: "What should I pay?", s: "Typical pay rates for drivers, warehouse, production and engineers.", h: "/pay-rates", tag: "Pay rates" },
+            { t: "Driver and FLT guides", s: "CPC, tacho cards, licence categories and FLT training explained.", h: "/guides", tag: "Guides" },
+          ].map((x) => (
+            <Link key={x.t} href={x.h} className="group flex items-start gap-4 rounded-2xl border border-slate-200 p-5 transition hover:-translate-y-0.5 hover:border-orange/50 hover:shadow-lg">
+              <span className="flex-none rounded-lg bg-orange/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-orange">{x.tag}</span>
+              <span>
+                <span className="block font-display font-bold text-navy group-hover:text-orange">{x.t}</span>
+                <span className="mt-0.5 block text-sm text-slate-500">{x.s}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <Reviews />
+      <CaseStudyStrip />
 
       {/* LATEST JOBS */}
       <section className="bg-slate-50 py-16 lg:py-20">

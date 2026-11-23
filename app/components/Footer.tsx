@@ -59,6 +59,16 @@ export default function Footer() {
                   Why choose us
                 </Link>
               </li>
+              <li>
+                <Link href="/pay-rates" className="text-xs text-white/60 transition hover:text-white">
+                  Pay rates and costs
+                </Link>
+              </li>
+              <li>
+                <Link href="/staff" className="text-xs text-white/60 transition hover:text-white">
+                  Areas we cover
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -80,6 +90,16 @@ export default function Footer() {
                   Register your CV
                 </Link>
               </li>
+              <li>
+                <Link href="/guides" className="text-xs text-white/60 transition hover:text-white">
+                  Guides and advice
+                </Link>
+              </li>
+              <li>
+                <Link href="/refer" className="text-xs text-white/60 transition hover:text-white">
+                  Refer a friend
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -94,6 +114,11 @@ export default function Footer() {
               <li>
                 <Link href="/contact-us" className="text-xs text-white/60 transition hover:text-white">
                   Contact us
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="text-xs text-white/60 transition hover:text-white">
+                  FAQ
                 </Link>
               </li>
             </ul>

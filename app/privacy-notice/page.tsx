@@ -152,7 +152,7 @@ export default function PrivacyNotice() {
           <h1 className="font-display mt-4 text-3xl font-extrabold tracking-tight text-navy sm:text-4xl">
             Privacy Notice
           </h1>
-          <p className="mt-2 text-sm text-slate-400">Last updated: [add date]</p>
+          <p className="mt-2 text-sm text-slate-400">Last updated: 23 November 2026</p>
 
           <div className="mt-8 space-y-6 text-sm leading-relaxed text-slate-600">
             <p>
@@ -165,27 +165,43 @@ export default function PrivacyNotice() {
             <div>
               <h2 className="font-display text-lg font-bold text-navy">Information we collect</h2>
               <p className="mt-2">
-                [Add detail: e.g. contact details, CV and work history, right-to-work documents, payroll
-                information, website usage data.]
+                What we collect depends on how you deal with us.
               </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li><strong>Candidates and workers:</strong> your name, contact details, address and postcode, CV, work history, skills, licences, tickets and qualifications, right to work documents or share code, National Insurance number, bank details and tax information for payroll, emergency contact, timesheets and feedback from the sites you work at.</li>
+                <li><strong>Reach Connect app:</strong> when you clock in or out, we record the time and your location to confirm you&apos;re at the right site, and a photo used to check that it&apos;s you. We don&apos;t track your location at any other time.</li>
+                <li><strong>Clients and their staff:</strong> names, job titles, work contact details, site details, staffing requests, timesheet approvals, signed terms and invoicing details.</li>
+                <li><strong>Website visitors:</strong> what you send us through our forms. If you accept cookies, the pages you visit (see Cookies below).</li>
+                <li><strong>Emails we send:</strong> whether a message was delivered, opened or clicked, and any unsubscribe request.</li>
+              </ul>
             </div>
-
             <div>
-              <h2 className="font-display text-lg font-bold text-navy">How we use your information</h2>
+              <h2 className="font-display text-lg font-bold text-navy">How we use your information, and our legal basis</h2>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li>To find you work, or find you staff, and to keep you updated. This is in our legitimate interests, or needed to take steps towards a contract you&apos;ve asked about.</li>
+                <li>To employ and pay temporary workers, run payroll, holiday pay, pension enrolment and tax. This is needed for our contract with you and to meet our legal obligations.</li>
+                <li>To check right to work, identity, licences and qualifications. This is a legal obligation for right to work, and in our legitimate interests (and our clients&apos;) for the rest.</li>
+                <li>To record clock-ins in Reach Connect. Location checks are in our legitimate interests in accurate timesheets. The photo check is only used with your explicit consent, which you can withdraw. If you do, we&apos;ll agree another way to confirm your attendance.</li>
+                <li>To manage our relationship with clients, send terms, invoices and service updates. This is needed for our contract, and in our legitimate interests.</li>
+                <li>To send business emails about our services to companies. This is in our legitimate interests, and every email has a one-click unsubscribe.</li>
+                <li>To improve our website and services, using website visit information only where you&apos;ve accepted cookies.</li>
+              </ul>
               <p className="mt-2">
-                [Add detail: e.g. matching candidates to roles, managing client relationships, complying with
-                employment and payroll law, improving our website and services.]
+                We don&apos;t make decisions about you based only on automated processing. A person always makes the final decision about who is put forward for a job.
               </p>
             </div>
-
             <div>
               <h2 className="font-display text-lg font-bold text-navy">Sharing your information</h2>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li><strong>Clients:</strong> when we put a candidate forward or place a worker, we share the details the client needs, such as your profile, relevant checks, and shift and timesheet information.</li>
+                <li><strong>Service providers</strong> who process data for us under contract, including cloud hosting and databases, email delivery, payroll and pensions providers, and AI tools that help us read CVs and draft job adverts.</li>
+                <li><strong>Government bodies and regulators</strong> where the law requires, such as HMRC, the Home Office or the police.</li>
+                <li><strong>Professional advisers</strong> such as our accountants, insurers and lawyers.</li>
+              </ul>
               <p className="mt-2">
-                [Add detail: e.g. with prospective employers/clients, payroll and compliance providers,
-                regulatory bodies where required.]
+                We never sell your data. Some of our providers process data outside the UK. When they do, we make sure it&apos;s protected by safeguards recognised under UK law, such as the UK-US Data Bridge or the ICO&apos;s International Data Transfer Agreement.
               </p>
             </div>
-
             <div id="cookies">
               <h2 className="font-display text-lg font-bold text-navy">Cookies</h2>
               <p className="mt-2">
@@ -200,17 +216,25 @@ export default function PrivacyNotice() {
 
             <div>
               <h2 className="font-display text-lg font-bold text-navy">Data retention</h2>
-              <p className="mt-2">
-                [Add detail on how long different categories of data are kept and why.]
-              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li><strong>Candidates we haven&apos;t placed:</strong> up to 2 years from our last contact with you, unless you ask us to keep you on file for longer, or to delete you sooner.</li>
+                <li><strong>Workers we&apos;ve placed:</strong> right to work records for the length of your work with us plus 2 years, as the Home Office requires. Payroll and tax records for 6 years after the end of the tax year they relate to.</li>
+                <li><strong>Reach Connect clock-in photos:</strong> only as long as needed to confirm attendance and deal with any query about hours.</li>
+                <li><strong>Clients:</strong> contracts, signed terms and invoices for 6 years after our relationship ends.</li>
+                <li><strong>Website visit records:</strong> up to 13 months.</li>
+                <li><strong>Unsubscribe requests:</strong> we keep your email address on a do-not-contact list so we don&apos;t email you again.</li>
+              </ul>
             </div>
-
             <div>
               <h2 className="font-display text-lg font-bold text-navy">Your rights</h2>
               <p className="mt-2">
                 Under UK GDPR, you have the right to access, correct, delete or restrict the use of your personal
                 data, and the right to object to certain processing or request that your data be transferred.
-                [Add detail on how to exercise these rights.]
+                Where we rely on your consent, you can withdraw it at any time. To use any of these rights, email{" "}
+                <a href="mailto:info@reachnetworkrec.com" className="font-bold text-orange">info@reachnetworkrec.com</a> or call 0121 630 1643. We&apos;ll
+                reply within one month, and it&apos;s free. If you&apos;re unhappy with how we&apos;ve handled your data, please tell us first so we
+                can put it right. You can also complain to the Information Commissioner&apos;s Office at{" "}
+                <a href="https://ico.org.uk/make-a-complaint/" target="_blank" rel="noopener noreferrer" className="font-bold text-orange">ico.org.uk</a> or on 0303 123 1113.
               </p>
             </div>
 
