@@ -237,7 +237,7 @@ function RateChecker({ rates }: { rates: RoleRate[] }) {
 
 const NLW_DISPLAY = 12.71;
 
-export default function PayTools({ rates, nlw }: { rates: RoleRate[]; nlw: number }) {
+export default function PayTools({ rates, nlw, guideLive = false }: { rates: RoleRate[]; nlw: number; guideLive?: boolean }) {
   return (
     <main className="overflow-x-hidden font-body">
       <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}`}</style>
@@ -269,6 +269,21 @@ export default function PayTools({ rates, nlw }: { rates: RoleRate[]; nlw: numbe
           </div>
         </div>
       </section>
+
+      {guideLive && (
+        <section className="bg-slate-50 pb-4">
+          <div className="mx-auto max-w-7xl px-6 lg:px-8">
+            <Link href="/salary-guide" className="flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-orange p-6 text-white shadow-lg transition hover:-translate-y-0.5">
+              <span>
+                <span className="block text-xs font-bold uppercase tracking-wider text-white/80">Free PDF</span>
+                <span className="block font-display text-2xl font-extrabold">Get the full Midlands pay rates guide</span>
+                <span className="block text-white/90">12 roles, official figures for both regions, and the true cost of a worker.</span>
+              </span>
+              <span className="rounded-full bg-navy px-6 py-3 font-bold">Download free →</span>
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section id="calculator" className="scroll-mt-20 bg-white py-16">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">

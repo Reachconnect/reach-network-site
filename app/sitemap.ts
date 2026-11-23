@@ -4,6 +4,7 @@ import { SECTOR_PAGES, TOWNS } from "@/lib/locations";
 import { GUIDES } from "@/lib/guides";
 import { CASE_STUDIES } from "@/lib/siteConfig";
 import { listPublicJobs } from "@/lib/jobsPublic";
+import { SALARY_GUIDE_LIVE } from "@/lib/salaryGuide";
 
 export const revalidate = 3600;
 
@@ -36,6 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/privacy-notice", 0.2],
   ] as const;
   const out: MetadataRoute.Sitemap = pages.map(([p, priority]) => ({ url: `${BASE}${p}`, lastModified: now, priority }));
+  if (SALARY_GUIDE_LIVE) out.push({ url: `${BASE}/salary-guide`, lastModified: now, priority: 0.7 });
   if (CASE_STUDIES.length) out.push({ url: `${BASE}/case-studies`, lastModified: now, priority: 0.6 });
   for (const g of GUIDES) out.push({ url: `${BASE}/guides/${g.slug}`, lastModified: now, priority: 0.5 });
   for (const s of SECTOR_PAGES) for (const t of TOWNS) out.push({ url: `${BASE}/staff/${s.slug}/${t.slug}`, lastModified: now, priority: 0.6 });

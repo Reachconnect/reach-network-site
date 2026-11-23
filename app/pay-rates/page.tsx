@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ogMeta } from "@/lib/og";
 import PayTools from "./PayTools";
 import { NLW, getRoleRates } from "@/lib/payRates";
+import { SALARY_GUIDE_LIVE } from "@/lib/salaryGuide";
 
 export const revalidate = 3600;
 
@@ -15,5 +16,5 @@ export const metadata: Metadata = {
 
 export default async function PayRatesPage() {
   const rates = await getRoleRates().catch(() => []);
-  return <PayTools rates={rates} nlw={NLW} />;
+  return <PayTools rates={rates} nlw={NLW} guideLive={SALARY_GUIDE_LIVE} />;
 }
