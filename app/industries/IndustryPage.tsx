@@ -116,7 +116,7 @@ function EnquiryForm({ cfg, role }: { cfg: IndustryConfig; role: string }) {
       <div className="rounded-2xl bg-white p-8 text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-3xl text-green-700">✓</div>
         <p className="mt-4 font-display text-xl font-bold text-navy">Thanks, {f.fullName.split(" ")[0]}</p>
-        <p className="mt-2 text-sm text-slate-600">We&apos;ve got your request for {f.numberOfStaff} x {f.rolesRequired}. Darren will call you shortly. If it&apos;s urgent, ring 0121 630 1643.</p>
+        <p className="mt-2 text-sm text-slate-600">We&apos;ve got your request for {f.numberOfStaff} x {f.rolesRequired}. One of our team will call you shortly. If it&apos;s urgent, ring 0121 630 1643.</p>
       </div>
     );
   }
@@ -522,7 +522,7 @@ export default function IndustryPage({ cfg }: { cfg: IndustryConfig }) {
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Need {cfg.peopleWord}?</p>
             <h2 className="mt-3 font-display text-3xl font-extrabold text-white sm:text-4xl">{cfg.enquiryHeading}</h2>
             <ul className="mt-6 space-y-3 text-white/80">
-              {["A call back from Darren, not a call centre", `Checked ${cfg.peopleWord} matched to your site and shifts`, "One point of contact from first call to start"].map((x) => (
+              {[`Checked ${cfg.peopleWord} matched to your site and shifts`, "One point of contact from first call to start", "Honest advice on pay rates and availability"].map((x) => (
                 <li key={x} className="flex gap-3">
                   <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-orange text-xs font-bold text-white">✓</span>
                   {x}

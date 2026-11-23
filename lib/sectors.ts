@@ -23,8 +23,14 @@ export const SECTORS: Record<SectorKey, { any: RegExp; types: Record<string, Reg
     },
   },
   manufacturing: {
-    any: /manufactur|production|factory|machine|operator|assembl|food|process|packing|quality|\bqa\b|line lead|cnc|weld|fabricat/,
-    types: {},
+    any: /manufactur|production|factory|machine|operator|assembl|food|process|quality|\bqa\b|\bqc\b|line lead|cnc|weld|fabricat|setter|moulding/,
+    types: {
+      production: /production|operative|factory|process|assembl|food|line worker|packing/,
+      machine: /machine|cnc|press|moulding|setter|lathe|mill|operator/,
+      welding: /weld|fabricat|mig|tig|plater|sheet metal/,
+      quality: /quality|\bqa\b|\bqc\b|inspect|technical|hygiene|food safety/,
+      supervisors: /supervis|team lead|line lead|manager|shift lead/,
+    },
   },
   engineering: {
     any: /engineer|electric|mechanic|maintenance|technician|hvac|refrigerat|fire|security|gas|plumb|fitter|multi[- ]?skill/,

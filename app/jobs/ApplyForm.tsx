@@ -44,7 +44,7 @@ export default function ApplyForm({ jobKey, jobTitle, compact = false }: { jobKe
       <div className="rounded-2xl bg-green-50 p-6 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl text-green-700">✓</div>
         <p className="mt-3 font-display text-lg font-bold text-navy">Thanks, {f.name.split(" ")[0]}!</p>
-        <p className="mt-1 text-sm text-slate-600">{jobTitle ? `We've got your application for ${jobTitle}.` : "We've got your details."} Darren or the team will be in touch soon, usually within one working day.</p>
+        <p className="mt-1 text-sm text-slate-600">{jobTitle ? `We've got your application for ${jobTitle}.` : "We've got your details."} One of our team will be in touch soon, usually within one working day.</p>
       </div>
     );
   }

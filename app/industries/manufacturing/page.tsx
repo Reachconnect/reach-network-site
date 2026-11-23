@@ -1,299 +1,155 @@
-"use client";
+// Manufacturing recruitment page
+import type { Metadata } from "next";
+import IndustryPage, { type IndustryConfig } from "../IndustryPage";
+import { ICONS } from "../icons";
 
-import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import Footer from "../../components/Footer";
+export const metadata: Metadata = {
+  title: "Manufacturing recruitment: operatives, machine operators and welders | Reach Network Recruitment",
+  description: "Checked, reliable manufacturing staff: production operatives, machine operators and setters, welders and fabricators, quality inspectors and supervisors. Temporary and permanent, across the UK.",
+};
 
-const BENEFITS = [
-  { title: "Skilled & reliable", sub: "We supply dependable manufacturing staff who get the job done." },
-  { title: "Safety focused", sub: "Health and safety is our priority in every placement we make." },
-  { title: "Productivity driven", sub: "We help you maintain output, quality and efficiency." },
-  { title: "Flexible solutions", sub: "Short-term cover to permanent hires, we work around you." },
-  { title: "Quality assured", sub: "All candidates are thoroughly vetted and reference-checked." },
-  { title: "Long-term partner", sub: "We build lasting relationships that support your growth." },
-];
-
-const ROLE_TYPES = [
-  "Production Operatives",
-  "Machine Minders",
-  "CNC Machinists",
-  "Assemblers",
-  "Welders & Fabricators",
-  "Quality Control Inspectors",
-  "Maintenance Technicians",
-  "Team Leaders & Supervisors",
-  "Production Managers",
-];
-
-const PROCESS = [
-  { step: "1", title: "Understand", sub: "We take the time to understand your operations, roles and workforce requirements." },
-  { step: "2", title: "Source & assess", sub: "We find and vet the right manufacturing talent with the skills and experience you need." },
-  { step: "3", title: "Place", sub: "We deliver the right people, ready to contribute from day one." },
-  { step: "4", title: "Support", sub: "We provide ongoing support to ensure performance, retention and long-term success." },
-];
-
-const NAV_SECTIONS = [
-  {
-    label: "For Employers",
-    links: [
-      { label: "I need staff", href: "/i-need-staff" },
-      { label: "Book a call", href: "/book-a-call" },
-      { label: "Our services", href: "/our-services" },
-      { label: "How it works", href: "/how-it-works" },
-      { label: "Reach Connect sign in", href: "#" },
-    ],
-  },
-  {
-    label: "For Candidates",
-    links: [
-      { label: "Find a job", href: "/looking-for-work" },
-      { label: "Register for work", href: "/looking-for-work" },
-      { label: "Register CV", href: "/looking-for-work" },
-      { label: "Career advice", href: "/looking-for-work" },
-    ],
-  },
-  {
-    label: "Reach Connect",
-    links: [
-      { label: "Book a demo", href: "/book-a-demo" },
-      { label: "Features", href: "/book-a-demo#features" },
-    ],
-  },
-  {
-    label: "Reach Network Recruitment",
-    links: [
-      { label: "About us", href: "/about-us" },
-      { label: "Why choose us", href: "/about-us" },
-      { label: "FAQ", href: "/faq" },
-    ],
-  },
-];
+const cfg: IndustryConfig = {
+  sector: "manufacturing",
+  crumb: "Manufacturing",
+  eyebrow: "Manufacturing recruitment",
+  headline: "Skilled, safe people",
+  accent: "to keep your lines running.",
+  intro: "Production operatives, machine operators, welders, quality inspectors and supervisors for everyday cover, busy periods and permanent roles. Every one interviewed and checked before they start on your line.",
+  heroImage: "/industries/manufacturingpeople.png",
+  heroPos: "object-[72%_center]",
+  heroAlt: "Two manufacturing operatives working on a machine",
+  chips: ["Operatives · Machine operators · Welders · QA · Supervisors", "Temp, temp to perm and permanent", "Days, nights, weekends and continental shifts"],
+  benefits: [
+    { title: "Checked before they start", sub: "ID, right to work, references and certificates.", icon: ICONS.shield },
+    { title: "Skills that match", sub: "Machines, materials and processes matched to yours.", icon: ICONS.badge },
+    { title: "Safety first", sub: "PPE, site rules and safe working briefed before day one.", icon: ICONS.box },
+    { title: "Every shift pattern", sub: "Days, nights, weekends and 4-on-4-off.", icon: ICONS.calendar },
+    { title: "Scale up or down", sub: "From one operative to a full new shift.", icon: ICONS.chart },
+    { title: "One point of contact", sub: "A named recruiter who knows your site.", icon: ICONS.person },
+  ],
+  typesEyebrow: "The people we supply",
+  typesHeading: "From the shop floor to the shift office",
+  workLabel: "Roles we cover",
+  types: [
+    {
+      key: "production",
+      tab: "Production operatives",
+      title: "Production operatives",
+      image: "/industries/manufacturingpeople.png",
+      pos: "object-[72%_center]",
+      intro: "Reliable operatives who pick up your process quickly and keep the line moving, for everyday cover, busy periods or a whole new shift.",
+      work: ["Production line and process operatives", "Food production and packing", "Assembly and bench work", "Packing, labelling and palletising", "Hygiene and cleaning teams", "Line feeding and material handling"],
+      checks: ["Production or factory experience", "Right to work in the UK", "Food hygiene certificate where needed", "Own safety boots, or we'll arrange PPE"],
+      shifts: "Days, nights, weekends and continental shifts",
+      unit: "production operatives",
+    },
+    {
+      key: "machine",
+      tab: "Machine operators & setters",
+      title: "Machine operators and setters",
+      image: "/industries/manufacturingpeople.png",
+      pos: "object-[58%_75%]",
+      intro: "Operators and setters who know their machines, from presses and injection moulding to CNC, so you get output from the first shift.",
+      work: ["CNC operators and setters", "Press and brake press", "Injection and blow moulding", "Lathe and milling", "Print, packaging and converting machinery", "Changeovers and first-off checks"],
+      checks: ["Machines and controls used (e.g. Fanuc, Haas)", "Setting or operating level, honestly assessed", "Reading drawings and measuring", "References from recent employers"],
+      shifts: "Days, nights and rotating shifts",
+      unit: "machine operators and setters",
+    },
+    {
+      key: "welding",
+      tab: "Welders & fabricators",
+      title: "Welders and fabricators",
+      image: "/industries/industry-manufacturing.png",
+      pos: "object-[center_25%]",
+      intro: "MIG, TIG and stick welders and fabricators for structural, sheet metal and precision work.",
+      work: ["MIG, TIG and MMA (stick) welding", "Structural steel fabrication", "Sheet metal work", "Platers and fitters", "Reading fabrication drawings"],
+      checks: ["Welding processes and materials used", "Coded welder certificates where needed", "Reading drawings", "References from recent employers"],
+      shifts: "Mostly days, some nights and overtime",
+      unit: "welders and fabricators",
+    },
+    {
+      key: "quality",
+      tab: "Quality & technical",
+      title: "Quality and technical",
+      image: "/industries/aboutusone.png",
+      pos: "object-[78%_center]",
+      intro: "Inspectors, QA and technical staff who protect your standards and keep you audit-ready.",
+      work: ["Quality inspectors", "QA and QC technicians", "Food safety and hygiene", "Technical managers", "Metrology and measurement"],
+      checks: ["Standards worked to (BRC, ISO 9001, IATF)", "Measuring equipment used", "Qualifications such as HACCP", "References from recent employers"],
+      shifts: "Days and shifts",
+      unit: "quality and technical staff",
+    },
+    {
+      key: "supervisors",
+      tab: "Supervisors & managers",
+      title: "Supervisors and managers",
+      image: "/industries/buildsomething.png",
+      pos: "object-[82%_center]",
+      intro: "Team leaders, shift managers and production managers who lead people, hit targets and run a safe floor. Usually permanent, sometimes interim.",
+      work: ["Team and line leaders", "Shift supervisors and managers", "Production managers", "Continuous improvement (CI) roles", "Health and safety"],
+      checks: ["Management experience and references", "People and KPI track record", "IOSH, NEBOSH or lean qualifications where needed", "Right to work in the UK"],
+      shifts: "Days, nights or rotating shifts",
+      unit: "supervisors and managers",
+    },
+  ],
+  peopleWord: "manufacturing staff",
+  coverageFallback: "We supply manufacturing staff nationwide, and we're strongest across the Midlands.",
+  complianceHeading: "Six checks before anyone starts on your line",
+  complianceIntro: "On a production floor, the wrong person costs output, quality and sometimes safety. Here's what we check before anyone starts with you.",
+  compliance: [
+    {
+      title: "Interview and skills",
+      short: "We find out what they can really do",
+      body: "Everyone is interviewed by us before they're put forward. We talk through the machines, materials and processes they've worked with, and ask practical questions so we're honest with you about their level.",
+      points: ["Machines, processes and materials used", "Operating or setting level, honestly assessed", "Shifts they can genuinely commit to"],
+    },
+    {
+      title: "ID and right to work",
+      short: "Who they are, and that they can work in the UK",
+      body: "We check original identity documents and the right to work in the UK in line with Home Office guidance: a passport, or a share code checked online. The check is recorded and dated, and time-limited permissions get a reminder before they run out.",
+      points: ["Photo ID matched to the person", "Right to work check, recorded and dated", "Follow-up dates for time-limited permission"],
+    },
+    {
+      title: "Certificates and tickets",
+      short: "Qualifications checked, not assumed",
+      body: "Where the role needs them, we see the certificates: welding codes, food hygiene, forklift licences, first aid and health and safety qualifications. Dates are recorded so you know when a renewal is due.",
+      points: ["Welding codes and food hygiene", "FLT, first aid and IOSH where needed", "Dates recorded, with renewal reminders"],
+    },
+    {
+      title: "Work history and references",
+      short: "No unexplained gaps",
+      body: "We go through their work history, ask about any gaps, and take references from recent employers before they start with you.",
+      points: ["Full work history with gaps explained", "References from recent employers", "Attendance and reliability discussed"],
+    },
+    {
+      title: "Ready for your site",
+      short: "Safety and the basics sorted",
+      body: "Before day one we brief them on your site rules, start times, parking and PPE, and confirm they have the right safety boots, glasses and gloves, or arrange it with you.",
+      points: ["Site rules and start times briefed", "PPE confirmed for your site", "Hygiene rules for food sites"],
+    },
+    {
+      title: "Ongoing checks",
+      short: "Not just a one-off",
+      body: "We stay in touch with you and the worker once they start. Feedback is acted on quickly, attendance is followed up, and certificate and right to work dates are tracked with reminders.",
+      points: ["Regular check-ins with you", "Attendance followed up straight away", "Reminders before anything expires"],
+    },
+  ],
+  enquiryIndustry: "Manufacturing",
+  enquiryHeading: "Tell us what you need. We'll find the right people.",
+  enquiryImage: "/industries/manufacturingpeople.png",
+  enquiryPos: "object-[72%_center]",
+  enquiryPlaceholder: "Anything else? Machines, processes, shift pattern, pay rate",
+  shiftOptions: ["Days", "Nights", "Weekends", "Continental (4 on 4 off)", "Rotating"],
+  faqs: [
+    { q: "How quickly can you supply manufacturing staff?", a: "For short-notice cover, call us on 0121 630 1643 and we'll aim to have people with you the same or next day where we can. Skilled roles like setters and welders can take a little longer, and for permanent roles we usually send a shortlist within a few days." },
+    { q: "Can you staff a whole new shift?", a: "Yes. Tell us the numbers, skills and start date as early as you can, and we'll recruit, check and brief the team so they're ready to start together." },
+    { q: "Do you supply food production staff?", a: "Yes. We brief everyone on hygiene rules before they start, and check food hygiene certificates where your site needs them." },
+    { q: "Can we take someone on permanently?", a: "Yes. Many of our temps go permanent. Our terms explain how that works and what it costs, and we're happy to talk it through." },
+    { q: "What if someone isn't right for us?", a: "Tell us. We'll talk to you and the worker straight away and, if it's not working, find you a replacement." },
+  ],
+  candidate: { title: "Looking for manufacturing work?", sub: "Production, machine operator, welding and quality jobs, temporary and permanent.", button: "See manufacturing jobs" },
+};
 
 export default function ManufacturingPage() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [openSection, setOpenSection] = useState<string | null>(null);
-
-  return (
-    <main className="overflow-x-hidden font-body">
-      {/* HEADER */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-navy">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-orange">
-              <span className="h-3 w-3 rounded-full bg-orange" />
-            </span>
-            <span className="font-display leading-none">
-              <span className="block text-lg font-extrabold tracking-tight text-white">REACH</span>
-              <span className="block text-[9px] font-semibold tracking-[0.2em] text-white/60">NETWORK RECRUITMENT</span>
-            </span>
-          </Link>
-
-          <div className="flex shrink-0 items-center gap-3">
-            <a href="tel:01216301643" className="hidden shrink-0 items-center gap-2 whitespace-nowrap text-sm font-semibold text-white/85 transition hover:text-white sm:flex">
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0">
-                <path d="M3.5 2.5A1.5 1.5 0 0 1 5 1h1.3a1.5 1.5 0 0 1 1.46 1.16l.62 2.68a1.5 1.5 0 0 1-.4 1.42l-1.1 1.1a11.5 11.5 0 0 0 5 5l1.1-1.1a1.5 1.5 0 0 1 1.42-.4l2.68.62A1.5 1.5 0 0 1 18 12.7V14a1.5 1.5 0 0 1-1.5 1.5C8.5 15.5 3.5 10.5 3.5 2.5z" />
-              </svg>
-              0121 630 1643
-            </a>
-            <Link href="/book-a-call" className="hidden rounded-full bg-orange px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-dark sm:block">
-              Let&rsquo;s Talk
-            </Link>
-            <button
-              type="button"
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-expanded={menuOpen}
-              aria-label="Toggle menu"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white transition hover:border-white/40"
-            >
-              {menuOpen ? (
-                <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4">
-                  <path d="M4 4l12 12M16 4L4 16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4">
-                  <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-                </svg>
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div className={`overflow-hidden border-t border-white/10 bg-navy transition-[max-height] duration-300 ease-in-out ${menuOpen ? "max-h-96" : "max-h-0 border-t-0"}`}>
-          <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-6 py-4 lg:px-8">
-            {NAV_SECTIONS.map((section) => (
-              <div key={section.label}>
-                <button
-                  type="button"
-                  onClick={() => setOpenSection(openSection === section.label ? null : section.label)}
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white"
-                >
-                  {section.label}
-                  <svg viewBox="0 0 12 12" className={`h-3 w-3 opacity-60 transition-transform ${openSection === section.label ? "rotate-180" : ""}`} fill="none">
-                    <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                {openSection === section.label && (
-                  <div className="ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
-                    {section.links.map((link) => (
-                      <Link key={link.label} href={link.href} className="rounded-lg px-3 py-2 text-left text-xs font-semibold text-white/70 transition hover:bg-white/5 hover:text-white">
-                        {link.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            <Link href="/contact-us" className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/5 hover:text-white">
-              Contact us
-            </Link>
-            <Link href="/book-a-call" className="mx-3 mt-2 rounded-full bg-orange px-5 py-2.5 text-center text-sm font-bold text-white transition hover:bg-orange-dark sm:hidden">
-              Let&rsquo;s Talk
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      {/* HERO */}
-      <section className="relative isolate min-h-[480px] overflow-hidden bg-navy">
-        <div className="absolute inset-0">
-          <Image src="/industries/manufacturingpeople.png" alt="Manufacturing staff at work" fill sizes="100vw" className="object-cover object-center" priority />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/85 to-navy/20" />
-
-        <div className="relative mx-auto max-w-7xl px-6 pb-24 pt-8 lg:px-8 lg:pb-32 lg:pt-10">
-          <p className="flex items-center gap-1.5 text-xs font-semibold text-white/50">
-            <Link href="/" className="hover:text-white">Home</Link>
-            <span>&#8250;</span>
-            <Link href="/industries" className="hover:text-white">Industries</Link>
-            <span>&#8250;</span>
-            <span>Manufacturing</span>
-          </p>
-
-          <div className="mt-6 max-w-lg">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Manufacturing recruitment</p>
-            <h1 className="font-display mt-3 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
-              The right people. <span className="text-orange">Powering your production.</span>
-            </h1>
-            <p className="mt-4 max-w-md text-sm text-white/70 sm:text-base">
-              From production operatives to skilled trades and management, we supply the people who keep your manufacturing operations running at their best.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/book-a-call" className="flex items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark">
-                Find manufacturing staff <span aria-hidden="true">&rarr;</span>
-              </Link>
-              <Link href="/looking-for-work" className="flex items-center gap-1.5 rounded-full border border-white/25 px-6 py-3 text-sm font-bold text-white transition hover:border-white/50">
-                Find manufacturing jobs <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* BENEFITS STRIP */}
-      <section className="relative z-10 -mt-16 lg:-mt-20">
-        <div className="mx-auto max-w-6xl px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-6 rounded-2xl bg-white p-6 shadow-xl shadow-navy/10 sm:grid-cols-3 lg:grid-cols-6 lg:p-8">
-            {BENEFITS.map((b) => (
-              <div key={b.title} className="text-center">
-                <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-navy">
-                  <svg viewBox="0 0 16 16" fill="currentColor" className="h-4.5 w-4.5">
-                    <circle cx="8" cy="8" r="3" />
-                  </svg>
-                </span>
-                <p className="font-display mt-3 text-xs font-bold text-navy">{b.title}</p>
-                <p className="mt-1 text-[11px] leading-snug text-slate-500">{b.sub}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ROLES + PHOTO + WORKFORCE SOLUTIONS */}
-      <section className="bg-white pb-16 pt-16 lg:pb-24 lg:pt-24">
-        <div className="mx-auto max-w-6xl px-6 lg:px-8">
-          <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
-            <div className="relative overflow-hidden rounded-2xl bg-navy p-8 lg:p-10">
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">We supply staff for</p>
-              <h2 className="font-display mt-3 text-2xl font-extrabold text-white">All areas of manufacturing</h2>
-              <ul className="mt-6 space-y-3">
-                {ROLE_TYPES.map((role) => (
-                  <li key={role} className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange/20 text-orange">
-                      <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
-                        <path d="M6.2 10.9 3.5 8.2l1-1 1.7 1.7 4.6-4.6 1 1z" />
-                      </svg>
-                    </span>
-                    <span className="text-sm font-medium text-white/90">{role}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="relative min-h-[220px] overflow-hidden rounded-2xl sm:min-h-[260px] lg:min-h-[180px]">
-                <Image src="/industries/industry-manufacturing.png" alt="Manufacturing operative at work" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-6 lg:p-8">
-                <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Tailored solutions</p>
-                <h3 className="font-display mt-3 text-xl font-extrabold text-navy">
-                  Workforce solutions built for your business
-                </h3>
-                <p className="mt-3 text-sm text-slate-500">
-                  Whether you need to scale up for increased demand or specialist skills for a critical project, we provide the right people to keep your operations moving forward.
-                </p>
-                <Link href="/book-a-call" className="mt-5 flex w-fit items-center gap-1.5 rounded-full border border-navy/20 px-5 py-2.5 text-sm font-bold text-navy transition hover:border-navy/40">
-                  Let&rsquo;s talk <span aria-hidden="true">&rarr;</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PROCESS */}
-      <section className="bg-slate-50 py-16 lg:py-20">
-        <div className="mx-auto max-w-6xl px-6 text-center lg:px-8">
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange">Our process</p>
-          <h2 className="font-display mt-3 text-2xl font-extrabold text-navy sm:text-3xl">Simple. Fast. Effective.</h2>
-
-          <div className="mt-10 grid grid-cols-1 gap-8 text-left sm:grid-cols-2 lg:grid-cols-4">
-            {PROCESS.map((p) => (
-              <div key={p.step}>
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-navy text-sm font-extrabold text-white">
-                  {p.step}
-                </span>
-                <p className="font-display mt-3 text-sm font-bold text-navy">{p.title}</p>
-                <p className="mt-1 text-xs text-slate-500">{p.sub}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="bg-white pb-16 lg:pb-20">
-        <div className="mx-auto max-w-6xl px-6 lg:px-8">
-          <div className="flex flex-col items-start gap-5 rounded-2xl bg-navy p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between lg:p-8">
-            <div className="flex items-center gap-4">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-orange/40 text-orange">
-                <svg viewBox="0 0 16 16" fill="currentColor" className="h-4.5 w-4.5">
-                  <path d="M8 1a3 3 0 013 3v1.5a3 3 0 01-6 0V4a3 3 0 013-3zM3 13a5 5 0 0110 0" />
-                </svg>
-              </span>
-              <div>
-                <p className="font-display text-sm font-bold text-white">Need manufacturing staff?</p>
-                <p className="mt-0.5 text-xs text-white/60">Get in touch today and let us help you find the people who keep your business moving.</p>
-              </div>
-            </div>
-            <Link href="/book-a-call" className="flex shrink-0 items-center gap-1.5 rounded-full bg-orange px-6 py-3 text-sm font-bold text-white transition hover:bg-orange-dark">
-              Let&rsquo;s talk <span aria-hidden="true">&rarr;</span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <Footer />
-    </main>
-  );
+  return <IndustryPage cfg={cfg} />;
 }
