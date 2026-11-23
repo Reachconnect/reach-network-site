@@ -142,7 +142,7 @@ export default function WebChat() {
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F7931E] font-bold">R</div>
             <div className="min-w-0 flex-1">
               <p className="font-[family-name:var(--font-manrope)] font-bold">Reach Network Recruitment</p>
-              <p className="text-xs text-white/70">We usually reply within minutes</p>
+              <p className="text-xs text-white/70">Instant answers, 24/7. Our team reads every chat.</p>
             </div>
             <button onClick={() => setOpen(false)} aria-label="Close chat" className="rounded-full p-1.5 text-white/80 hover:bg-white/10 hover:text-white">
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
@@ -154,7 +154,7 @@ export default function WebChat() {
           {!token ? (
             <div className="flex-1 space-y-3 overflow-y-auto p-4">
               <div className="rounded-xl bg-slate-100 p-3 text-sm text-slate-700">
-                Hi! 👋 Looking for work, or need staff? Send us a message and we&apos;ll get straight back to you.
+                Hi! 👋 Need staff, or looking for work? Ask us anything: you&apos;ll get an answer straight away, day or night, and our team will follow up.
               </div>
               <input
                 value={name}
