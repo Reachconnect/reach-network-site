@@ -299,7 +299,7 @@ export default function HomeClient({ jobs, jobCount }: { jobs: HomeJob[]; jobCou
     fetch("/api/public/coverage?sector=all")
       .then((r) => r.json())
       .then((j) => {
-        setAreas(j.areas ?? []);
+        setAreas(((j.areas ?? []) as { key: string; label: string; lat: number; lng: number; all?: number; count?: number }[]).map((a) => ({ key: a.key, label: a.label, lat: a.lat, lng: a.lng, count: a.count ?? a.all ?? 0 })));
         setTotal(j.total ?? 0);
       })
       .catch(() => {});
@@ -598,6 +598,17 @@ export default function HomeClient({ jobs, jobCount }: { jobs: HomeJob[]; jobCou
                 </div>
               ))}
             </div>
+            {areas.length > 0 && (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {areas.slice(0, 8).map((a) => (
+                  <span key={a.key} className="flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-white/80 ring-1 ring-white/10">
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange" />
+                    {a.label}
+                    {a.count ? <span className="text-orange">{a.count}+</span> : null}
+                  </span>
+                ))}
+              </div>
+            )}
             <Link href="/why-choose-us" className="mt-6 inline-block font-bold text-orange hover:underline">
               Why choose us →
             </Link>
