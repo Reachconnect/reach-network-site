@@ -30,7 +30,10 @@ function longestConsonantRun(w: string) {
 export function looksLikeGibberish(text: string) {
   let strong = 0;
   let weak = 0;
-  for (const w of String(text || "").split(/[^A-Za-zÀ-ÿ]+/).filter((x) => x.length >= 6)) {
+  const words = String(text || "").split(/[^A-Za-zÀ-ÿ]+/);
+  // e.g. "Stpzn": 5+ letters with no vowel at all (y counts as a vowel, so "Llwyd" passes)
+  if (words.some((w) => w.length >= 5 && !VOWELS.test(w) && /^[A-Za-z]+$/.test(w) && /[a-z]/.test(w))) strong++;
+  for (const w of words.filter((x) => x.length >= 6)) {
     // Random strings switch between capitals and small letters (McDonald, DeVries only switch once)
     if (caseFlips(w) >= 2) strong++;
     const run = longestConsonantRun(w);
@@ -45,8 +48,8 @@ export function looksLikeUkPhone(phone: string) {
   const p = String(phone || "").replace(/[\s()-]/g, "");
   if (!/^\+?\d{9,15}$/.test(p)) return false;
   if (p.startsWith("0") || p.startsWith("+") || p.startsWith("44")) return true;
-  // UK numbers typed without the leading 0, e.g. 7700 900123 or 121 630 1643
-  return p.length === 10 && /^[123578]/.test(p);
+  // UK numbers typed without the leading 0, e.g. 7700 900123 or 121 630 1643 (01, 02 or 07 only)
+  return p.length === 10 && /^[127]/.test(p);
 }
 
 type Check = {
@@ -69,6 +72,7 @@ export function spamReason(c: Check): string | null {
   if (c.phone !== undefined && String(c.phone || "").trim() && !looksLikeUkPhone(String(c.phone))) return "bad phone";
   if (c.place !== undefined) {
     const p = String(c.place || "").trim();
+    // A number on its own, e.g. a US zip code like 52972, isn't a UK town or postcode
     if (p && /^\d+$/.test(p)) return "bad location";
   }
   if (/https?:\/\/|www\.|\[url|<a\s/i.test(text) && (text.match(/https?:\/\//g) || []).length >= 2) return "links";

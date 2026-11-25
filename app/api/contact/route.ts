@@ -14,6 +14,7 @@ type ContactPayload = {
   workEmail: string;
   helpTopic: string;
   message: string;
+  area?: string;
 };
 
 function esc(v: string) {
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
 
-    const spam = spamReason({ body: body as unknown as Record<string, unknown>, text: [fullName, companyName, jobTitle, message], phone: phoneNumber });
+    const spam = spamReason({ body: body as unknown as Record<string, unknown>, text: [fullName, companyName, jobTitle, message], phone: phoneNumber, place: body.area });
     if (spam) {
       logSpam("contact", spam, { fullName, companyName, workEmail });
       return NextResponse.json({ ok: true });

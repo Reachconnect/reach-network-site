@@ -127,6 +127,8 @@ function RateChecker({ rates }: { rates: RoleRate[] }) {
   const [f, setF] = useState({ name: "", company: "", email: "", phone: "", area: "" });
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [hp, setHp] = useState("");
+  const [started] = useState(() => Date.now());
   const sectors = Array.from(new Set(rates.map((x) => x.sector)));
   const input = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-navy focus:border-orange focus:outline-none";
 
@@ -138,7 +140,7 @@ function RateChecker({ rates }: { rates: RoleRate[] }) {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName: f.name, companyName: f.company, jobTitle: "", phoneNumber: f.phone, workEmail: f.email, helpTopic: `Pay rate guide: ${r?.label}`, message: `Please send a pay rate guide for ${r?.label}${f.area ? ` in ${f.area}` : ""}.` }),
+        body: JSON.stringify({ fullName: f.name, companyName: f.company, jobTitle: "", phoneNumber: f.phone, workEmail: f.email, helpTopic: `Pay rate guide: ${r?.label}`, message: `Please send a pay rate guide for ${r?.label}${f.area ? ` in ${f.area}` : ""}.`, area: f.area, website: hp, _t: Date.now() - started }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || "Something went wrong.");
@@ -222,6 +224,7 @@ function RateChecker({ rates }: { rates: RoleRate[] }) {
                 <input className={input} type="tel" placeholder="Phone" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} required />
               </div>
               <input className={input} placeholder="Site town or postcode" value={f.area} onChange={(e) => setF({ ...f, area: e.target.value })} />
+              <input type="text" name="website" tabIndex={-1} autoComplete="off" value={hp} onChange={(e) => setHp(e.target.value)} aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 opacity-0" />
               {error && <p className="text-sm text-red-600">{error}</p>}
               <button disabled={status === "sending"} className="rounded-full bg-orange px-6 py-3 font-bold text-white hover:bg-orange-dark disabled:opacity-50">
                 {status === "sending" ? "Sending…" : "Send me local rates"}
