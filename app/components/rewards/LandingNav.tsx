@@ -8,7 +8,7 @@ const LINKS = [
   { href: "/rewards/login", label: "Offers" },
   { href: "#categories", label: "Categories" },
   { href: "#how-it-works", label: "How it works" },
-  { href: "#employers", label: "For Employers" },
+  { href: "#who", label: "Who it's for" },
   { href: "#contact", label: "Contact" },
 ];
 
