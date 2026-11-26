@@ -62,28 +62,8 @@ export default function Footer() {
       <div className="pointer-events-none absolute -top-40 right-[-10%] h-96 w-96 rounded-full bg-orange/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-        {/* Call to action */}
-        <div className="grid gap-4 pt-16 md:grid-cols-2">
-          <Link href="/i-need-staff" className="group flex items-center justify-between gap-6 rounded-3xl bg-orange p-7 transition hover:bg-orange-dark">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/80">For employers</p>
-              <p className="mt-1 font-display text-2xl font-extrabold text-white">Need staff, fast?</p>
-              <p className="mt-1 text-sm text-white/85">Reliable temporary and permanent people, often within 24 hours.</p>
-            </div>
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-xl text-orange transition group-hover:translate-x-1">→</span>
-          </Link>
-          <Link href="/looking-for-work" className="group flex items-center justify-between gap-6 rounded-3xl bg-white/5 p-7 ring-1 ring-white/10 transition hover:bg-white/10">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-orange">For candidates</p>
-              <p className="mt-1 font-display text-2xl font-extrabold text-white">Looking for work?</p>
-              <p className="mt-1 text-sm text-white/60">Register once and we&rsquo;ll match you with shifts and jobs near you.</p>
-            </div>
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange text-xl text-white transition group-hover:translate-x-1">→</span>
-          </Link>
-        </div>
-
         {/* Main */}
-        <div className="grid gap-12 py-14 lg:grid-cols-[1.3fr_1fr_1fr_0.8fr]">
+        <div className="grid gap-12 pb-14 pt-16 lg:grid-cols-[1.3fr_1fr_1fr_0.8fr]">
           <div>
             <Link href="/" className="inline-flex items-center gap-2.5">
               <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-orange">
