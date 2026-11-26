@@ -1,6 +1,3 @@
 {
-  "crons": [
-    { "path": "/api/cron/sign-reminders", "schedule": "0 9 * * *" },
-    { "path": "/api/rewards/import-awin", "schedule": "30 3 * * *" }
-  ]
+  "crons": [{ "path": "/api/cron/sign-reminders", "schedule": "0 9 * * *" }]
 }

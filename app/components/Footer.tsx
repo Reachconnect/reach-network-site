@@ -17,7 +17,6 @@ const CANDIDATES = [
   { href: "/cv-builder", label: "Free CV builder" },
   { href: "/take-home-pay", label: "Take-home pay calculator" },
   { href: "/guides", label: "Guides and advice" },
-  { href: "/rewards", label: "Reach Rewards" },
   { href: "/refer", label: "Refer a friend" },
 ];
 
