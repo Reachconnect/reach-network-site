@@ -3,7 +3,7 @@
 
 export const SITE = {
   // Google review link, from your Google Business Profile ("Ask for reviews")
-  googleReviewUrl: "",
+  googleReviewUrl: "https://www.google.com/search?q=Reach+Network+Recruitment#lrd=0x34b35e88b4463b7:0x109c40c2bb3e95b9,3,,,,",
   // WhatsApp number in international format without + or spaces, e.g. "447700900123"
   whatsapp: "",
   // Referral bonus shown on the refer-a-friend page, e.g. "£100". Leave empty to say "a thank-you bonus".
@@ -11,7 +11,7 @@ export const SITE = {
   // Hours a referred friend must work before the bonus is paid, e.g. 100
   referralHours: 0,
   accreditations: {
-    companyNumber: "", // Companies House number
+    companyNumber: "15935163", // Companies House number
     icoNumber: "", // ICO registration number
     recMember: false, // Recruitment & Employment Confederation member
     insured: false, // Employer's liability and public liability insurance in place
